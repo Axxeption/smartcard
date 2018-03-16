@@ -93,16 +93,16 @@ public class Client {
 			
 			//4. cryptographic operation on card: send a random byte array
 			System.out.println("Send random byte array name");
-			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-			byte [] randbytes = new byte[20];
-			random.nextBytes(randbytes);
-			System.out.println(randbytes);
-			a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
-			r = c.transmit(a);
-			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
-			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-			str = new String(r.getData(), StandardCharsets.UTF_8);
-			System.out.println("Signed is: " + str);
+//			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+//			byte [] randbytes = new byte[20];
+//			random.nextBytes(randbytes);
+//			System.out.println(randbytes);
+//			a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
+//			r = c.transmit(a);
+//			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
+//			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+//			str = new String(r.getData(), StandardCharsets.UTF_8);
+//			System.out.println("Signed is: " + str);
 			
 			//5. transferring large amounts of data
 			

@@ -5,7 +5,7 @@
     <property name="cardDir" value="C:\VeiligeSoftware\veilige_software_sc_windows\java_card_kit-2_2_2"/>
     <property name="targetDir" value="${basedir}/target"/>
 	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
-
+	//
 	<presetdef name="javac">
     	<javac includeantruntime="false" />
   	</presetdef>
