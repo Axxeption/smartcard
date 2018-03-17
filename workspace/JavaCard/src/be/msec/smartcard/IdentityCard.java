@@ -16,7 +16,7 @@ public class IdentityCard extends Applet {
 	private static final byte GET_NAME_INS = 0x24;
 	private static final byte GET_SERIAL_INS = 0x26;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
-
+	private static final byte GET_CERTIFICATE = 0x28;
 	
 	private final static byte PIN_TRY_LIMIT =(byte)0x03;
 	private final static byte PIN_SIZE =(byte)0x04;
@@ -98,6 +98,9 @@ public class IdentityCard extends Applet {
 		case GET_NAME_INS:
 			getName(apdu);
 			break;
+		case GET_CERTIFICATE:
+			getCertificate(apdu);
+			break;
 		case SIGN_RANDOM_BYTE:
 			sign(apdu);
 			break;
@@ -147,7 +150,8 @@ public class IdentityCard extends Applet {
 	
 	private void sign(APDU apdu) {
 		byte[] buffer = apdu.getBuffer();
-		byte[] outputBuffer = null;
+//		hoe kun je deze lengte weten?
+		byte[] outputBuffer = new byte[100];
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
 			apdu.setIncomingAndReceive();
@@ -155,13 +159,28 @@ public class IdentityCard extends Applet {
 			//'serial' with offset '0' and length 'serial.length'
 			//to the host application.
 			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-			
 			signature.init(privKey, Signature.MODE_SIGN);
-			//hier zit de fout..?
-			short responsLength = signature.sign(buffer, offset, (short) buffer.length, outputBuffer, (short)0);
+			short responsLength = signature.sign(buffer,(short)0, (short)buffer.length, outputBuffer, (short) 0 );
 			apdu.setOutgoing();
 			apdu.setOutgoingLength((short)responsLength);
 			apdu.sendBytesLong(outputBuffer,(short)0,responsLength);
+		}
+	}
+	
+	private void getCertificate(APDU apdu) {
+		//if the pin is validated --> return certificate
+		byte [] partOfCertificate = new byte[240];
+		byte[] buffer = apdu.getBuffer();
+		offset = buffer[ISO7816.OFFSET_P1];
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			if(offset == 0x01) offset = 239;
+			for (int i = 0; (i < 240) && ((offset + i) < certificate.length); i++) {
+				partOfCertificate[i] = certificate[offset + i];
+			}
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short)partOfCertificate.length);
+			apdu.sendBytesLong(partOfCertificate,(short)0,(short)partOfCertificate.length);
 		}
 	}
 	

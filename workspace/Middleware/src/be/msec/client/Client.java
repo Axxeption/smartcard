@@ -4,8 +4,13 @@ import be.msec.client.connection.Connection;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 import javax.smartcardio.*;
 
@@ -18,13 +23,15 @@ public class Client {
 	private static final byte GET_SERIAL_INS = 0x26;
 	private static final byte GET_NAME_INS = 0x24;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
-
+	private static final byte GET_CERTIFICATE = 0x28;
+	private static final byte test = 0x01;
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
 		IConnection c;
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
 
 		//Simulation:
 		c = new SimulatedConnection();
@@ -105,7 +112,33 @@ public class Client {
 			System.out.println("Signed is: " + str);
 			
 			//5. transferring large amounts of data
+			//ask for the public key (certificate)
+			byte [] byteCertificate = new byte [256];
+			System.out.println("Ask for the certificate");
+			//eerste is offset, tweede geeft lengte aan
+			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_CERTIFICATE, (byte) 0x00, (byte) 0x00);
+			r= c.transmit(a);
+			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
+			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+			//we hebben nog niet de volledige data!
+			System.out.println("De lengte is: " + r.getData().length);
+			byteCertificate = r.getData();
+			System.out.println("Tweede deel opvragen!");
+			byte test = (byte) 0xF0;
+			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_CERTIFICATE, test , 0x00);
+			r= c.transmit(a);
+			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
+			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
 			
+
+			outputStream.write( byteCertificate );
+			outputStream.write( r.getData() );
+			byteCertificate = outputStream.toByteArray();
+			CertificateFactory certFac = CertificateFactory.getInstance("X.509");
+			InputStream is = new ByteArrayInputStream(byteCertificate);
+			X509Certificate certificate = (X509Certificate) certFac.generateCertificate(is);
+			System.out.println("Succesfully created certificate on the host app.");
+
 		} catch (Exception e) {
 			throw e;
 		}
