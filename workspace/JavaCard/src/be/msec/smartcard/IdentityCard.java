@@ -4,6 +4,7 @@ import javacard.framework.APDU;
 import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
 import javacard.security.KeyBuilder;
 import javacard.security.RSAPrivateKey;
@@ -36,6 +37,10 @@ public class IdentityCard extends Applet {
 	private short keySizeInBytes = 64;
 	private short keySizeInBits = 512;
 	private RSAPrivateKey privKey = null;
+	
+	private final static short MAX_APDU = 240;
+	private short BUF_IN_OFFSET[];
+	private byte data[];
 
 	private IdentityCard() {
 		/*
@@ -54,6 +59,7 @@ public class IdentityCard extends Applet {
 		 * This method registers the applet with the JCRE on the card.
 		 */
 		register();
+		BUF_IN_OFFSET = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_DESELECT);
 	}
 
 	/*
@@ -99,7 +105,7 @@ public class IdentityCard extends Applet {
 			getName(apdu);
 			break;
 		case GET_CERTIFICATE:
-			getCertificate(apdu);
+			sendData(apdu);
 			break;
 		case SIGN_RANDOM_BYTE:
 			sign(apdu);
@@ -172,6 +178,7 @@ public class IdentityCard extends Applet {
 		byte [] partOfCertificate = new byte[240];
 		byte[] buffer = apdu.getBuffer();
 		offset = buffer[ISO7816.OFFSET_P1];
+		short lengthh = (short) certificate.length;
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
 			if(offset == 0x01) offset = 239;
@@ -215,4 +222,25 @@ public class IdentityCard extends Applet {
 			apdu.sendBytesLong(name,(short)0,(short)name.length);
 		}
 	}
+	
+	private void sendData(APDU apdu) {
+        short remain = (short) ((short)certificate.length - BUF_IN_OFFSET[0]);
+        boolean chain = remain > MAX_APDU;
+        //als sendLen = chain zet het gelijk aan max_ampdu anders aan remain
+        short sendLen = chain ? MAX_APDU : remain;
+       
+        apdu.setOutgoing();
+        apdu.setOutgoingLength((short)sendLen);
+        apdu.sendBytesLong(certificate, BUF_IN_OFFSET[0], sendLen);
+       
+        if (chain) {
+            BUF_IN_OFFSET[0] += sendLen +1; // count the bytes sent
+            remain -=sendLen;
+            ISOException.throwIt((short)(ISO7816.SW_BYTES_REMAINING_00 + remain));
+           
+        } else {
+            BUF_IN_OFFSET[0] = 0; // no more bytes to send
+        }
+ 
+    }
 }

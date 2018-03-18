@@ -23,3 +23,5 @@ hs_err_pid*
 workspace/JavaCard/CAPGenerationScript.txt
 workspace/JavaCard/projectBuilder.xml
 workspace/.metadata/
+java_card_kit-2_2_2/
+plugins/
