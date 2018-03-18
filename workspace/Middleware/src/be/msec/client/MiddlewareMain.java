@@ -53,7 +53,7 @@ public class MiddlewareMain extends Application {
         try {
 			ConnectSimulator();
 //			ConnectRealDevice();
-			
+//			
 //			askName();
 //			checkChallenge();
 		} catch (Exception e) {
