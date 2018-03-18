@@ -15,12 +15,19 @@ import be.msec.client.connection.SimulatedConnection;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -50,7 +57,8 @@ public class MiddlewareMain extends Application {
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte test = 0x01;
-	 static final int port = 8000;
+	static final int port = 8001;
+	private Socket timestampSocket = null;
 	IConnection c;
 	CommandAPDU a;
 	ResponseAPDU r;
@@ -66,6 +74,7 @@ public class MiddlewareMain extends Application {
 //			askName();
 //			checkChallenge();
 			connectTimestampServer();
+			askTime();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -269,28 +278,71 @@ public class MiddlewareMain extends Application {
 		SSLSocketFactory sslSocketFactory = 
                 (SSLSocketFactory)SSLSocketFactory.getDefault();
         try {
-            Socket socket = sslSocketFactory.createSocket("localhost", port);
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            try (BufferedReader bufferedReader = 
-                    new BufferedReader(
-                            new InputStreamReader(socket.getInputStream()))) {
-                Scanner scanner = new Scanner(System.in);
-                while(true){
-                    System.out.println("Enter something:");
-                    String inputLine = scanner.nextLine();
-                    if(inputLine.equals("q")){
-                        break;
-                    }
-                     
-                    out.println(inputLine);
-                    System.out.println(bufferedReader.readLine());
-                }
-            }
-             
+            timestampSocket = sslSocketFactory.createSocket("localhost", port);  
         } catch (IOException ex) {
             System.out.println("ERROR WITH CONNECTION TO G: " + ex);
         }
+        System.out.println("Connected to timestamp server:" + timestampSocket);
           
+	}
+	
+	public void askTime() {
+        try {
+        	System.out.println(timestampSocket);
+            PrintWriter out = new PrintWriter(timestampSocket.getOutputStream(), true);
+            byte[] dataToTest = ("test".getBytes());
+
+            try (BufferedReader bufferedReader = 
+                    new BufferedReader(
+                            new InputStreamReader(timestampSocket.getInputStream()))) {
+            	out.println(1);
+            	
+                String received = bufferedReader.readLine();
+                System.out.println("I received the signed time: " + received);
+                KeyStore keyStore = KeyStore.getInstance("JKS");
+                String fileName = new java.io.File("").getAbsolutePath() + "\\middleware\\middleware.jks";
+                FileInputStream fis = new FileInputStream(fileName);
+                System.out.println("File found!");
+                keyStore.load(fis,"jonasaxel".toCharArray());
+                fis.close();
+                //in middleware zitten alle (public ) keys dat middleware heeft normaal 
+                //is dit enkel die van de CA maar dit ziter ng niet in
+                java.security.cert.Certificate certificateGovernment = keyStore.getCertificate("government");
+                
+                Signature rsa = Signature.getInstance("SHA1withRSA");
+                rsa.initVerify(certificateGovernment.getPublicKey());
+                rsa.update(dataToTest);
+                System.out.println("Is it verified? " + rsa.verify(received.getBytes()));
+//                Scanner scanner = new Scanner(System.in);
+//                while(true){
+//                    System.out.println("Enter something:");
+//                    String inputLine = scanner.nextLine();
+//                    if(inputLine.equals("q")){
+//                        break;
+//                    }
+//                     
+//                    out.println(inputLine);
+//                }
+            } catch (SignatureException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (KeyStoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (CertificateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+             
+        } catch (IOException ex) {
+            System.out.println("ERROR WITH RECEIVING TIME: " + ex);
+        }
 	}
 	
 	public static void main(String[] args) throws Exception {
