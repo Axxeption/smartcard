@@ -1,0 +1,6 @@
+Command for TimestampServer G:	java -jar -Djavax.net.ssl.keyStore=sslKeyStore -Djavax.net.ssl.keyStorePassword=jonasaxel TimestampServiceServer.jar
+
+Command for Middleware: java -jar -Djavax.net.ssl.trustStore=sslKeyStore -Djavax.net.ssl.trustStorePassword=jonasaxel Middleware.jar
+
+(die rare javax dingen moeten er bij om de SSL connectie op te zetten!) 
+wachtwoord van sslKeyStore = "jonasaxel", alias = "signFiles", gegeneerd door de java keyTool (standaard in java jdk)

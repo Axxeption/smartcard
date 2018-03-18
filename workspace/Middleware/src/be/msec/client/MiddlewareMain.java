@@ -1,6 +1,15 @@
 package be.msec.client;
 
 import be.msec.client.connection.Connection;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.ssl.SSLSocketFactory;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
 
@@ -41,7 +50,7 @@ public class MiddlewareMain extends Application {
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte test = 0x01;
-
+	 static final int port = 8000;
 	IConnection c;
 	CommandAPDU a;
 	ResponseAPDU r;
@@ -49,17 +58,20 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
         this.primaryStage.setTitle("Card reader UI");
-        initRootLayout();
+//        initRootLayout();
         try {
-			ConnectSimulator();
+//			ConnectSimulator();
 //			ConnectRealDevice();
 //			
 //			askName();
 //			checkChallenge();
+			connectTimestampServer();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
     }
+	
+	
 	
 	public void checkChallenge() throws Exception {
 		//first get the certificate with the public key
@@ -252,7 +264,35 @@ public class MiddlewareMain extends Application {
 		}
 
 	}
-
+	
+	public void connectTimestampServer() {
+		SSLSocketFactory sslSocketFactory = 
+                (SSLSocketFactory)SSLSocketFactory.getDefault();
+        try {
+            Socket socket = sslSocketFactory.createSocket("localhost", port);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            try (BufferedReader bufferedReader = 
+                    new BufferedReader(
+                            new InputStreamReader(socket.getInputStream()))) {
+                Scanner scanner = new Scanner(System.in);
+                while(true){
+                    System.out.println("Enter something:");
+                    String inputLine = scanner.nextLine();
+                    if(inputLine.equals("q")){
+                        break;
+                    }
+                     
+                    out.println(inputLine);
+                    System.out.println(bufferedReader.readLine());
+                }
+            }
+             
+        } catch (IOException ex) {
+            System.out.println("ERROR WITH CONNECTION TO G: " + ex);
+        }
+          
+	}
+	
 	public static void main(String[] args) throws Exception {
 		launch(args);
 	}
