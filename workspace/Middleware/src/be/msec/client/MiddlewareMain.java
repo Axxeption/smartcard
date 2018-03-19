@@ -1,6 +1,8 @@
 package be.msec.client;
 
 import be.msec.client.connection.Connection;
+
+import java.awt.RenderingHints.Key;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,16 +22,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
 import javafx.application.Application;
@@ -73,14 +83,55 @@ public class MiddlewareMain extends Application {
 //			
 //			askName();
 //			checkChallenge();
-			connectTimestampServer();
-			askTime();
+//			connectTimestampServer();
+//			askTime();
+        	testSetup();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
     }
 	
-	
+	public void testSetup() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
+		//aan de CA kant
+		KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        KeyPair kp = kpg.genKeyPair();
+        
+		KeyFactory fact = KeyFactory.getInstance("RSA");
+        RSAPublicKeySpec publicKeyCARSA = fact.getKeySpec(kp.getPublic(),
+                RSAPublicKeySpec.class);
+        RSAPrivateKeySpec privateKeyCARSA = fact.getKeySpec(kp.getPrivate(),
+                RSAPrivateKeySpec.class);
+        
+        PublicKey publicKeyCA = fact.generatePublic(publicKeyCARSA);
+        PrivateKey privateKeyCA = fact.generatePrivate(privateKeyCARSA);
+        
+		//aan de kant van G
+		//maak eerst een keypair aan
+        kpg.initialize(2048);
+        kp = kpg.genKeyPair();
+        
+		fact = KeyFactory.getInstance("RSA");
+        RSAPublicKeySpec publicKeyGovernment = fact.getKeySpec(kp.getPublic(),
+                RSAPublicKeySpec.class);
+        RSAPrivateKeySpec privateKeyGovernment = fact.getKeySpec(kp.getPrivate(),
+                RSAPrivateKeySpec.class);
+        PublicKey publicKeyG = fact.generatePublic(publicKeyGovernment);
+        PrivateKey privateKeyG = fact.generatePrivate(privateKeyGovernment);
+        
+      //digital signature met privkey van CA
+        Signature rsa = Signature.getInstance("SHA1withRSA");
+        rsa.initSign(privateKeyCA);
+        OwnCertificate certificateG = new OwnCertificate(publicKeyG, "government", 365);
+        rsa.update(certificateG.getBytes());
+        byte [] signedCertificateG = rsa.sign();
+        
+        //nu kan op de smartcard gechecked worden of dat de publickey van G klopt!
+        rsa.initVerify(publicKeyCA);
+        rsa.update(certificateG.getBytes());
+        System.out.println("Is it verified? " + rsa.verify(signedCertificateG));
+
+	}
 	
 	public void checkChallenge() throws Exception {
 		//first get the certificate with the public key

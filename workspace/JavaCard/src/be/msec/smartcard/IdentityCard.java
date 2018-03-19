@@ -182,9 +182,9 @@ public class IdentityCard extends Applet {
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
 			if(offset == 0x01) offset = 239;
-			for (int i = 0; (i < 240) && ((offset + i) < certificate.length); i++) {
-				partOfCertificate[i] = certificate[offset + i];
-			}
+//			for (short i = 0; (i < 240) && ((offset + i) < certificate.length); i++) {
+//				partOfCertificate[i] = certificate[offset + i];
+//			}
 			apdu.setOutgoing();
 			apdu.setOutgoingLength((short)partOfCertificate.length);
 			apdu.sendBytesLong(partOfCertificate,(short)0,(short)partOfCertificate.length);
@@ -234,7 +234,7 @@ public class IdentityCard extends Applet {
         apdu.sendBytesLong(certificate, BUF_IN_OFFSET[0], sendLen);
        
         if (chain) {
-            BUF_IN_OFFSET[0] += sendLen +1; // count the bytes sent
+            BUF_IN_OFFSET[0] += (short) sendLen + 1; // count the bytes sent
             remain -=sendLen;
             ISOException.throwIt((short)(ISO7816.SW_BYTES_REMAINING_00 + remain));
            

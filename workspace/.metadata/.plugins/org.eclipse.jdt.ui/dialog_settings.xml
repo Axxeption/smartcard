@@ -25,7 +25,7 @@
 	</section>
 	<section name="FatJarPackageWizard">
 		<item value="C:\Users\vulst\Documents\School_4elict\Veilige_software\smartcard\workspace" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
-		<item value="MiddlewareMain - Middleware" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="TimestampService - TimestampService" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
 		<item value="C:\Users\vulst\Documents\School_4elict\Veilige_software\smartcard\workspace\TimestampServiceServer.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>

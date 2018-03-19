@@ -14,13 +14,16 @@
 <fullyQualifiedTypeName name="javacard.framework.JCSystem"/>
 <fullyQualifiedTypeName name="java.lang.Exception"/>
 <fullyQualifiedTypeName name="java.util.Arrays"/>
-<fullyQualifiedTypeName name="java.security.Signature"/>
 <fullyQualifiedTypeName name="be.msec.client.UIController"/>
 <fullyQualifiedTypeName name="javafx.scene.layout.BorderPane"/>
 <fullyQualifiedTypeName name="be.msec.client.Client"/>
-<fullyQualifiedTypeName name="be.msec.client.MiddlewareController"/>
 <fullyQualifiedTypeName name="javafx.stage.PopupWindow.AnchorLocation"/>
 <fullyQualifiedTypeName name="javafx.scene.layout.AnchorPane"/>
 <fullyQualifiedTypeName name="javafx.fxml.FXMLLoader"/>
 <fullyQualifiedTypeName name="java.awt.event.ActionEvent"/>
+<fullyQualifiedTypeName name="java.security.Signature"/>
+<fullyQualifiedTypeName name="java.security.KeyStore"/>
+<fullyQualifiedTypeName name="java.io.FileInputStream"/>
+<fullyQualifiedTypeName name="java.security.PrivateKey"/>
+<fullyQualifiedTypeName name="be.msec.client.MiddlewareController"/>
 </qualifiedTypeNameHistroy>

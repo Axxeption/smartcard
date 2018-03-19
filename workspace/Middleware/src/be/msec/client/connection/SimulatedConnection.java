@@ -54,8 +54,12 @@ public class SimulatedConnection implements IConnection {
 		a.setDataIn(apdu.getData());
 		a.Le = apdu.getNe();
 		cad.exchangeApdu(a);
-		return new ResponseAPDU(a.getResponseApduBytes());
+		
+		//Code added to handle the occurrence of the full CommandAPDU in the ResponseAPDU
+		byte[] response = new byte[a.getResponseApduBytes().length - a.getCommandApduBytes().length];
+		System.arraycopy(a.getResponseApduBytes(), a.getCommandApduBytes().length, response, 0, response.length);
+		
+		return new ResponseAPDU(response);
 	}
 
 }
-
