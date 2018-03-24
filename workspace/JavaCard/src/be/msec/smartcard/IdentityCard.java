@@ -1,16 +1,18 @@
 package be.msec.smartcard;
 
 import javacard.framework.APDU;
+import javacardx.apdu.ExtendedLength;
 import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
+import javacard.framework.*;
 import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
 import javacard.security.KeyBuilder;
 import javacard.security.RSAPrivateKey;
 import javacard.security.Signature;
 
-public class IdentityCard extends Applet {
+public class IdentityCard extends Applet implements ExtendedLength {
 	private final static byte IDENTITY_CARD_CLA =(byte)0x80;
 	
 	private static final byte VALIDATE_PIN_INS = 0x22;
@@ -175,20 +177,20 @@ public class IdentityCard extends Applet {
 	
 	private void getCertificate(APDU apdu) {
 		//if the pin is validated --> return certificate
-		byte [] partOfCertificate = new byte[240];
-		byte[] buffer = apdu.getBuffer();
-		offset = buffer[ISO7816.OFFSET_P1];
-		short lengthh = (short) certificate.length;
-		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-		else{
-			if(offset == 0x01) offset = 239;
+//		byte [] partOfCertificate = new byte[240];
+//		byte[] buffer = apdu.getBuffer();
+//		offset = buffer[ISO7816.OFFSET_P1];
+//		short length = (short) certificate.length;
+//		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+//		else{
+//			if(offset == 0x01) offset = 238;
 //			for (short i = 0; (i < 240) && ((offset + i) < certificate.length); i++) {
 //				partOfCertificate[i] = certificate[offset + i];
 //			}
-			apdu.setOutgoing();
-			apdu.setOutgoingLength((short)partOfCertificate.length);
-			apdu.sendBytesLong(partOfCertificate,(short)0,(short)partOfCertificate.length);
-		}
+//			apdu.setOutgoing();
+//			apdu.setOutgoingLength((short)partOfCertificate.length);
+//			apdu.sendBytesLong(partOfCertificate,(short)0,(short)partOfCertificate.length);
+//		}
 	}
 	
 	/*
@@ -224,23 +226,29 @@ public class IdentityCard extends Applet {
 	}
 	
 	private void sendData(APDU apdu) {
-        short remain = (short) ((short)certificate.length - BUF_IN_OFFSET[0]);
-        boolean chain = remain > MAX_APDU;
-        //als sendLen = chain zet het gelijk aan max_ampdu anders aan remain
-        short sendLen = chain ? MAX_APDU : remain;
-       
-        apdu.setOutgoing();
-        apdu.setOutgoingLength((short)sendLen);
-        apdu.sendBytesLong(certificate, BUF_IN_OFFSET[0], sendLen);
-       
-        if (chain) {
-            BUF_IN_OFFSET[0] += (short) sendLen + 1; // count the bytes sent
-            remain -=sendLen;
-            ISOException.throwIt((short)(ISO7816.SW_BYTES_REMAINING_00 + remain));
-           
-        } else {
-            BUF_IN_OFFSET[0] = 0; // no more bytes to send
+		//Send big files
+		short toSend = (short) (certificate.length);
+		try {
+            apdu.setOutgoing();
+            apdu.setOutgoingLength(toSend);
+
+            byte counter = 0;
+            while (toSend > 0) {
+                apdu.sendBytesLong(certificate, (short) (32 * counter), (short) 32);
+                toSend = (short) (toSend - 32);
+                counter = (byte) (counter + 1);
+            }
+        } catch (Exception e) {
+            if (e instanceof APDUException) {
+                APDUException ae = (APDUException) e;
+                short reason = ae.getReason();
+                if (reason == APDUException.BAD_LENGTH)
+                    ISOException.throwIt((short) 0x9990);
+                else
+                    ISOException.throwIt((short) 0x8887);
+            } else {
+                ISOException.throwIt((short) 0x8888);
+            }
         }
- 
     }
 }

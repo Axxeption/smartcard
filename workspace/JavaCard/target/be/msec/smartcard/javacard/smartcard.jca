@@ -1,5 +1,5 @@
 // converted by version 1.3
-// on Mon Mar 19 09:44:48 CET 2018
+// on Sat Mar 24 11:18:56 CET 2018
 
 .package be/msec/smartcard {
 	.aid 0x1:0x2:0x3:0x4:0x5:0x6:0x7:0x8:0x9:0x0;
@@ -7,6 +7,7 @@
 
 	.imports {
 		0xA0:0x0:0x0:0x0:0x62:0x1:0x1 1.3;		//javacard/framework
+		0xA0:0x0:0x0:0x0:0x62:0x2:0x9 1.0;		//javacardx/apdu
 		0xA0:0x0:0x0:0x0:0x62:0x1:0x2 1.3;		//javacard/security
 		0xA0:0x0:0x0:0x0:0x62:0x0:0x1 1.0;		//java/lang
 	}
@@ -33,7 +34,7 @@
 		// 7
 		instanceFieldRef short IdentityCard/keySizeInBits;
 		// 8
-		instanceFieldRef 1.8 IdentityCard/privKey;
+		instanceFieldRef 2.8 IdentityCard/privKey;
 		// 9
 		instanceFieldRef 0.9 IdentityCard/pin;
 		// 10
@@ -45,11 +46,11 @@
 		// 13
 		virtualMethodRef 0.9.8([BSB)V;		// update([BSB)V
 		// 14
-		staticMethodRef 1.13.0(BSZ)Ljavacard/security/Key;;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
-			.descriptor	Ljavacard/security/Key;	1.0;
+		staticMethodRef 2.13.0(BSZ)Ljavacard/security/Key;;		// javacard/security/KeyBuilder.buildKey(BSZ)Ljavacard/security/Key;
+			.descriptor	Ljavacard/security/Key;	2.0;
 
 		// 15
-		classRef 1.8;		// javacard/security/RSAPrivateKey
+		classRef 2.8;		// javacard/security/RSAPrivateKey
 		// 16
 		virtualMethodRef 0.3.1()V;		// register()V
 		// 17
@@ -95,21 +96,27 @@
 		// 32
 		virtualMethodRef 0.9.4()Z;		// isValidated()Z
 		// 33
-		staticMethodRef 1.15.0(BZ)Ljavacard/security/Signature;;		// javacard/security/Signature.getInstance(BZ)Ljavacard/security/Signature;
-			.descriptor	Ljavacard/security/Signature;	1.15;
+		staticMethodRef 2.15.0(BZ)Ljavacard/security/Signature;;		// javacard/security/Signature.getInstance(BZ)Ljavacard/security/Signature;
+			.descriptor	Ljavacard/security/Signature;	2.15;
 
 		// 34
-		virtualMethodRef 1.15.3(Ljavacard/security/Key;B)V;		// init(Ljavacard/security/Key;B)V
-			.descriptor	Ljavacard/security/Key;	1.0;
+		virtualMethodRef 2.15.3(Ljavacard/security/Key;B)V;		// init(Ljavacard/security/Key;B)V
+			.descriptor	Ljavacard/security/Key;	2.0;
 
 		// 35
-		virtualMethodRef 1.15.5([BSS[BS)S;		// sign([BSS[BS)S
+		virtualMethodRef 2.15.5([BSS[BS)S;		// sign([BSS[BS)S
 		// 36
 		virtualMethodRef 0.10.7()S;		// setOutgoing()S
 		// 37
 		virtualMethodRef 0.10.9(S)V;		// setOutgoingLength(S)V
 		// 38
 		virtualMethodRef 0.10.5([BSS)V;		// sendBytesLong([BSS)V
+		// 39
+		classRef 3.2;		// java/lang/Exception
+		// 40
+		classRef 0.12;		// javacard/framework/APDUException
+		// 41
+		virtualMethodRef 0.12.1()S;		// getReason()S
 	}
 
 	.class public IdentityCard 0 extends 0.3 {		// extends javacard/framework/Applet
@@ -121,7 +128,7 @@
 			private byte[] serial 3;		// [B
 			private byte[] name 4;		// [B
 			private 0.9 pin 5;		// Ljavacard/framework/OwnerPIN;
-			private 1.8 privKey 6;		// Ljavacard/security/RSAPrivateKey;
+			private 2.8 privKey 6;		// Ljavacard/security/RSAPrivateKey;
 			private short[] BUF_IN_OFFSET 7;		// [S
 			private byte[] data 8;		// [B
 			private short offset 9;		// S
@@ -152,6 +159,12 @@
 		}
 
 		.packageMethodTable 0 {
+		}
+
+		.implementedInterfaceInfoTable { 
+			.interface 1.0 { 		// javacardx/apdu/ExtendedLength
+			}
+
 		}
 
 		.method private <init>()V {
@@ -2739,51 +2752,12 @@
 		}
 
 		.method private getCertificate(Ljavacard/framework/APDU;)V {
-			.stack 4;
-			.locals 2;
+			.stack 0;
+			.locals 0;
 
 			.descriptor	Ljavacard/framework/APDU;	0.10;
 
-				L0:	sspush 240;
-					newarray 11;
-					astore_2;
-					aload_1;
-					invokevirtual 22;		// getBuffer()[B
-					astore_3;
-					aload_0;
-					aload_3;
-					sconst_2;
-					baload;
-					putfield_s 5;		// short be/msec/smartcard/IdentityCard.offset
-					getfield_a_this 2;		// reference be/msec/smartcard/IdentityCard.certificate
-					arraylength;
-					pop;
-					getfield_a_this 9;		// reference be/msec/smartcard/IdentityCard.pin
-					invokevirtual 32;		// isValidated()Z
-					ifne L2;
-				L1:	sspush 25345;
-					invokestatic 24;		// javacard/framework/ISOException.throwIt(S)V
-					goto L5;
-				L2:	getfield_s_this 5;		// short be/msec/smartcard/IdentityCard.offset
-					sconst_1;
-					if_scmpne L4;
-				L3:	aload_0;
-					sspush 239;
-					putfield_s 5;		// short be/msec/smartcard/IdentityCard.offset
-				L4:	aload_1;
-					invokevirtual 36;		// setOutgoing()S
-					pop;
-					aload_1;
-					aload_2;
-					arraylength;
-					invokevirtual 37;		// setOutgoingLength(S)V
-					aload_1;
-					aload_2;
-					sconst_0;
-					aload_2;
-					arraylength;
-					invokevirtual 38;		// sendBytesLong([BSS)V
-				L5:	return;
+				L0:	return;
 		}
 
 		.method private getSerial(Ljavacard/framework/APDU;)V {
@@ -2843,69 +2817,65 @@
 		}
 
 		.method private sendData(Ljavacard/framework/APDU;)V {
-			.stack 5;
-			.locals 3;
+			.stack 4;
+			.locals 4;
 
 			.descriptor	Ljavacard/framework/APDU;	0.10;
 
 				L0:	getfield_a_this 2;		// reference be/msec/smartcard/IdentityCard.certificate
 					arraylength;
-					getfield_a_this 10;		// reference be/msec/smartcard/IdentityCard.BUF_IN_OFFSET
-					sconst_0;
-					saload;
-					ssub;
 					sstore_2;
-					sload_2;
-					sspush 240;
-					if_scmple L2;
-				L1:	sconst_1;
-					goto L3;
-				L2:	sconst_0;
-				L3:	sstore_3;
-					sload_3;
-					ifeq L5;
-				L4:	sspush 240;
-					goto L6;
-				L5:	sload_2;
-				L6:	sstore 4;
-					aload_1;
+				L1:	aload_1;
 					invokevirtual 36;		// setOutgoing()S
 					pop;
 					aload_1;
-					sload 4;
+					sload_2;
 					invokevirtual 37;		// setOutgoingLength(S)V
-					aload_1;
+					sconst_0;
+					sstore_3;
+					goto L3;
+				L2:	aload_1;
 					getfield_a_this 2;		// reference be/msec/smartcard/IdentityCard.certificate
-					getfield_a_this 10;		// reference be/msec/smartcard/IdentityCard.BUF_IN_OFFSET
-					sconst_0;
-					saload;
-					sload 4;
-					invokevirtual 38;		// sendBytesLong([BSS)V
+					bspush 32;
 					sload_3;
-					ifeq L8;
-				L7:	getfield_a_this 10;		// reference be/msec/smartcard/IdentityCard.BUF_IN_OFFSET
-					sconst_0;
-					dup2;
-					saload;
-					sload 4;
+					smul;
+					bspush 32;
+					invokevirtual 38;		// sendBytesLong([BSS)V
+					sinc 2 -32;
+					sload_3;
 					sconst_1;
 					sadd;
-					sadd;
-					sastore;
-					sload_2;
-					sload 4;
-					ssub;
-					sstore_2;
-					sspush 24832;
-					sload_2;
-					sadd;
+					s2b;
+					sstore_3;
+				L3:	sload_2;
+					ifgt L2;
+				L4:	goto L10;
+				L5:	astore_3;
+					aload_3;
+					instanceof 0 40;		// T_CLASSORINTERFACE javacard/framework/APDUException
+					ifeq L9;
+				L6:	aload_3;
+					checkcast 0 40;		// T_CLASSORINTERFACE javacard/framework/APDUException
+					astore 4;
+					aload 4;
+					invokevirtual 41;		// getReason()S
+					sstore 5;
+					sload 5;
+					sconst_3;
+					if_scmpne L8;
+				L7:	sspush -26224;
 					invokestatic 24;		// javacard/framework/ISOException.throwIt(S)V
-					goto L9;
-				L8:	getfield_a_this 10;		// reference be/msec/smartcard/IdentityCard.BUF_IN_OFFSET
-					sconst_0;
-					sconst_0;
-					sastore;
-				L9:	return;
+					goto L10;
+				L8:	sspush -30585;
+					invokestatic 24;		// javacard/framework/ISOException.throwIt(S)V
+					goto L10;
+				L9:	sspush -30584;
+					invokestatic 24;		// javacard/framework/ISOException.throwIt(S)V
+				L10:	return;
+			.exceptionTable {
+				// start_block end_block handler_block catch_type_index
+				L1 L4 L5 39;
+			}
 		}
 
 	}
