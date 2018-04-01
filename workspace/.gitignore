@@ -22,8 +22,9 @@
 hs_err_pid*
 JavaCard/CAPGenerationScript.txt
 JavaCard/projectBuilder.xml
+JavaCard/.classpath
+Middleware/.classpath
 .metadata/
 java_card_kit-2_2_2/
 plugins/
-.metadata/.plugins/org.eclipse.jdt.core/406258650.index
 *.xmi
