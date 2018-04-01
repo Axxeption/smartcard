@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="JCDK2.2.2"/>
-	<classpathentry kind="lib" path="C:/Users/vulst/Documents/School_4elict/Veilige_software/smartcard/java_card_kit-2_2_2/lib/api_16.jar"/>
-	<classpathentry kind="output" path="bin"/>
-</classpath>
