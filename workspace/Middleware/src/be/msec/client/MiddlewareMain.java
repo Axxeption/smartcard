@@ -79,11 +79,12 @@ public class MiddlewareMain extends Application {
 //        initRootLayout();
         try {
 			ConnectSimulator();
-//			ConnectRealDevice();
+	//		ConnectRealDevice();
 //			
 			askName();
-			checkChallenge();
 //			connectTimestampServer();
+			checkChallenge();
+			
 //			askTime();
 //        	testSetup();
 		} catch (Exception e) {
@@ -147,62 +148,52 @@ public class MiddlewareMain extends Application {
 		r= c.transmit(a);
 		int numberOfBytesLeft = 0;
 		
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
+		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR, verification failed");
 		else if(r.getSW()!=0x9000) {
-//			numberOfBytesLeft = r.getSW() - 24832;  
-			byteCertificate = r.getBytes();
-//			byteCertificate = Arrays.copyOfRange( byteCertificate, 1, byteCertificate.length -1);
-//			if(numberOfBytesLeft > 0 ) {
-//			System.out.println("There are " +  numberOfBytesLeft + " number of bytes left --> ask again!");
-//			r= c.transmit(a);
-//			System.out.println("the second time: "+ r.getSW());
-//			}
-		}
-		for (int i = 0; i < byteCertificate.length; i++) {
-				System.out.println(i + ": " + byteCertificate[i]);
-		}
-		final byte[] realCertificateByteArray = new byte[]{(byte)48, (byte)-126, (byte)1, (byte)-67, (byte)48, (byte)-126, (byte)1, (byte)103, (byte)-96, (byte)3, (byte)2, (byte)1, (byte)2, (byte)2, (byte)5, (byte)0, (byte)-73, (byte)-43, (byte)96, (byte)-107, (byte)48, (byte)13, (byte)6, (byte)9, (byte)42, (byte)-122, (byte)72, (byte)-122, (byte)-9, (byte)13, (byte)1, (byte)1, (byte)5, (byte)5, (byte)0, (byte)48, (byte)100, (byte)49, (byte)11, (byte)48, (byte)9, (byte)6, (byte)3, (byte)85, (byte)4, (byte)6, (byte)19, (byte)2, (byte)66, (byte)69, (byte)49, (byte)13, (byte)48, (byte)11, (byte)6, (byte)3, (byte)85, (byte)4, (byte)7, (byte)12, (byte)4, (byte)71, (byte)101, (byte)110, (byte)116, (byte)49, (byte)25, (byte)48, (byte)23, (byte)6, (byte)3, (byte)85, (byte)4, (byte)10, (byte)12, (byte)16, (byte)75, (byte)97, (byte)72, (byte)111, (byte)32, (byte)83, (byte)105, (byte)110, (byte)116, (byte)45, (byte)76, (byte)105, (byte)101, (byte)118, (byte)101, (byte)110, (byte)49, (byte)20, (byte)48, (byte)18, (byte)6, (byte)3, (byte)85, (byte)4, (byte)11, (byte)12, (byte)11, (byte)86, (byte)97, (byte)107, (byte)103, (byte)114, (byte)111, (byte)101, (byte)112, (byte)32, (byte)73, (byte)84, (byte)49, (byte)21, (byte)48, (byte)19, (byte)6, (byte)3, (byte)85, (byte)4, (byte)3, (byte)12, (byte)12, (byte)74, (byte)97, (byte)110, (byte)32, (byte)86, (byte)111, (byte)115, (byte)115, (byte)97, (byte)101, (byte)114, (byte)116, (byte)48, (byte)32, (byte)23, (byte)13, (byte)49, (byte)48, (byte)48, (byte)50, (byte)50, (byte)52, (byte)48, (byte)57, (byte)52, (byte)51, (byte)48, (byte)50, (byte)90, (byte)24, (byte)15, (byte)53, (byte)49, (byte)55, (byte)57, (byte)48, (byte)49, (byte)48, (byte)57, (byte)49, (byte)57, (byte)50, (byte)57, (byte)52, (byte)50, (byte)90, (byte)48, (byte)100, (byte)49, (byte)11, (byte)48, (byte)9, (byte)6, (byte)3, (byte)85, (byte)4, (byte)6, (byte)19, (byte)2, (byte)66, (byte)69, (byte)49, (byte)13, (byte)48, (byte)11, (byte)6, (byte)3, (byte)85, (byte)4, (byte)7, (byte)12, (byte)4, (byte)71, (byte)101, (byte)110, (byte)116, (byte)49, (byte)25, (byte)48, (byte)23, (byte)6, (byte)3, (byte)85, (byte)4, (byte)10, (byte)12, (byte)16, (byte)75, (byte)97, (byte)72, (byte)111, (byte)32, (byte)83, (byte)105, (byte)110, (byte)116, (byte)45, (byte)76, (byte)105, (byte)101, (byte)118, (byte)101, (byte)110, (byte)49, (byte)20, (byte)48, (byte)18, (byte)6, (byte)3, (byte)85, (byte)4, (byte)11, (byte)12, (byte)11, (byte)86, (byte)97, (byte)107, (byte)103, (byte)114, (byte)111, (byte)101, (byte)112, (byte)32, (byte)73, (byte)84, (byte)49, (byte)21, (byte)48, (byte)19, (byte)6, (byte)3, (byte)85, (byte)4, (byte)3, (byte)12, (byte)12, (byte)74, (byte)97, (byte)110, (byte)32, (byte)86, (byte)111, (byte)115, (byte)115, (byte)97, (byte)101, (byte)114, (byte)116, (byte)48, (byte)92, (byte)48, (byte)13, (byte)6, (byte)9, (byte)42, (byte)-122, (byte)72, (byte)-122, (byte)-9, (byte)13, (byte)1, (byte)1, (byte)1, (byte)5, (byte)0, (byte)3, (byte)75, (byte)0, (byte)48, (byte)72, (byte)2, (byte)65, (byte)0, (byte)-73, (byte)-43, (byte)96, (byte)-107, (byte)82, (byte)25, (byte)-66, (byte)34, (byte)5, (byte)-58, (byte)75, (byte)-39, (byte)-54, (byte)43, (byte)25, (byte)-117, (byte)80, (byte)-62, (byte)51, (byte)19, (byte)59, (byte)-70, (byte)-100, (byte)85, (byte)24, (byte)-57, (byte)108, (byte)-98, (byte)-2, (byte)1, (byte)-80, (byte)-39, (byte)63, (byte)93, (byte)112, (byte)7, (byte)4, (byte)18, (byte)-11, (byte)-98, (byte)17, (byte)126, (byte)-54, (byte)27, (byte)-56, (byte)33, (byte)77, (byte)-111, (byte)-74, (byte)-78, (byte)88, (byte)70, (byte)-22, (byte)-3, (byte)15, (byte)16, (byte)37, (byte)-18, (byte)92, (byte)74, (byte)124, (byte)-107, (byte)-116, (byte)-125, (byte)2, (byte)3, (byte)1, (byte)0, (byte)1, (byte)48, (byte)13, (byte)6, (byte)9, (byte)42, (byte)-122, (byte)72, (byte)-122, (byte)-9, (byte)13, (byte)1, (byte)1, (byte)5, (byte)5, (byte)0, (byte)3, (byte)65, (byte)0, (byte)33, (byte)97, (byte)121, (byte)-25, (byte)43, (byte)-47, (byte)113, (byte)-104, (byte)-11, (byte)-42, (byte)-46, (byte)-17, (byte)1, (byte)-38, (byte)50, (byte)59, (byte)-63, (byte)-74, (byte)-33, (byte)90, (byte)92, (byte)-59, (byte)99, (byte)-17, (byte)-60, (byte)17, (byte)25, (byte)79, (byte)68, (byte)68, (byte)-57, (byte)-8, (byte)-64, (byte)35, (byte)-19, (byte)-114, (byte)110, (byte)-116, (byte)31, (byte)-126, (byte)-24, (byte)54, (byte)71, (byte)82, (byte)-53, (byte)-78, (byte)-84, (byte)-45, (byte)-83, (byte)87, (byte)68, (byte)124, (byte)-1, (byte)-128, (byte)-49, (byte)124, (byte)103, (byte)28, (byte)56, (byte)-114, (byte)-10, (byte)97, (byte)-78, (byte)54};
+			 throw new Exception("ERROR, "+ r.getSW()); // print error number if not succeded
+		}else {
+			System.out.println(" status 9000 ! dus oke");
+			System.out.println(r.toString());
+			byteCertificate = Arrays.copyOfRange( r.getBytes(), 0, r.getBytes().length -2);
+			System.out.println(bytesToHex(byteCertificate));
 
-		System.out.println("length: " + byteCertificate.length + " ------ real length: " + realCertificateByteArray.length );
-		
+		}
 //		outputStream.write( byteCertificate );
 //		byte [] byteCertificate2 = Arrays.copyOfRange( r.getData(), 1, r.getData().length);
 //		outputStream.write( byteCertificate2);
 //		byteCertificate = outputStream.toByteArray();
 //		System.out.println(byteCertificate.length);
-//		CertificateFactory certFac = CertificateFactory.getInstance("X.509");
-//
-		for (int i = 0; i < byteCertificate.length; i++) {
-			if(byteCertificate[i] != realCertificateByteArray[i]) {
-				System.out.println("vershil bij: " + i + ": " + byteCertificate[i] + 
-						" vs: " + realCertificateByteArray[i]);
-			}
-		}
 		
-	
 		
-//		InputStream is = new ByteArrayInputStream(byteCertificate);
-//		X509Certificate certificate2 = (X509Certificate) certFac.generateCertificate(is);
-//		System.out.println("Succesfully created certificate on the host app.");
+		// change Byte array into Certificate object
+		CertificateFactory certFac = CertificateFactory.getInstance("X.509");
+		InputStream is = new ByteArrayInputStream(byteCertificate);
+		X509Certificate certificateObj = (X509Certificate) certFac.generateCertificate(is);
+		System.out.println("Succesfully created certificate on the host app.");
 		
-//		System.out.println("Now we send something and it must be signed and validated!");
-//		System.out.println("Send random byte array name");
-//		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-//		byte [] randbytes = new byte[20];
-//		random.nextBytes(randbytes);
-//		a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
-//		r = c.transmit(a);
-//		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
-//		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-//		String str = new String(r.getBytes(), StandardCharsets.UTF_8);
-//		System.out.println("Signed is: " + str);
-//		Signature signature = Signature.getInstance("SHA1withRSA");
-////		signature.initVerify(certificate2.getPublicKey());
-//		signature.update(randbytes);
-////		byte [] byteCertificate2 = Arrays.copyOfRange( r.getData(), 1, r.getData().length);
-//		System.out.println("length of data: " + r.getData().length);
-//		boolean ok = signature.verify(Arrays.copyOfRange( r.getData(), 0, r.getData().length));
-//		System.out.println(ok);
+		System.out.println("Now we send something and it must be signed and validated!");
+		System.out.println("Send random byte array :");
+		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+		random.setSeed(1);
+		// send 10 random bytes
+		byte [] randbytes = new byte[20];
+		random.nextBytes(randbytes);
+		System.out.println(bytesToHex(randbytes));
+		a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
+		r = c.transmit(a);
+		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
+		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+		
+		System.out.println("Signed is:");
+		Signature signature = Signature.getInstance("SHA1withRSA");
+		signature.initVerify(certificateObj.getPublicKey());
+		signature.update(randbytes);
+		byte [] signedBytes = Arrays.copyOfRange( r.getData(), 1, r.getData().length); // receive signed data from card.
+		// Wel nog niet helemaal duidelijk wnr je hoeveel bytes er af moet knippen. Bij het doorsturen van het certificaat werden de SW bits op het einde ook duurgestuurd.
+		// Nu is dit niet het geval dus mogen de twee laatste er ook niet afgeknipt worden. Dus steeds checken met debugger!
+		System.out.println(bytesToDec(signedBytes));
+		boolean ok = signature.verify(signedBytes); // TODO sign is nog false om een rare reden. Bytes komen wel overeen op de kaart als de ontvangen.
+		System.out.println(ok);
 	}
 	public void askName() {
 		try {
@@ -409,4 +400,26 @@ public class MiddlewareMain extends Application {
 		launch(args);
 	}
 	
+	
+	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+	public static String bytesToHex(byte[] bytes) {
+	    char[] hexChars = new char[bytes.length * 2];
+	    for ( int j = 0; j < bytes.length; j++ ) {
+	        int v = bytes[j] & 0xFF;
+	        hexChars[j * 2] = hexArray[v >>> 4];
+	        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+	    }
+	    String str= "";
+	    for ( int j = 0; j < hexChars.length; j+=2 ) {
+	    	str += "0x"+ hexChars[j]+ hexChars[j+1]+", ";
+	    }
+	    return str;
+	}
+	public String bytesToDec(byte[] barray)
+	 {
+	   String str = "";
+	   for (byte b : barray)
+	      	str += (int)b + ", ";
+	   return str;
+	 }
 }
