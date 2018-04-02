@@ -178,7 +178,7 @@ public class MiddlewareMain extends Application {
 		// send 10 random bytes
 		byte [] randbytes = new byte[20];
 		random.nextBytes(randbytes);
-		System.out.println(bytesToHex(randbytes));
+		System.out.println(bytesToDec(randbytes));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
 		r = c.transmit(a);
 		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
@@ -192,7 +192,7 @@ public class MiddlewareMain extends Application {
 		// Wel nog niet helemaal duidelijk wnr je hoeveel bytes er af moet knippen. Bij het doorsturen van het certificaat werden de SW bits op het einde ook duurgestuurd.
 		// Nu is dit niet het geval dus mogen de twee laatste er ook niet afgeknipt worden. Dus steeds checken met debugger!
 		System.out.println(bytesToDec(signedBytes));
-		boolean ok = signature.verify(signedBytes); // TODO sign is nog false om een rare reden. Bytes komen wel overeen op de kaart als de ontvangen.
+		boolean ok = signature.verify(signedBytes); 
 		System.out.println(ok);
 	}
 	public void askName() {

@@ -167,21 +167,45 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	
 	
 	private void sign(APDU apdu) {
-		byte[] buffer = apdu.getBuffer();
-//		hoe kun je deze lengte weten?
-		byte[] outputBuffer = new byte[255];
+		try {
+		
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
-			apdu.setIncomingAndReceive();
-			//This sequence of three methods sends the data contained in
-			//'serial' with offset '0' and length 'serial.length'
-			//to the host application.
+			 // apdu.getBuffer() bevat alle data dus eerste bits moeten er nog af want behoren niet tot dataveld.
+			
+			//--------- Poging voor het inlezen van data die langer is als max lengte. Zit nog een foutje in --------------
+//			short dataOffset = apdu.getOffsetCdata(); // nodig om eerste 5 bytes er af te knippen.
+////			hoe kun je deze lengte weten?
+//			
+//			short bytesLeft = (short) (apdu.getBuffer()[ISO7816.OFFSET_LC] & 0x00FF);
+//			byte[] buffer = new byte[bytesLeft];
+//			Util.arrayCopy(apdu.getBuffer(), dataOffset, buffer, (short) 0, bytesLeft);
+//			
+//			short readCount = apdu.setIncomingAndReceive();
+//			bytesLeft -= readCount;
+//			while ( bytesLeft > 0){
+//				Util.arrayCopy(apdu.getBuffer(), ISO7816.OFFSET_CDATA, buffer, dataOffset, readCount);
+//				bytesLeft -= readCount;
+//				dataOffset+=readCount;
+//				readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
+//			}
+			byte[] outputBuffer = new byte[100];
+			byte[] buffer = new byte[apdu.getIncomingLength()];
+			Util.arrayCopy(apdu.getBuffer(), apdu.getOffsetCdata(), buffer,(short) 0,(short) apdu.getIncomingLength());
+			
 			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 			signature.init(privKey, Signature.MODE_SIGN);
-			short responsLength = signature.sign(buffer,(short)0, (short)buffer.length, outputBuffer, (short) 0 );
+			short responsLength = signature.sign(buffer,(short) 0, (short)(buffer.length), outputBuffer, (short) 0 );
 			apdu.setOutgoing();
 			apdu.setOutgoingLength((short)responsLength);
 			apdu.sendBytesLong(outputBuffer,(short)0,responsLength);
+		}
+		}catch(Exception e) {
+			if(e instanceof ArrayIndexOutOfBoundsException) {
+            	ISOException.throwIt(ERROR_OUT_OF_BOUNDS);
+            }else {
+            	ISOException.throwIt(ERROR_UNKNOW);
+            }
 		}
 	}
 	
