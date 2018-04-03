@@ -78,12 +78,17 @@ public class MiddlewareMain extends Application {
         this.primaryStage.setTitle("Card reader UI");
 //        initRootLayout();
         try {
-			ConnectSimulator();
+			//ConnectSimulator();
 	//		ConnectRealDevice();
 //			
-			askName();
+//			askName();
 //			connectTimestampServer();
-			checkChallenge();
+//			checkChallenge();
+			
+			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
+			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
+			
+			System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
 			
 //			askTime();
 //        	testSetup();
@@ -123,13 +128,13 @@ public class MiddlewareMain extends Application {
       //digital signature met privkey van CA
         Signature rsa = Signature.getInstance("SHA1withRSA");
         rsa.initSign(privateKeyCA);
-        OwnCertificate certificateG = new OwnCertificate(publicKeyG, "government", 365);
-        rsa.update(certificateG.getBytes());
+        //OwnCertificate certificateG = new OwnCertificate(publicKeyG, "government", 365);
+        //rsa.update(certificateG.getBytes());
         byte [] signedCertificateG = rsa.sign();
         
         //nu kan op de smartcard gechecked worden of dat de publickey van G klopt!
         rsa.initVerify(publicKeyCA);
-        rsa.update(certificateG.getBytes());
+        //rsa.update(certificateG.getBytes());
         System.out.println("Is it verified? " + rsa.verify(signedCertificateG));
 
 	}
