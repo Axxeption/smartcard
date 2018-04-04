@@ -87,7 +87,7 @@ public class MiddlewareMain extends Application {
 			//
 			// askName();
 			connectTimestampServer();
-			askTime();
+			askTimeToTimestampServer();
 
 			// checkChallenge();
 
@@ -368,7 +368,7 @@ public class MiddlewareMain extends Application {
 
 	}
 
-	public void askTime() throws CertificateException {
+	public void askTimeToTimestampServer() throws CertificateException {
 		// hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
 		// hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met
 		// SKg en eenmaal plain text
@@ -404,11 +404,11 @@ public class MiddlewareMain extends Application {
 
 		// make connection to the card (simulator) and send the bytes
 		ConnectSimulator();
-		checkTimeCard(timeInfoStruct);
+		sendTimeToCard(timeInfoStruct);
 
 	}
 
-	private void checkTimeCard(TimeInfoStruct timeInfoStruct) {
+	private void sendTimeToCard(TimeInfoStruct timeInfoStruct) {
 		//this line must be commented for real uses! here is just a new byte array made for easy checking on the card
 		timeInfoStruct = new TimeInfoStruct(new byte[256], new byte[255]);
 		// send the bytes to the card so the time can be updated
