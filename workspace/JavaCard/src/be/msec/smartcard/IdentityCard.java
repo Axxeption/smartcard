@@ -146,14 +146,22 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		
 		// slice data field into Signature and date
 		Util.arrayCopy(data,(short) (data.length-9), date,(short) 0, (short)8);
-		
+		//test
 		try {
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		
 		// TODO: WERKT NOG NI!
-		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC,(short) 512, false);
-		pubk.setExponent(pubExp_G, offset, (short) 256);
-		pubk.setModulus(pubMod_G, offset, (short) 256);
+		//this keysize must be the same size as the one given in in setModulus! 
+		
+		KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC,(short) 512, false); //werkt
+		KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC,KeyBuilder.LENGTH_RSA_2048, false); //werkt niet??
+		
+		KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC,(short) 2048, false); //werkt niet???
+		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC,(short) 2048, false);
+		pubk.setExponent(pubExp_G, offset, (short) 3);
+		//this length is 257 --> seems impossible?
+		
+		pubk.setModulus(pubMod_G, offset, (short) pubMod_G.length);
 		signature.init(pubk, Signature.MODE_VERIFY);
 		boolean result = signature.verify(date, (short)0, (short)date.length, data, (short)0, (short) (data.length-9));
 		short test = 0;
