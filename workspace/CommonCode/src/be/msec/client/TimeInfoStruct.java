@@ -9,15 +9,17 @@ import java.util.Date;
 
 public class TimeInfoStruct implements InfoStruct, Serializable {
 	private byte [] signedData;
-	private Date date;
+	private byte[] date;
 	
-	public TimeInfoStruct(byte [] signedData, Date date) {
+	public TimeInfoStruct(byte [] signedData, byte[] dataToSend) {
 		super();
 		this.signedData = signedData;
-		this.date = date;
+		this.date = dataToSend;
 	}
 	
-	
+
+
+
 	public byte[] getSignedData() {
 		return signedData;
 	}
@@ -30,13 +32,13 @@ public class TimeInfoStruct implements InfoStruct, Serializable {
 
 
 
-	public Date getDate() {
+	public byte[] getDate() {
 		return date;
 	}
 
 
 
-	public void setDate(Date date) {
+	public void setDate(byte[] date) {
 		this.date = date;
 	}
 
