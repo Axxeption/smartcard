@@ -6,6 +6,8 @@ import java.awt.RenderingHints.Key;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
@@ -17,6 +19,7 @@ import be.msec.client.connection.SimulatedConnection;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +44,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -83,16 +85,16 @@ public class MiddlewareMain extends Application {
 	//		ConnectRealDevice();
 //			
 //			askName();
-//			connectTimestampServer();
+			connectTimestampServer();
+			askTime();
+
 //			checkChallenge();
 			
-			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
-			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
-			System.out.println(bytesToBase64(CAService.getPublicKey().getEncoded()) );
-			System.out.println(bytesToHex(CAService.getPublicKey().getEncoded()) );
-			//System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
+//			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
+//			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
 			
-//			askTime();
+//			System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
+			
 //        	testSetup();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -345,59 +347,34 @@ public class MiddlewareMain extends Application {
 	}
 	
 	public void askTime() {
+		//hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
+		//hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met SKg en eenmaal plain text
         try {
-        	System.out.println(timestampSocket);
-            PrintWriter out = new PrintWriter(timestampSocket.getOutputStream(), true);
+//        	System.out.println(timestampSocket);
+        	ObjectOutputStream objectoutputstream = null;
+//            PrintWriter out = new PrintWriter(timestampSocket.getOutputStream(), true);
             byte[] dataToTest = ("test".getBytes());
+            ObjectInputStream objectinputstream = null;
+        	System.out.println("Try..");
 
-            try (BufferedReader bufferedReader = 
-                    new BufferedReader(
-                            new InputStreamReader(timestampSocket.getInputStream()))) {
-            	out.println(1);
+            try {            	
+
+            	objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
+//            	System.out.println("Try writing!");
+            	System.out.println("Try writing!");
+            	objectoutputstream.writeObject(1);
+            	System.out.println("Written");
+            	objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
+            	TimeInfoStruct timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
+            	System.out.println("Date from server: " + timeInfoStruct.getDate());
+            	objectinputstream.close();
             	
-                String received = bufferedReader.readLine();
-                System.out.println("I received the signed time: " + received);
-                KeyStore keyStore = KeyStore.getInstance("JKS");
-                String fileName = new java.io.File("").getAbsolutePath() + "\\middleware\\middleware.jks";
-                FileInputStream fis = new FileInputStream(fileName);
-                System.out.println("File found!");
-                keyStore.load(fis,"jonasaxel".toCharArray());
-                fis.close();
-                //in middleware zitten alle (public ) keys dat middleware heeft normaal 
-                //is dit enkel die van de CA maar dit ziter ng niet in
-                java.security.cert.Certificate certificateGovernment = keyStore.getCertificate("government");
-                
-                Signature rsa = Signature.getInstance("SHA1withRSA");
-                rsa.initVerify(certificateGovernment.getPublicKey());
-                rsa.update(dataToTest);
-                System.out.println("Is it verified? " + rsa.verify(received.getBytes()));
-//                Scanner scanner = new Scanner(System.in);
-//                while(true){
-//                    System.out.println("Enter something:");
-//                    String inputLine = scanner.nextLine();
-//                    if(inputLine.equals("q")){
-//                        break;
-//                    }
-//                     
-//                    out.println(inputLine);
-//                }
-            } catch (SignatureException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (KeyStoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvalidKeyException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchAlgorithmException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CertificateException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-             
+            	
+            }
+            	catch (EOFException | ClassNotFoundException exc)
+            	{
+            	 objectinputstream.close();
+            	}
         } catch (IOException ex) {
             System.out.println("ERROR WITH RECEIVING TIME: " + ex);
         }
@@ -407,8 +384,6 @@ public class MiddlewareMain extends Application {
 		launch(args);
 	}
 	
-	
-	// -------- Utility methodes -----------
 	
 	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 	public static String bytesToHex(byte[] bytes) {
@@ -424,17 +399,11 @@ public class MiddlewareMain extends Application {
 	    }
 	    return str;
 	}
-	public static String bytesToDec(byte[] barray)
-	{
+	public String bytesToDec(byte[] barray)
+	 {
 	   String str = "";
 	   for (byte b : barray)
 	      	str += (int)b + ", ";
 	   return str;
-	}
-	public static String bytesToBase64(byte[] barray)
-	{ 
-		Base64.Encoder encoder = Base64.getEncoder();
-		return encoder.encodeToString(barray);
-	}
-	
+	 }
 }
