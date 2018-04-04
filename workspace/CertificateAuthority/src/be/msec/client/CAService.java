@@ -3,6 +3,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -22,8 +24,8 @@ public class CAService {
 	
 	public static PublicKey getPublicKey() {
 		try {
-			return loadPublicKey("Keys", "RSA");
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+			return loadPublicKey("RSA");
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | URISyntaxException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -33,8 +35,8 @@ public class CAService {
 	public static OwnCertificate getSignedCertificate(InfoStruct infoStruct) {
 		OwnCertificate cert = new OwnCertificate(infoStruct);
 		try {
-			cert.signCertificate(loadPrivateKey("Keys", "RSA"));
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+			cert.signCertificate(loadPrivateKey("RSA"));
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | URISyntaxException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -59,7 +61,14 @@ public class CAService {
             System.out.println("privateKey: " + encoder.encodeToString(privateKey.getEncoded()));
             System.out.println("publicKey: " + encoder.encodeToString(publicKey.getEncoded()));
             
-            saveKeyPair("Keys/", keyPair);
+            try {
+				System.out.println("blabla: " + loadPublicKey("RSA"));
+			} catch (InvalidKeySpecException | URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            
+            saveKeyPair(keyPair);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -68,33 +77,35 @@ public class CAService {
 		}
     }
 	
-	private static void saveKeyPair(String path, KeyPair keyPair) throws IOException {
+	private static void saveKeyPair(KeyPair keyPair) throws IOException {
 		PrivateKey privateKey = keyPair.getPrivate();
 		PublicKey publicKey = keyPair.getPublic();
  
 		// Store Public Key.
 		X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
 				publicKey.getEncoded());
-		FileOutputStream fos = new FileOutputStream(path + "/public.key");
+		FileOutputStream fos = new FileOutputStream("public.key");
 		fos.write(x509EncodedKeySpec.getEncoded());
 		fos.close();
  
 		// Store Private Key.
 		PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
 				privateKey.getEncoded());
-		fos = new FileOutputStream(path + "/private.key");
+		fos = new FileOutputStream("private.key");
 		fos.write(pkcs8EncodedKeySpec.getEncoded());
 		fos.close();
 	}
 	
 	
 	
-	public static PrivateKey loadPrivateKey(String path, String algorithm)
+	public static PrivateKey loadPrivateKey(String algorithm)
 			throws IOException, NoSuchAlgorithmException,
-			InvalidKeySpecException {
+			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
-		File filePrivateKey = new File(path + "/private.key");
-		FileInputStream fis = new FileInputStream(path + "/private.key");
+		URL d = CAService.class.getClassLoader().getResource("./keys/private.key");
+		System.out.println(d.getPath());
+		File filePrivateKey = new File(d.toURI());
+		FileInputStream fis = new FileInputStream(filePrivateKey);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
 		fis.read(encodedPrivateKey);
 		fis.close();
@@ -108,12 +119,13 @@ public class CAService {
 		return privateKey;
 	}
 	
-	public static PublicKey loadPublicKey(String path, String algorithm)
+	public static PublicKey loadPublicKey(String algorithm)
 			throws IOException, NoSuchAlgorithmException,
-			InvalidKeySpecException {
+			InvalidKeySpecException, URISyntaxException {
 		// Read Public Key.
-		File filePublicKey = new File(path + "/public.key");
-		FileInputStream fis = new FileInputStream(path + "/public.key");
+		URL d = CAService.class.getClassLoader().getResource("./keys/public.key");
+		File filePublicKey = new File(d.toURI());
+		FileInputStream fis = new FileInputStream(filePublicKey);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
 		fis.read(encodedPublicKey);
 		fis.close();

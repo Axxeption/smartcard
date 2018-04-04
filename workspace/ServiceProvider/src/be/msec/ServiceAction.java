@@ -2,7 +2,7 @@ package be.msec;
 public class ServiceAction {
 
     String name;
-    String command;
+    short command;
     // MSS INTERFACE VAN MAKEN VAN DIE ACTIONS
 
     public ServiceAction(String name) {

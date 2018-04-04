@@ -41,6 +41,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -87,8 +88,9 @@ public class MiddlewareMain extends Application {
 			
 			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
 			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
-			
-			System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
+			System.out.println(bytesToBase64(CAService.getPublicKey().getEncoded()) );
+			System.out.println(bytesToHex(CAService.getPublicKey().getEncoded()) );
+			//System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
 			
 //			askTime();
 //        	testSetup();
@@ -406,6 +408,8 @@ public class MiddlewareMain extends Application {
 	}
 	
 	
+	// -------- Utility methodes -----------
+	
 	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 	public static String bytesToHex(byte[] bytes) {
 	    char[] hexChars = new char[bytes.length * 2];
@@ -420,11 +424,17 @@ public class MiddlewareMain extends Application {
 	    }
 	    return str;
 	}
-	public String bytesToDec(byte[] barray)
-	 {
+	public static String bytesToDec(byte[] barray)
+	{
 	   String str = "";
 	   for (byte b : barray)
 	      	str += (int)b + ", ";
 	   return str;
-	 }
+	}
+	public static String bytesToBase64(byte[] barray)
+	{ 
+		Base64.Encoder encoder = Base64.getEncoder();
+		return encoder.encodeToString(barray);
+	}
+	
 }
