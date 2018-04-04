@@ -57,15 +57,16 @@ import javafx.stage.Stage;
 import javax.smartcardio.*;
 
 public class MiddlewareMain extends Application {
-	
+
 	private Stage primaryStage;
 	private BorderPane rootLayout;
-	
-	private final static byte IDENTITY_CARD_CLA =(byte)0x80;
+
+	private final static byte IDENTITY_CARD_CLA = (byte) 0x80;
 	private static final byte VALIDATE_PIN_INS = 0x22;
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
 	private static final byte GET_SERIAL_INS = 0x26;
+	private static final byte UPDATE_TIME = 0x25;
 	private static final byte GET_NAME_INS = 0x24;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
@@ -99,114 +100,118 @@ public class MiddlewareMain extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-    }
-	
-	public void testSetup() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
-		//aan de CA kant
+	}
+
+	public void testSetup()
+			throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
+		// aan de CA kant
 		KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
-        KeyPair kp = kpg.genKeyPair();
-        
+		kpg.initialize(2048);
+		KeyPair kp = kpg.genKeyPair();
+
 		KeyFactory fact = KeyFactory.getInstance("RSA");
-        RSAPublicKeySpec publicKeyCARSA = fact.getKeySpec(kp.getPublic(),
-                RSAPublicKeySpec.class);
-        RSAPrivateKeySpec privateKeyCARSA = fact.getKeySpec(kp.getPrivate(),
-                RSAPrivateKeySpec.class);
-        
-        PublicKey publicKeyCA = fact.generatePublic(publicKeyCARSA);
-        PrivateKey privateKeyCA = fact.generatePrivate(privateKeyCARSA);
-        
-		//aan de kant van G
-		//maak eerst een keypair aan
-        kpg.initialize(2048);
-        kp = kpg.genKeyPair();
-        
+		RSAPublicKeySpec publicKeyCARSA = fact.getKeySpec(kp.getPublic(), RSAPublicKeySpec.class);
+		RSAPrivateKeySpec privateKeyCARSA = fact.getKeySpec(kp.getPrivate(), RSAPrivateKeySpec.class);
+
+		PublicKey publicKeyCA = fact.generatePublic(publicKeyCARSA);
+		PrivateKey privateKeyCA = fact.generatePrivate(privateKeyCARSA);
+
+		// aan de kant van G
+		// maak eerst een keypair aan
+		kpg.initialize(2048);
+		kp = kpg.genKeyPair();
+
 		fact = KeyFactory.getInstance("RSA");
-        RSAPublicKeySpec publicKeyGovernment = fact.getKeySpec(kp.getPublic(),
-                RSAPublicKeySpec.class);
-        RSAPrivateKeySpec privateKeyGovernment = fact.getKeySpec(kp.getPrivate(),
-                RSAPrivateKeySpec.class);
-        PublicKey publicKeyG = fact.generatePublic(publicKeyGovernment);
-        PrivateKey privateKeyG = fact.generatePrivate(privateKeyGovernment);
-        
-      //digital signature met privkey van CA
-        Signature rsa = Signature.getInstance("SHA1withRSA");
-        rsa.initSign(privateKeyCA);
-        //OwnCertificate certificateG = new OwnCertificate(publicKeyG, "government", 365);
-        //rsa.update(certificateG.getBytes());
-        byte [] signedCertificateG = rsa.sign();
-        
-        //nu kan op de smartcard gechecked worden of dat de publickey van G klopt!
-        rsa.initVerify(publicKeyCA);
-        //rsa.update(certificateG.getBytes());
-        System.out.println("Is it verified? " + rsa.verify(signedCertificateG));
+		RSAPublicKeySpec publicKeyGovernment = fact.getKeySpec(kp.getPublic(), RSAPublicKeySpec.class);
+		RSAPrivateKeySpec privateKeyGovernment = fact.getKeySpec(kp.getPrivate(), RSAPrivateKeySpec.class);
+		PublicKey publicKeyG = fact.generatePublic(publicKeyGovernment);
+		PrivateKey privateKeyG = fact.generatePrivate(privateKeyGovernment);
+
+		// digital signature met privkey van CA
+		Signature rsa = Signature.getInstance("SHA1withRSA");
+		rsa.initSign(privateKeyCA);
+		// OwnCertificate certificateG = new OwnCertificate(publicKeyG, "government",
+		// 365);
+		// rsa.update(certificateG.getBytes());
+		byte[] signedCertificateG = rsa.sign();
+
+		// nu kan op de smartcard gechecked worden of dat de publickey van G klopt!
+		rsa.initVerify(publicKeyCA);
+		// rsa.update(certificateG.getBytes());
+		System.out.println("Is it verified? " + rsa.verify(signedCertificateG));
 
 	}
-	
+
 	public void checkChallenge() throws Exception {
-		//first get the certificate with the public key
-		//then send challenge and check the challenge!
-		
-		//5. transferring large amounts of data
-		//ask for the public key (certificate)
+		// first get the certificate with the public key
+		// then send challenge and check the challenge!
+
+		// 5. transferring large amounts of data
+		// ask for the public key (certificate)
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		byte [] byteCertificate = new byte [256];
+		byte[] byteCertificate = new byte[256];
 		System.out.println("Ask for the certificate");
-		//eerste is offset, tweede geeft lengte aan
+		// eerste is offset, tweede geeft lengte aan
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_CERTIFICATE, (byte) 0x00, (byte) 0x00);
-		r= c.transmit(a);
+		r = c.transmit(a);
 		int numberOfBytesLeft = 0;
-		
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR, verification failed");
-		else if(r.getSW()!=0x9000) {
-			 throw new Exception("ERROR, "+ r.getSW()); // print error number if not succeded
-		}else {
+
+		if (r.getSW() == SW_VERIFICATION_FAILED)
+			throw new Exception("ERROR, verification failed");
+		else if (r.getSW() != 0x9000) {
+			throw new Exception("ERROR, " + r.getSW()); // print error number if not succeded
+		} else {
 			System.out.println(" status 9000 ! dus oke");
 			System.out.println(r.toString());
-			byteCertificate = Arrays.copyOfRange( r.getBytes(), 0, r.getBytes().length -2);
+			byteCertificate = Arrays.copyOfRange(r.getBytes(), 0, r.getBytes().length - 2);
 			System.out.println(bytesToHex(byteCertificate));
 
 		}
-//		outputStream.write( byteCertificate );
-//		byte [] byteCertificate2 = Arrays.copyOfRange( r.getData(), 1, r.getData().length);
-//		outputStream.write( byteCertificate2);
-//		byteCertificate = outputStream.toByteArray();
-//		System.out.println(byteCertificate.length);
-		
-		
+		// outputStream.write( byteCertificate );
+		// byte [] byteCertificate2 = Arrays.copyOfRange( r.getData(), 1,
+		// r.getData().length);
+		// outputStream.write( byteCertificate2);
+		// byteCertificate = outputStream.toByteArray();
+		// System.out.println(byteCertificate.length);
+
 		// change Byte array into Certificate object
 		CertificateFactory certFac = CertificateFactory.getInstance("X.509");
 		InputStream is = new ByteArrayInputStream(byteCertificate);
 		X509Certificate certificateObj = (X509Certificate) certFac.generateCertificate(is);
 		System.out.println("Succesfully created certificate on the host app.");
-		
+
 		System.out.println("Now we send something and it must be signed and validated!");
 		System.out.println("Send random byte array :");
 		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 		random.setSeed(1);
 		// send 10 random bytes
-		byte [] randbytes = new byte[20];
+		byte[] randbytes = new byte[20];
 		random.nextBytes(randbytes);
 		System.out.println(bytesToDec(randbytes));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
 		r = c.transmit(a);
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
-		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-		
+		if (r.getSW() == SW_VERIFICATION_FAILED)
+			throw new Exception("ERROR");
+		else if (r.getSW() != 0x9000)
+			throw new Exception("Exception on the card: " + r.getSW());
+
 		System.out.println("Signed is:");
 		Signature signature = Signature.getInstance("SHA1withRSA");
 		signature.initVerify(certificateObj.getPublicKey());
 		signature.update(randbytes);
-		byte [] signedBytes = Arrays.copyOfRange( r.getData(), 1, r.getData().length); // receive signed data from card.
-		// Wel nog niet helemaal duidelijk wnr je hoeveel bytes er af moet knippen. Bij het doorsturen van het certificaat werden de SW bits op het einde ook duurgestuurd.
-		// Nu is dit niet het geval dus mogen de twee laatste er ook niet afgeknipt worden. Dus steeds checken met debugger!
+		byte[] signedBytes = Arrays.copyOfRange(r.getData(), 1, r.getData().length); // receive signed data from card.
+		// Wel nog niet helemaal duidelijk wnr je hoeveel bytes er af moet knippen. Bij
+		// het doorsturen van het certificaat werden de SW bits op het einde ook
+		// duurgestuurd.
+		// Nu is dit niet het geval dus mogen de twee laatste er ook niet afgeknipt
+		// worden. Dus steeds checken met debugger!
 		System.out.println(bytesToDec(signedBytes));
-		boolean ok = signature.verify(signedBytes); 
+		boolean ok = signature.verify(signedBytes);
 		System.out.println(ok);
 	}
+
 	public void askName() {
 		try {
-		
 		//2. Send PIN
 		//die cla is altijd zelfde: gwn aangeven welke instructieset
 		//ins geeft aan wat er moet gebeuren --> dit getal staat ook vast in applet
@@ -283,76 +288,123 @@ public class MiddlewareMain extends Application {
 		//Simulation:
 		c = new SimulatedConnection();
 
-		//Real Card:
+		// Real Card:
 		System.out.println("Do simulate connecting...");
-		c.connect(); 
 		try {
-				
-			//0. create applet (only for simulator!!!)
-			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,new byte[]{(byte) 0xa0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x08, 0x01}, 0x7f);
+		c.connect();
+		
+			// 0. create applet (only for simulator!!!)
+			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,
+					new byte[] { (byte) 0xa0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x08, 0x01 }, 0x7f);
 			r = c.transmit(a);
 			System.out.println(r);
-			if (r.getSW()!=0x9000) throw new Exception("select installer applet failed");
-			
-			a = new CommandAPDU(0x80, 0xB8, 0x00, 0x00,new byte[]{0xb, 0x01,0x02,0x03,0x04, 0x05, 0x06, 0x07, 0x08, 0x09,0x00, 0x00, 0x00}, 0x7f);
+			if (r.getSW() != 0x9000)
+				throw new Exception("select installer applet failed");
+
+			a = new CommandAPDU(0x80, 0xB8, 0x00, 0x00,
+					new byte[] { 0xb, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00 }, 0x7f);
 			r = c.transmit(a);
 			System.out.println(r);
-			if (r.getSW()!=0x9000) throw new Exception("Applet creation failed");
-			
-			//1. Select applet  (not required on a real card, applet is selected by default)
-			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,new byte[]{0x01,0x02,0x03,0x04, 0x05, 0x06, 0x07, 0x08, 0x09,0x00, 0x00}, 0x7f);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Applet creation failed");
+
+			// 1. Select applet (not required on a real card, applet is selected by default)
+			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,
+					new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00 }, 0x7f);
 			r = c.transmit(a);
 			System.out.println(r);
-			if (r.getSW()!=0x9000) throw new Exception("Applet selection failed");
-			
-		}catch (Exception e) {
-			throw e;
+			if (r.getSW() != 0x9000)
+				throw new Exception("Applet selection failed");
+
+		} catch (Exception e) {
+			System.out.println("ERROR IN MAKING CONNECTION WITH SIMULATOR: " + e);
 		}
 		System.out.println("Connected");
 
 	}
-	
-	public void ConnectRealDevice() throws Exception{
-		//TODO hier moet de tijd geinitaliseerd worden (als de kaart er word ingestopt)
+
+	public void ConnectRealDevice() throws Exception {
+		// TODO hier moet de tijd geinitaliseerd worden (als de kaart er word ingestopt)
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
 		c = new Connection();
-		((Connection)c).setTerminal(0); //depending on which cardreader you use
+		((Connection) c).setTerminal(0); // depending on which cardreader you use
 		System.out.println("Do real card connecting...");
-		c.connect(); 			
+		c.connect();
 		System.out.println("Connected");
 
 		try {
 			//TODO moet nog weg maar is gewoon of te testen als het werkt met de real card!
-			if(loginWithPin(new byte[]{0x01,0x02,0x03,0x04})) {
+			if(loginWithPin(new byte[]{0x31,0x32,0x33,0x34})) {
 				System.out.println("PIN Verified");
 			}
 			
 			System.out.println("Asking serial number");
-			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
+			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00, new byte[]{0x31,0x32,0x33,0x34});
 			r = c.transmit(a);
-			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
-			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+			if (r.getSW() == SW_VERIFICATION_FAILED)
+				throw new Exception("ERROR");
+			else if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
 			String str = new String(r.getData(), StandardCharsets.UTF_8);
 			System.out.println("SN is: " + str);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw e;
 		}
 
 	}
-	
+
 	public void connectTimestampServer() {
-		SSLSocketFactory sslSocketFactory = 
-                (SSLSocketFactory)SSLSocketFactory.getDefault();
-        try {
-            timestampSocket = sslSocketFactory.createSocket("localhost", port);  
-        } catch (IOException ex) {
-            System.out.println("ERROR WITH CONNECTION TO G: " + ex);
-        }
-        System.out.println("Connected to timestamp server:" + timestampSocket);
-          
+		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+		try {
+			timestampSocket = sslSocketFactory.createSocket("localhost", port);
+		} catch (IOException ex) {
+			System.out.println("ERROR WITH CONNECTION TO G: " + ex);
+		}
+		System.out.println("Connected to timestamp server:" + timestampSocket);
+
 	}
+
+	public void askTimeToTimestampServer() throws Exception {
+		// hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
+		// hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met
+		// SKg en eenmaal plain text
+		TimeInfoStruct timeInfoStruct = null;
+		ObjectOutputStream objectoutputstream = null;
+		ObjectInputStream objectinputstream = null;
+		try {
+			// System.out.println(timestampSocket);
+			System.out.println("Try to send to the timestampserver");
+
+			try {
+				objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
+				// Als hier een ander getal gestuurd wordt kunnen andere dingen opgevraagd
+				// worden
+				objectoutputstream.writeObject(1);
+				objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
+				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
+				// Deze twee byte arrays in timeInfoStruct moeten nu doorgestuurd worden naar de
+				// kaart en daarop moeten deze twee
+				// byte arrays geverifieerd worden
+				// daarna kan byte array vergeleken worden met de laatste vanop de kaart
+				System.out.println("Received date and signedData (both in byte array)");
+				// System.out.println("Date from server: " + timeInfoStruct.getDate());
+				// System.out.println(bytesToDec(timeInfoStruct.getSignedData()));
+				objectinputstream.close();
+
+			} catch (EOFException | ClassNotFoundException exc) {
+				objectinputstream.close();
+			}
+		} catch (IOException ex) {
+			System.out.println("ERROR WITH RECEIVING TIME: " + ex);
+		}
+
+		// make connection to the card (simulator) and send the bytes
+		ConnectSimulator();
+		sendTimeToCard(timeInfoStruct);
+
+	}
+
 	
 	public Boolean loginWithPin(byte[] pin) throws Exception {
 		if(pin.length != 4) { // limit length of the pin to prevent dangerous input
@@ -369,64 +421,50 @@ public class MiddlewareMain extends Application {
 		return true;
 	}
 	
-	public void askTime() {
-		//hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
-		//hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met SKg en eenmaal plain text
-        try {
-//        	System.out.println(timestampSocket);
-        	ObjectOutputStream objectoutputstream = null;
-//            PrintWriter out = new PrintWriter(timestampSocket.getOutputStream(), true);
-            byte[] dataToTest = ("test".getBytes());
-            ObjectInputStream objectinputstream = null;
-        	System.out.println("Try..");
 
-            try {            	
+	private void sendTimeToCard(TimeInfoStruct timeInfoStruct) {
+		//this line must be commented for real uses! here is just a new byte array made for easy checking on the card
+		timeInfoStruct = new TimeInfoStruct(new byte[256], new byte[255]);
+		// send the bytes to the card so the time can be updated
+		System.out.println("Length of signed data: " + timeInfoStruct.getSignedData().length); // 256
+		System.out.println("Length of data: " + timeInfoStruct.getDate().length); // 8
 
-            	objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
-//            	System.out.println("Try writing!");
-            	System.out.println("Try writing!");
-            	objectoutputstream.writeObject(1);
-            	System.out.println("Written");
-            	objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
-            	TimeInfoStruct timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
-            	System.out.println("Date from server: " + timeInfoStruct.getDate());
-            	objectinputstream.close();
-            	
-            	
-            }
-            	catch (EOFException | ClassNotFoundException exc)
-            	{
-            	 objectinputstream.close();
-            	}
-        } catch (IOException ex) {
-            System.out.println("ERROR WITH RECEIVING TIME: " + ex);
-        }
+		// concatenate all bytes into one big data array, this toSend needs to be given to the card
+		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
+		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
+		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
+				timeInfoStruct.getDate().length);
+
+		System.out.println(bytesToDec(timeInfoStruct.getDate()));
+		System.out.println("Send bytes with extended APDU");
+		// TODO: send the toSend to the card :( 
+
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		launch(args);
 	}
-	
-	
+
 	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
 	public static String bytesToHex(byte[] bytes) {
-	    char[] hexChars = new char[bytes.length * 2];
-	    for ( int j = 0; j < bytes.length; j++ ) {
-	        int v = bytes[j] & 0xFF;
-	        hexChars[j * 2] = hexArray[v >>> 4];
-	        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-	    }
-	    String str= "";
-	    for ( int j = 0; j < hexChars.length; j+=2 ) {
-	    	str += "0x"+ hexChars[j]+ hexChars[j+1]+", ";
-	    }
-	    return str;
+		char[] hexChars = new char[bytes.length * 2];
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		String str = "";
+		for (int j = 0; j < hexChars.length; j += 2) {
+			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
+		}
+		return str;
 	}
-	public String bytesToDec(byte[] barray)
-	 {
-	   String str = "";
-	   for (byte b : barray)
-	      	str += (int)b + ", ";
-	   return str;
-	 }
+
+	public String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", (byte)";
+		return str;
+	}
 }
