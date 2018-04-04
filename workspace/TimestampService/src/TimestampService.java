@@ -21,6 +21,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -74,14 +75,16 @@ public class TimestampService {
 
 				// get the public key from the government, commented because not needed --> is
 				// already placed as bytearray on the javacard
-				// FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
-				// "\\TimestampService\\government.cer");
-				// CertificateFactory f = CertificateFactory.getInstance("X.509");
-				// X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
-				// PublicKey publicKeyGovernment = certificate.getPublicKey();
-				// System.out.println("The found public key is: " + publicKeyGovernment);
-				// byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
-				// System.out.println("Byte array: " + publicKeyBytes.toString());
+				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
+				 "\\TimestampService\\government.cer");
+				 CertificateFactory f = CertificateFactory.getInstance("X.509");
+				 X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
+				 RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
+				 
+				 System.out.println("The found public key is: " + publicKeyGovernment);
+				 byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
+				 System.out.println("exp: " + bytesToHex(publicKeyGovernment.getPublicExponent().toByteArray()));
+				 System.out.println("mod: " + bytesToHex(publicKeyGovernment.getModulus().toByteArray()));
 
 				Long time = cal.getTimeInMillis();
 				System.out.println("Time is (in milliseconds): " + time);
@@ -145,6 +148,21 @@ public class TimestampService {
 		buffer.put(bytes);
 		buffer.flip();// need flip
 		return buffer.getLong();
+	}
+	
+	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+	public static String bytesToHex(byte[] bytes) {
+		char[] hexChars = new char[bytes.length * 2];
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		String str = "";
+		for (int j = 0; j < hexChars.length; j += 2) {
+			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
+		}
+		return str;
 	}
 
 }

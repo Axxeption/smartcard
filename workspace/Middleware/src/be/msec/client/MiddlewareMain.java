@@ -82,12 +82,13 @@ public class MiddlewareMain extends Application {
         this.primaryStage.setTitle("Card reader UI");
         initRootLayout();
         try {
-        	ConnectSimulator();
+        	
+//        	ConnectSimulator();
 	//		ConnectRealDevice();
 //			
 //			askName();
-//			connectTimestampServer();
-//			askTime();
+			connectTimestampServer();
+			askTimeToTimestampServer();
 
 //			checkChallenge();
 			
@@ -424,7 +425,7 @@ public class MiddlewareMain extends Application {
 
 	private void sendTimeToCard(TimeInfoStruct timeInfoStruct) {
 		//this line must be commented for real uses! here is just a new byte array made for easy checking on the card
-		timeInfoStruct = new TimeInfoStruct(new byte[256], new byte[255]);
+		//timeInfoStruct = new TimeInfoStruct(new byte[256], new byte[255]);
 		// send the bytes to the card so the time can be updated
 		System.out.println("Length of signed data: " + timeInfoStruct.getSignedData().length); // 256
 		System.out.println("Length of data: " + timeInfoStruct.getDate().length); // 8
@@ -434,10 +435,25 @@ public class MiddlewareMain extends Application {
 		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
 		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
 				timeInfoStruct.getDate().length);
-
-		System.out.println(bytesToDec(timeInfoStruct.getDate()));
+		
+		System.out.println(toSend.length);
+		System.out.println(bytesToDec(toSend));
 		System.out.println("Send bytes with extended APDU");
 		// TODO: send the toSend to the card :( 
+		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
+		try {
+			r = c.transmit(a);	
+			System.out.print("DATA SENDED ? ");
+			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("Wrong Pin size!");
+			else if(r.getSW() == 0x26368) throw new Exception("Wrong Pin size!");
+			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+			System.out.println("DONE "+ r.getSW());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	
 
 	}
 
@@ -464,7 +480,7 @@ public class MiddlewareMain extends Application {
 	public String bytesToDec(byte[] barray) {
 		String str = "";
 		for (byte b : barray)
-			str += (int) b + ", (byte)";
+			str += (int) b + ", ";
 		return str;
 	}
 }
