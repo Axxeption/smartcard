@@ -62,7 +62,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		//max try 3 times
 		pin = new OwnerPIN(PIN_TRY_LIMIT,PIN_SIZE);
 		//pin is 1234
-		pin.update(new byte[]{0x01,0x02,0x03,0x04},(short) 0, PIN_SIZE);
+		pin.update(new byte[]{0x31,0x32,0x33,0x34},(short) 0, PIN_SIZE);
 		//needed for the signature of a random byte array
 		privKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, keySizeInBits, false);
 		privKey.setExponent(privExponent, offset, keySizeInBytes);

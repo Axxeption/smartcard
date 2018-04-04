@@ -79,14 +79,14 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
         this.primaryStage.setTitle("Card reader UI");
-//        initRootLayout();
+        initRootLayout();
         try {
-			//ConnectSimulator();
+        	ConnectSimulator();
 	//		ConnectRealDevice();
 //			
 //			askName();
-			connectTimestampServer();
-			askTime();
+//			connectTimestampServer();
+//			askTime();
 
 //			checkChallenge();
 			
@@ -211,7 +211,7 @@ public class MiddlewareMain extends Application {
 		//die cla is altijd zelfde: gwn aangeven welke instructieset
 		//ins geeft aan wat er moet gebeuren --> dit getal staat ook vast in applet
 		//new byte[] geeft de pincode aan dus dit zou je normaal ingeven door de gebruiker
-		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
+		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x31,0x32,0x33,0x34});
 		r = c.transmit(a);
 		System.out.print("Pin ok? ");
 		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
@@ -219,7 +219,7 @@ public class MiddlewareMain extends Application {
 		System.out.println("PIN Verified");
 		
 		System.out.println("Asking serial number");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
+		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00,new byte[]{0x31,0x32,0x33,0x34});
 		r = c.transmit(a);
 		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
 		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
@@ -228,7 +228,7 @@ public class MiddlewareMain extends Application {
 
 		//3. ask name
 		System.out.println("Get name");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_NAME_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
+		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_NAME_INS, 0x00, 0x00,new byte[]{0x31,0x32,0x33,0x34});
 		r = c.transmit(a);
 		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
 		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
@@ -240,30 +240,41 @@ public class MiddlewareMain extends Application {
 			e.printStackTrace();
 		}
 	}
-	
-	public void initRootLayout() {
+	 public void initRootLayout() {
         try {
             // Load root layout from fxml file.
-        	FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MiddlewareMain.class.getResource("RootLayout.fxml"));
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(MiddlewareMain.class.getResource("RootMenu.fxml"));
             rootLayout = (BorderPane) loader.load();
 
             // Show the scene containing the root layout.
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
+            //scene.getStylesheets().add("be.msec.stylesheet.css");
+
+
+            // Give the controller access to the main app.
+            RootMenuController controllerRoot = loader.getController();
+            controllerRoot.setMain(this);
             primaryStage.show();
             
-            loader = new FXMLLoader();
-        	MiddlewareController middlewareController = new MiddlewareController(this);
-            loader.setLocation(MiddlewareMain.class.getResource("MiddlewareUI.fxml"));
-            loader.setController(middlewareController);
-            AnchorPane anchorPane = (AnchorPane) loader.load();
-            rootLayout.setCenter(anchorPane);
+            initPinLoginView();
             
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+	private void initPinLoginView() throws IOException {
+		FXMLLoader loader = new FXMLLoader();
+        loader.setLocation(MiddlewareMain.class.getResource("pinLoginView.fxml"));
+        System.out.println("Loading Main login Page");
+        AnchorPane loginView = (AnchorPane) loader.load();
+        
+        //controller initialiseren + koppelen aan mainClient
+        MiddlewareController controller = loader.getController();
+        controller.setMain(this);
+        rootLayout.setCenter(loginView);
+	}
 	
 	public void ConnectSimulator() throws Exception {
 //		Connect
@@ -313,12 +324,9 @@ public class MiddlewareMain extends Application {
 
 		try {
 			//TODO moet nog weg maar is gewoon of te testen als het werkt met de real card!
-			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
-			r = c.transmit(a);
-			System.out.print("Pin ok? ");
-			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
-			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("PIN Verified");
+			if(loginWithPin(new byte[]{0x01,0x02,0x03,0x04})) {
+				System.out.println("PIN Verified");
+			}
 			
 			System.out.println("Asking serial number");
 			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
@@ -344,6 +352,21 @@ public class MiddlewareMain extends Application {
         }
         System.out.println("Connected to timestamp server:" + timestampSocket);
           
+	}
+	
+	public Boolean loginWithPin(byte[] pin) throws Exception {
+		if(pin.length != 4) { // limit length of the pin to prevent dangerous input
+			throw new Exception("Pin has to be 4 characters");
+		}
+		System.out.println(bytesToHex(pin));
+		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, pin);
+		r = c.transmit(a);
+		System.out.print("Pin ok? ");
+		if (r.getSW()==SW_VERIFICATION_FAILED) return false;
+		else if(r.getSW() == 0x26368) throw new Exception("Wrong Pin size!");
+		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+	
+		return true;
 	}
 	
 	public void askTime() {
