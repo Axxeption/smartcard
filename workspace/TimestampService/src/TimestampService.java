@@ -79,7 +79,7 @@ public class TimestampService {
 
 				// get the public key from the government, commented because not needed --> is
 				// already placed as bytearray on the javacard
-				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"\\government.cer"); // \\TimestampService\\government.cer
+				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"\\government512.cer"); // \\TimestampService\\government512.cer
 
 				 CertificateFactory f = CertificateFactory.getInstance("X.509");
 				 X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
