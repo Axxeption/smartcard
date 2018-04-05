@@ -37,7 +37,11 @@ public class TimestampService {
 	static final int port = 8001;
 
 	public static void main(String[] args) {
-
+		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
+        System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
+        System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
+        System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+        
 		SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		try {
@@ -64,7 +68,7 @@ public class TimestampService {
 
 				// get the key from a jks file (once generated with portecle)
 				KeyStore keyStore = KeyStore.getInstance("JKS");
-				String fileName = new java.io.File("").getAbsolutePath() + "\\TimestampService\\government.jks";
+				String fileName = new java.io.File("").getAbsolutePath() + "\\government.jks"; // \\TimestampService\\government.jks
 				FileInputStream fis = new FileInputStream(fileName);
 				keyStore.load(fis, "jonasaxel".toCharArray());
 				fis.close();
@@ -75,6 +79,7 @@ public class TimestampService {
 
 				// get the public key from the government, commented because not needed --> is
 				// already placed as bytearray on the javacard
+
 //				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
 //				 "\\TimestampService\\government512.cer");
 //				 CertificateFactory f = CertificateFactory.getInstance("X.509");
@@ -87,6 +92,7 @@ public class TimestampService {
 //				 byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
 //				 System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
 //				 System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
+
 
 				Long time = cal.getTimeInMillis();
 				System.out.println("Time is (in milliseconds): " + time);

@@ -356,6 +356,12 @@ public class MiddlewareMain extends Application {
 	}
 
 	public void connectTimestampServer() {
+		System.out.println("Setting ssl properties...");
+		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
+        System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
+        System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
+        System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+		
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
 			timestampSocket = sslSocketFactory.createSocket("localhost", port);

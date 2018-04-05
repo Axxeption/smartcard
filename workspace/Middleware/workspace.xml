@@ -4,10 +4,10 @@
     <!--ANT 1.7 is required                                        -->
     <!--define folder properties-->
     <property name="dir.buildfile" value="."/>
-	<property name="dir.workspace" value="C:/Users/vulst/Documents/School 4elict/Veilige software/veilige_software_sc_windows/workspace"/>
-    <property name="dir.jarfile" value="C:/Users/vulst/Documents/School_4elict/Veilige_software/smartcard/workspace"/>
-	<!--<property name="dir.workspace" value="C:\Users\kobe\Documents\projects\smartcards\workspace"/>
-	<property name="dir.jarfile" value="C:\Users\kobe\Documents\projects\smartcards\workspace"/> -->
+	<!--<property name="dir.workspace" value="C:/Users/vulst/Documents/School 4elict/Veilige software/veilige_software_sc_windows/workspace"/>
+    <property name="dir.jarfile" value="C:/Users/vulst/Documents/School_4elict/Veilige_software/smartcard/workspace"/> -->
+	<property name="dir.workspace" value="C:\Users\kobe\Documents\projects\smartcards\workspace"/>
+	<property name="dir.jarfile" value="C:\Users\kobe\Documents\projects\smartcards\workspace"/>
     <target name="create_run_jar">
         <jar destfile="${dir.jarfile}/Middleware.jar" filesetmanifest="mergewithoutmain">
             <manifest>
