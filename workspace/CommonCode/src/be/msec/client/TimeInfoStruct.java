@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.security.PublicKey;
 import java.util.Date;
 
-public class TimeInfoStruct implements InfoStruct, Serializable {
+public class TimeInfoStruct extends InfoStruct {
 	private byte [] signedData;
 	private byte[] date;
 	
@@ -16,44 +16,22 @@ public class TimeInfoStruct implements InfoStruct, Serializable {
 		this.signedData = signedData;
 		this.date = dataToSend;
 	}
-	
-
 
 
 	public byte[] getSignedData() {
 		return signedData;
 	}
 
-
-
 	public void setSignedData(byte[] signedData) {
 		this.signedData = signedData;
 	}
-
-
 
 	public byte[] getDate() {
 		return date;
 	}
 
-
-
 	public void setDate(byte[] date) {
 		this.date = date;
 	}
 
-
-
-	public byte [] getBytes() {
-		try{
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ObjectOutputStream oos = new ObjectOutputStream(baos);
-			oos.writeObject(this);
-			System.out.println("bytes from ServiceProviderInfoStruct");
-			return baos.toByteArray();
-		}catch (IOException ioe){
-			System.err.println(ioe.getLocalizedMessage());
-			return null;
-		}
-	}
 }

@@ -1,4 +1,5 @@
-package be.msec;
+package be.msec.controllers;
+import be.msec.ServiceProviderMain;
 import be.msec.helpers.Controller;
 import javafx.application.Platform;
 import javafx.fxml.FXML;

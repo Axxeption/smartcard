@@ -1,4 +1,9 @@
-package be.msec;
+package be.msec.controllers;
+import be.msec.ServiceAction;
+import be.msec.ServiceProvider;
+import be.msec.ServiceProviderAction;
+import be.msec.ServiceProviderMain;
+import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.ServiceProviderType;
 import be.msec.helpers.Controller;
 import javafx.beans.value.ChangeListener;
@@ -23,7 +28,7 @@ public class MainServiceController extends Controller {
     @FXML
     private Button submit;
 
-    private ServiceProviderMain mainController;
+    private ServiceProviderMain spMain;
     private ObservableList<ServiceProvider> services = FXCollections.observableArrayList();
     private ObservableList<ServiceAction> actions = FXCollections.observableArrayList();
     private ServiceProvider selectedServiceProvider;
@@ -108,40 +113,41 @@ public class MainServiceController extends Controller {
         });
     }
     private void generateSPs() {
-
     	services.add(new ServiceProvider("napoleonGames.com", ServiceProviderType.SOCNET));
     	services.add(new ServiceProvider("studentAtWork.be", ServiceProviderType.GOVERNMENT));
     	services.add(new ServiceProvider("CompasClub.be", ServiceProviderType.DEFAULT));
     }
 
     public void setMainController(ServiceProviderMain mainController) {
-        this.mainController = mainController;
+        this.spMain = mainController;
         //test data in services steken
         generateSPs();
-        actions.add(new ServiceAction("authenticate SP",1));
-        actions.add(new ServiceAction("get eGov Data",2));
-        actions.add(new ServiceAction("get socNet data",3));
-        actions.add(new ServiceAction("get default data",4));
+        actions.add(new ServiceAction("authenticate SP",CallableMiddelwareMethodes.AUTH_SP));
+        actions.add(new ServiceAction("get Data",CallableMiddelwareMethodes.GET_DATA));
 
         serviceList.setItems(services);
         actionList.setItems(actions);
     }
 
     public void submit(){
-        if(selectedServiceAction !=null){
-            System.out.println(selectedServiceAction.getName());
-            outputTextArea.setText(outputTextArea.getText()+"\n"+selectedServiceAction.getName());
-
-        }
-        if(selectedServiceProvider != null){
-            System.out.println(selectedServiceProvider);
-            outputTextArea.setText(outputTextArea.getText()+"\n"+selectedServiceProvider);
+        if(selectedServiceProvider != null && selectedServiceAction !=null){
+            ServiceProviderAction request = new ServiceProviderAction(selectedServiceAction, selectedServiceProvider.getCertificate());
+            addToDataLog(selectedServiceProvider.toString());
+            addToDataLog(selectedServiceAction.getName());
+            addToDataLog("Sending request...");
+            spMain.sendServiceProviderActionToMiddleWare(request);
+            
+        }else {	
+        	addToDataLog("Select a ServiceProvider and an action!");
         }
 
     }
 
 
-
+    public void addToDataLog(String log) {
+    	System.out.println(log);
+    	outputTextArea.setText(outputTextArea.getText()+"\n"+log);
+    }
 
     public void alertDialog(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -151,6 +157,4 @@ public class MainServiceController extends Controller {
 
         alert.showAndWait();
     }
-
-
 }

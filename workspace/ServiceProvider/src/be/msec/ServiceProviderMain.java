@@ -1,5 +1,7 @@
 package be.msec;
 import be.msec.client.TimeInfoStruct;
+import be.msec.controllers.MainServiceController;
+import be.msec.controllers.RootMenuController;
 import be.msec.helpers.Controller;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -20,9 +22,9 @@ public class ServiceProviderMain extends Application {
     private Stage primaryStage;
     private BorderPane rootLayout;
     private Controller currentViewController;
+    private MainServiceController mainController;
 	private Socket serviceProviderSocket = null;
 	static final int portSP = 8003;
-
 
 
     /**
@@ -42,7 +44,6 @@ public class ServiceProviderMain extends Application {
         initRootLayout();
         showMainView();
         connectToMiddleWare();
-        sendTestObjectToMiddleWare();
     }
 
     @Override
@@ -51,19 +52,31 @@ public class ServiceProviderMain extends Application {
         System.out.println("Stage is Normaly closed");
     }
     
-    public void sendTestObjectToMiddleWare() {
-    	TimeInfoStruct timeInfoStruct = null; //just to test...
+    public void sendServiceProviderActionToMiddleWare(ServiceProviderAction action) {
 		ObjectOutputStream objectoutputstream = null;
-		ObjectInputStream objectinputstream = null;
+		
 		try {
 			System.out.println("Send something to the middleware");
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
-			objectoutputstream.writeObject(1);
+			objectoutputstream.writeObject(action);
 			
-			objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-			timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
-			System.out.println("succesfully received an answer!");
+			//wait for response
+			receiveResponseFromMiddleWare();
+			
 		}catch (Exception e) {
+			System.out.println(e);
+		}
+    }
+    public void receiveResponseFromMiddleWare() {	
+    	ObjectInputStream objectinputstream = null;
+    	Object obj;
+    	try {
+			objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
+			obj = objectinputstream.readObject();
+			System.out.println("succesfully received an answer!");
+			System.out.println(obj.toString());
+			mainController.addToDataLog("Succesfully received: " + obj.toString());
+    	}catch (Exception e) {
 			System.out.println(e);
 		}
     }
@@ -117,6 +130,7 @@ public class ServiceProviderMain extends Application {
             MainServiceController controller = loader.getController();
             controller.setMainController(this);
             currentViewController = controller;
+            mainController = controller;
             rootLayout.setCenter(loginView);
 
         } catch (Exception e) {

@@ -1,13 +1,9 @@
 package be.msec.client;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 
-public class ServiceProviderInfoStruct implements InfoStruct, Serializable {
+public class ServiceProviderInfoStruct extends InfoStruct implements Serializable {
 	private PublicKey publicKey;
 	private String name;
 	private int validTime;
@@ -20,7 +16,6 @@ public class ServiceProviderInfoStruct implements InfoStruct, Serializable {
 		this.validTime = 24*60*60; // default 24h
 		this.type = ServiceProviderType.DEFAULT; // default type is default
 	}
-	
 
 	public ServiceProviderType getType() {
 		return type;
@@ -53,19 +48,5 @@ public class ServiceProviderInfoStruct implements InfoStruct, Serializable {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-
-	public byte [] getBytes() {
-		try{
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ObjectOutputStream oos = new ObjectOutputStream(baos);
-			oos.writeObject(this);
-			System.out.println("bytes from ServiceProviderInfoStruct");
-			return baos.toByteArray();
-		}catch (IOException ioe){
-			System.err.println(ioe.getLocalizedMessage());
-			return null;
-		}
 	}
 }

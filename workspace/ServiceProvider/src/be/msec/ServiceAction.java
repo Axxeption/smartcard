@@ -1,17 +1,21 @@
 package be.msec;
-public class ServiceAction {
+
+import java.io.Serializable;
+
+import be.msec.client.CallableMiddelwareMethodes;
+
+public class ServiceAction implements Serializable {
 
     String name;
-    short command;
-    // MSS INTERFACE VAN MAKEN VAN DIE ACTIONS
-
-    public ServiceAction(String name, int command) {
+    CallableMiddelwareMethodes command;
+    
+    public ServiceAction(String name, CallableMiddelwareMethodes command) {
         this.name = name;
-        this.command = (short) command;
+        this.command =command;
     }
     
     
-    public short getCommand() {
+    public CallableMiddelwareMethodes getCommand() {
 		return command;
 	}
 

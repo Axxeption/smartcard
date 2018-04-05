@@ -1,5 +1,6 @@
 package be.msec.client;
 
+import be.msec.ServiceProviderAction;
 import be.msec.client.connection.Connection;
 
 import java.io.IOException;
@@ -78,53 +79,31 @@ public class MiddlewareMain extends Application {
 //      initRootLayout();
         try {
         	
+        	connectServiceProvider();
 //			askName();     	
-        	// 1. UPDATE_TIME_ON_CARD_ROUTINE
-			if(connectTimestampServer()) {
-				TimeInfoStruct signedTime = askTimeToTimestampServer();
-			 	if(signedTime !=null) {
-			 		// make connection to the card (simulator) and send the bytes
-					connectToCard(true); // true => simulatedconnection
-					sendTimeToCard(signedTime);
-			 	}
-			}
+        	
+        	UPDATE_TIME_ON_CARD_ROUTINE();
+			
 
 //			checkChallenge();
-			
-//			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
-//			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
-//			System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
-
-	private void listenToServiceProvider() {
-		ObjectInputStream objectinputstream = null;
-		try {
-			ObjectOutputStream out = new ObjectOutputStream(middlewareSocket.getOutputStream());
-			while(true) {
-				System.out.println("Listening to service provider...");
-				objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
-				Integer received = (Integer) objectinputstream.readObject();
-				System.out.println("received: " + received);
-				
-				byte[] time = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
-				TimeInfoStruct timeinfostruct = new TimeInfoStruct(new byte[4], time);
-				out.writeObject(timeinfostruct);
-				
-			}
-		
-		
-		} catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	
+	private void UPDATE_TIME_ON_CARD_ROUTINE() throws Exception {
+		if(connectTimestampServer()) {
+			TimeInfoStruct signedTime = askTimeToTimestampServer();
+		 	if(signedTime !=null) {
+		 		// make connection to the card (simulator) and send the bytes
+				connectToCard(true); // true => simulatedconnection
+				sendTimeToCard(signedTime);
+		 	}
 		}
-		
-		
 	}
+
+
 
 
 	// -------------------------------------------------
@@ -388,18 +367,6 @@ public class MiddlewareMain extends Application {
 		return true;
 
 	}
-	
-	public void connectServiceProvider() {
-		try {
-			socket = new ServerSocket(portSP);
-			System.out.println("Serversocket is listening");
-			middlewareSocket = socket.accept();
-			System.out.println("Socket connection accepted");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	public TimeInfoStruct askTimeToTimestampServer() throws Exception {
 		// hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
@@ -432,6 +399,39 @@ public class MiddlewareMain extends Application {
 		}
 		return timeInfoStruct;
 	}
+	
+	// -------------------------------------------------
+	// ------- SERVICE PROVIDER COMMUNICATION ----------
+	// -------------------------------------------------
+	public void connectServiceProvider() {
+		try {
+			socket = new ServerSocket(portSP);
+			System.out.println("Serversocket is listening");
+			middlewareSocket = socket.accept();
+			System.out.println("Socket connection accepted");
+			
+			// start thread to listen for commands from ServiceProvider client
+			Thread listenerThread = new ListenForServiceProviderCommandThread();
+			listenerThread.start();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
+	private void sendToServiceProvider(String response) {
+		ObjectOutputStream out;
+		try {
+			out = new ObjectOutputStream(middlewareSocket.getOutputStream());
+			out.writeObject(response);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
 	
 	// ------------------------------------------
 	// ------- JAVA CARD COMMUNICATION ----------
@@ -506,5 +506,36 @@ public class MiddlewareMain extends Application {
 		for (byte b : barray)
 			str += (int) b + ", ";
 		return str;
+	}
+	
+	
+	class ListenForServiceProviderCommandThread extends Thread{
+		public void run() {
+			ObjectInputStream objectinputstream = null;
+			try {
+				while(true) {
+					System.out.println("Listening to service provider...");
+					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
+					ServiceProviderAction received = (ServiceProviderAction) objectinputstream.readObject();
+					System.out.println("received: " + received);
+					
+					switch(received.getAction().getCommand()) {
+						case AUTH_SP: 	
+							System.out.println("AUTH SP COMMAND");
+							sendToServiceProvider("AUTH command received");
+							break;
+						case GET_DATA:
+							System.out.println("GET DATA COMMAND");
+							break;
+						default:
+							sendToServiceProvider("Command doesn't exists.");
+					}
+					
+				}	
+			} catch (IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();	
+			}
+		}
 	}
 }

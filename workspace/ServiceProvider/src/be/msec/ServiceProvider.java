@@ -59,6 +59,10 @@ public class ServiceProvider {
 	public PublicKey getPublicKey() {
 		return serviceProviderInfo.getPublicKey();
 	}
+	
+	public OwnCertificate getCertificate() {
+		return certificate;
+	}
 
 	@Override
 	public String toString() {
