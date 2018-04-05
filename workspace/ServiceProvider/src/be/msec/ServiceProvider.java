@@ -22,7 +22,6 @@ public class ServiceProvider {
     		KeyPair keyPair = generateKey();
 	        privateKey = (RSAPrivateKey) keyPair.getPrivate();
 	        serviceProviderInfo = new ServiceProviderInfoStruct(keyPair.getPublic(), name);
-	        
 	        letCASignCertificate();
     }
 

@@ -14,6 +14,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -134,8 +135,20 @@ public class CAService {
 		X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(
 				encodedPublicKey);
 		PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
- 
+		
+		//print out once to place him on the SC
+//		RSAPublicKey rsapublicKey = (RSAPublicKey) publicKey;
+//		System.out.println("exp: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
+//		System.out.println("mod: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
+	
 		return publicKey;
+	}
+	
+	public static String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", (byte) ";
+		return str;
 	}
 
 }

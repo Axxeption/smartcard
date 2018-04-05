@@ -2,6 +2,7 @@ package be.msec.smartcard;
 
 import javacard.framework.APDU;
 import javacardx.apdu.ExtendedLength;
+import sun.security.util.Length;
 import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
@@ -24,6 +25,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte GET_BIGDATA = 0x29;
 	private static final byte UPDATE_TIME = 0x25;
+	private static final byte AUTHENTICATE_SP = 0x21;
 
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -50,7 +52,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 34, (byte) 114, (byte) -99, (byte) -102, (byte) 43, (byte) -43, (byte) -102, (byte) 71, (byte) 115,
 			(byte) 116, (byte) -105, (byte) -48, (byte) -80, (byte) 109, (byte) 117, (byte) 106, (byte) 88, (byte) 6,
 			(byte) -69, (byte) -42, (byte) -83, (byte) 25 };
-
+	private byte[] pubExp_CA = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
+	private byte[] pubMod_CA = new byte[] {(byte) -112, (byte) 45, (byte) 83, (byte) -77, (byte) 55, (byte) 18, (byte) -41, (byte) -33, (byte) -104, (byte) -9, (byte) 67, (byte) -105, (byte) 71, (byte) 126, (byte) -21, (byte) -122, (byte) 71, (byte) -26, (byte) -41, (byte) 23, (byte) 107, (byte) -52, (byte) 103, (byte) 114, (byte) -91, (byte) -100, (byte) -52, (byte) 107, (byte) -79, (byte) 4, (byte) 74, (byte) 22, (byte) 110, (byte) -71, (byte) -128, (byte) -113, (byte) -11, (byte) -36, (byte) -63, (byte) -40, (byte) -92, (byte) -55, (byte) 83, (byte) 89, (byte) 98, (byte) -11, (byte) -38, (byte) 26, (byte) -74, (byte) -107, (byte) -29, (byte) -84, (byte) -96, (byte) 24, (byte) 48, (byte) 30, (byte) -33, (byte) 15, (byte) -59, (byte) 6, (byte) 50, (byte) -103, (byte) -4, (byte) 80, (byte) -2, (byte) 91, (byte) 25, (byte) -107, (byte) 69, (byte) 30, (byte) 126, (byte) 44, (byte) 37, (byte) 99, (byte) 23, (byte) 85, (byte) 82, (byte) 76, (byte) -85, (byte) 109, (byte) -57, (byte) -77, (byte) -31, (byte) 107, (byte) -120, (byte) -127, (byte) -110, (byte) -78, (byte) 119, (byte) 22, (byte) -110, (byte) -126, (byte) 89, (byte) 37, (byte) -19, (byte) 7, (byte) 41, (byte) 75, (byte) 46, (byte) 27, (byte) 108, (byte) 20, (byte) -109, (byte) -107, (byte) -58, (byte) -50, (byte) -15, (byte) 65, (byte) 127, (byte) -115, (byte) 25, (byte) -22, (byte) -86, (byte) 26, (byte) 70, (byte) -95, (byte) -101, (byte) 93, (byte) -34, (byte) -40, (byte) 64, (byte) 126, (byte) -91, (byte) -6, (byte) -51, (byte) -58, (byte) -108, (byte) 71};
 	private byte[] pubExp_G = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
 	// this length is 65 --> seems impossible? --> cropped first byte (was 0) so now
 	// is length = 64
@@ -262,8 +265,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	/*
 	 * This method is called when the applet is selected and an APDU arrives.
 	 */
+	
 	public void process(APDU apdu) throws ISOException {
 		// A reference to the buffer, where the APDU data is stored, is retrieved.
+		try {
 		byte[] buffer = apdu.getBuffer();
 
 		// If the APDU selects the applet, no further processing is required.
@@ -294,6 +299,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		case UPDATE_TIME:
 			updateTime(apdu);
 			break;
+		case AUTHENTICATE_SP:
+			authenticate(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status word of
 		// the response.
 		// This can be done by using this method. As an argument a short is given that
@@ -302,6 +310,28 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		// class.
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
+		}
+		}catch(Exception e) {
+			short a = 0;
+		}
+	}
+
+	private void authenticate(APDU apdu) {
+		byte[] data = receiveBigData(apdu);
+		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+		data[0] = data[0];
+		// this keysize must be the same size as the one given in in setModulus! but
+		// another keylenght is not working??
+		try {
+		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024 , false);
+		pubk.setExponent(pubExp_CA, offset, (short) 3);
+		// pubk.setModulus(pubMod_G, offset, (short) pubMod_G.length);
+		// signature.init(pubk, Signature.MODE_VERIFY);
+		// boolean result = signature.verify(date, (short) 0, (short) date.length,
+		// signedData, (short) 0,
+		// (short) signedData.length);
+		}catch(Exception e) {
+			
 		}
 	}
 

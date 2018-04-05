@@ -15,6 +15,11 @@ public class OwnCertificate implements Serializable{
 	
 	private InfoStruct infoStruct;
 	private byte[] signatureBytes;
+	
+	public byte[] getSignatureBytes() {
+		return signatureBytes;
+	}
+
 	public OwnCertificate() {
 	}
 	

@@ -62,6 +62,7 @@ public class MiddlewareMain extends Application {
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte test = 0x01;
+	private static final byte AUTHENTICATE_SP = 0x21;
 	static final int portG = 8001;
 	static final int portSP = 8003;
 	private Socket timestampSocket = null;
@@ -69,42 +70,40 @@ public class MiddlewareMain extends Application {
 	IConnection c;
 	CommandAPDU a;
 	ResponseAPDU r;
-	
+	boolean connectedWithSC = false;
+
 	private ServerSocket socket;
-    private Socket middlewareSocket;
+	private Socket middlewareSocket;
 
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
-        this.primaryStage.setTitle("Card reader UI");
-//      initRootLayout();
-        try {
-        	
-        	connectServiceProvider();
-//			askName();     	
-        	
-        	UPDATE_TIME_ON_CARD_ROUTINE();
-			
+		this.primaryStage.setTitle("Card reader UI");
+		// initRootLayout();
+		try {
+			connectToCard(true);
+			authenticateCertificate(new byte[10]);
+			// connectServiceProvider();
+			// askName();
 
-//			checkChallenge();
-			
+			// UPDATE_TIME_ON_CARD_ROUTINE();
+
+			// checkChallenge();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void UPDATE_TIME_ON_CARD_ROUTINE() throws Exception {
-		if(connectTimestampServer()) {
+		if (connectTimestampServer()) {
 			TimeInfoStruct signedTime = askTimeToTimestampServer();
-		 	if(signedTime !=null) {
-		 		// make connection to the card (simulator) and send the bytes
+			if (signedTime != null) {
+				// make connection to the card (simulator) and send the bytes
 				connectToCard(true); // true => simulatedconnection
 				sendTimeToCard(signedTime);
-		 	}
+			}
 		}
 	}
-
-
-
 
 	// -------------------------------------------------
 	// ------- TEST METHODES wITH USEFULL CODE ----------
@@ -151,10 +150,9 @@ public class MiddlewareMain extends Application {
 	}
 
 	/**
-	 * Test Methode 
-	 * First get the certificate with the public key
-	 * then send challenge and check the challenge!
-	 * ( transfer big amount of data)
+	 * Test Methode First get the certificate with the public key then send
+	 * challenge and check the challenge! ( transfer big amount of data)
+	 * 
 	 * @throws Exception
 	 */
 	public void checkChallenge() throws Exception {
@@ -174,7 +172,8 @@ public class MiddlewareMain extends Application {
 			throw new Exception("ERROR, " + r.getSW()); // print error number if not succeded
 		} else {
 			System.out.println(" status 9000 ! dus oke");
-			byteCertificate = Arrays.copyOfRange(r.getBytes(), 0, r.getBytes().length - 2); // -2 bytes to cut off the SW-bytes
+			byteCertificate = Arrays.copyOfRange(r.getBytes(), 0, r.getBytes().length - 2); // -2 bytes to cut off the
+																							// SW-bytes
 			System.out.println(bytesToHex(byteCertificate));
 
 		}
@@ -216,105 +215,121 @@ public class MiddlewareMain extends Application {
 
 	public void askName() {
 		try {
-		//2. Send PIN
-		//die cla is altijd zelfde: gwn aangeven welke instructieset
-		//ins geeft aan wat er moet gebeuren --> dit getal staat ook vast in applet
-		//new byte[] geeft de pincode aan dus dit zou je normaal ingeven door de gebruiker
-		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x31,0x32,0x33,0x34});
-		r = c.transmit(a);
-		System.out.print("Pin ok? ");
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
-		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-		System.out.println("PIN Verified");
-		
-		System.out.println("Asking serial number");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00,new byte[]{0x31,0x32,0x33,0x34});
-		r = c.transmit(a);
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
-		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-		String str = new String(r.getData(), StandardCharsets.UTF_8);
-		System.out.println("SN is: " + str);
+			// 2. Send PIN
+			// die cla is altijd zelfde: gwn aangeven welke instructieset
+			// ins geeft aan wat er moet gebeuren --> dit getal staat ook vast in applet
+			// new byte[] geeft de pincode aan dus dit zou je normaal ingeven door de
+			// gebruiker
+			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
+			r = c.transmit(a);
+			System.out.print("Pin ok? ");
+			if (r.getSW() == SW_VERIFICATION_FAILED)
+				throw new Exception("PIN INVALID");
+			else if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			System.out.println("PIN Verified");
 
-		//3. ask name
-		System.out.println("Get name");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_NAME_INS, 0x00, 0x00,new byte[]{0x31,0x32,0x33,0x34});
-		r = c.transmit(a);
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("ERROR");
-		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-		str = new String(r.getData(), StandardCharsets.UTF_8);
-		System.out.println("Name is: " + str);
-		
+			System.out.println("Asking serial number");
+			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
+			r = c.transmit(a);
+			if (r.getSW() == SW_VERIFICATION_FAILED)
+				throw new Exception("ERROR");
+			else if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			String str = new String(r.getData(), StandardCharsets.UTF_8);
+			System.out.println("SN is: " + str);
+
+			// 3. ask name
+			System.out.println("Get name");
+			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_NAME_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
+			r = c.transmit(a);
+			if (r.getSW() == SW_VERIFICATION_FAILED)
+				throw new Exception("ERROR");
+			else if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			str = new String(r.getData(), StandardCharsets.UTF_8);
+			System.out.println("Name is: " + str);
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
+
 	// ---------------------------
 	// ------- INIT GUI ----------
 	// ---------------------------
-	
+
 	public void initRootLayout() {
-        try {
-            // Load root layout from fxml file.
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MiddlewareMain.class.getResource("RootMenu.fxml"));
-            rootLayout = (BorderPane) loader.load();
+		try {
+			// Load root layout from fxml file.
+			FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(MiddlewareMain.class.getResource("RootMenu.fxml"));
+			rootLayout = (BorderPane) loader.load();
 
-            // Show the scene containing the root layout.
-            Scene scene = new Scene(rootLayout);
-            primaryStage.setScene(scene);
-            //scene.getStylesheets().add("be.msec.stylesheet.css");
+			// Show the scene containing the root layout.
+			Scene scene = new Scene(rootLayout);
+			primaryStage.setScene(scene);
+			// scene.getStylesheets().add("be.msec.stylesheet.css");
 
-            // Give the controller access to the main app.
-            RootMenuController controllerRoot = loader.getController();
-            controllerRoot.setMain(this);
-            primaryStage.show();
-            
-            initPinLoginView();
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+			// Give the controller access to the main app.
+			RootMenuController controllerRoot = loader.getController();
+			controllerRoot.setMain(this);
+			primaryStage.show();
+
+			initPinLoginView();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void initPinLoginView() throws IOException {
 		FXMLLoader loader = new FXMLLoader();
-        loader.setLocation(MiddlewareMain.class.getResource("pinLoginView.fxml"));
-        System.out.println("Loading Main login Page");
-        AnchorPane loginView = (AnchorPane) loader.load();
-        
-        //controller initialiseren + koppelen aan mainClient
-        MiddlewareController controller = loader.getController();
-        controller.setMain(this);
-        rootLayout.setCenter(loginView);
+		loader.setLocation(MiddlewareMain.class.getResource("pinLoginView.fxml"));
+		System.out.println("Loading Main login Page");
+		AnchorPane loginView = (AnchorPane) loader.load();
+
+		// controller initialiseren + koppelen aan mainClient
+		MiddlewareController controller = loader.getController();
+		controller.setMain(this);
+		rootLayout.setCenter(loginView);
 	}
-	
+
 	// ----------------------------------
 	// ------- CONNECT TO CARD ----------
 	// ----------------------------------
-	
+
 	/**
 	 * Connect to the javacard
-	 * @param simulatedConnection, true= simulated connection ; false = connect to real card terminal
+	 * 
+	 * @param simulatedConnection,
+	 *            true= simulated connection ; false = connect to real card terminal
 	 * @throws Exception
 	 */
-	public void connectToCard(boolean simulatedConnection) throws Exception {
-		
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-		
-		if(simulatedConnection) {
-			System.out.println("Simulated connection");
-			c = new SimulatedConnection();
-			c.connect();
-			createAppletForSimulator();
-		}else {
-			System.out.println("Real connection");
-			c = new Connection();
-			((Connection) c).setTerminal(0); // depending on which cardreader you use
-			c.connect();
+	public boolean connectToCard(boolean simulatedConnection) {
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			if (simulatedConnection) {
+				System.out.println("Simulated connection");
+				c = new SimulatedConnection();
+
+				c.connect();
+
+				createAppletForSimulator();
+			} else {
+				System.out.println("Real connection");
+				c = new Connection();
+				((Connection) c).setTerminal(0); // depending on which cardreader you use
+				c.connect();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		return true;
 	}
-	
+
 	private void createAppletForSimulator() {
 		try {
 			// 0. create applet (only for simulator!!!)
@@ -345,17 +360,16 @@ public class MiddlewareMain extends Application {
 		}
 	}
 
-	
 	// -------------------------------------------------
 	// ------- TIMESTAMP SERVER COMMUNICATION ----------
 	// -------------------------------------------------
 	public boolean connectTimestampServer() {
 		// setup ssl properties
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
-        System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
-        System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
-        System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
-		
+		System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
+		System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
+		System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
 			timestampSocket = sslSocketFactory.createSocket("localhost", portG);
@@ -364,6 +378,7 @@ public class MiddlewareMain extends Application {
 			return false;
 		}
 		System.out.println("Connected to timestamp server:" + timestampSocket);
+
 		return true;
 
 	}
@@ -385,7 +400,7 @@ public class MiddlewareMain extends Application {
 				objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
 				// Cast serialized object into new object
 				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
-				
+
 				System.out.println("Received date and signedData (both in byte array)");
 				// System.out.println("Date from server: " + timeInfoStruct.getDate());
 				// System.out.println(bytesToDec(timeInfoStruct.getSignedData()));
@@ -399,7 +414,7 @@ public class MiddlewareMain extends Application {
 		}
 		return timeInfoStruct;
 	}
-	
+
 	// -------------------------------------------------
 	// ------- SERVICE PROVIDER COMMUNICATION ----------
 	// -------------------------------------------------
@@ -409,7 +424,7 @@ public class MiddlewareMain extends Application {
 			System.out.println("Serversocket is listening");
 			middlewareSocket = socket.accept();
 			System.out.println("Socket connection accepted");
-			
+
 			// start thread to listen for commands from ServiceProvider client
 			Thread listenerThread = new ListenForServiceProviderCommandThread();
 			listenerThread.start();
@@ -418,8 +433,7 @@ public class MiddlewareMain extends Application {
 			e.printStackTrace();
 		}
 	}
-	
-	
+
 	private void sendToServiceProvider(String response) {
 		ObjectOutputStream out;
 		try {
@@ -429,30 +443,34 @@ public class MiddlewareMain extends Application {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
-	
-	
+
 	// ------------------------------------------
 	// ------- JAVA CARD COMMUNICATION ----------
 	// ------------------------------------------
-	
+
 	/**
 	 * Send the signedtimestamp to the card so the time can be verifyed and updated
+	 * 
 	 * @param timeInfoStruct
 	 */
 	private boolean sendTimeToCard(TimeInfoStruct timeInfoStruct) {
-		// concatenate all bytes into one big data array, this toSend needs to be given to the card
+		// concatenate all bytes into one big data array, this toSend needs to be given
+		// to the card
 		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
 		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
-		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length, timeInfoStruct.getDate().length);
-		
-		System.out.println("Send signed time bytes with extended APDU"); 
+		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
+				timeInfoStruct.getDate().length);
+
+		System.out.println("Send signed time bytes with extended APDU");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
-			if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
 			System.out.println("DATE UPDATED ");
-			
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -460,22 +478,24 @@ public class MiddlewareMain extends Application {
 		}
 		return true;
 	}
-	
+
 	public Boolean loginWithPin(byte[] pin) throws Exception {
-		if(pin.length != 4) { // limit length of the pin to prevent dangerous input
+		if (pin.length != 4) { // limit length of the pin to prevent dangerous input
 			throw new Exception("Pin has to be 4 characters");
 		}
 		System.out.println(bytesToHex(pin));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, pin);
 		r = c.transmit(a);
 		System.out.print("Pin ok? ");
-		if (r.getSW()==SW_VERIFICATION_FAILED) return false;
-		else if(r.getSW() == 0x26368) throw new Exception("Wrong Pin size!");
-		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-	
+		if (r.getSW() == SW_VERIFICATION_FAILED)
+			return false;
+		else if (r.getSW() == 0x26368)
+			throw new Exception("Wrong Pin size!");
+		else if (r.getSW() != 0x9000)
+			throw new Exception("Exception on the card: " + r.getSW());
+
 		return true;
 	}
-	
 
 	public static void main(String[] args) throws Exception {
 		launch(args);
@@ -484,7 +504,7 @@ public class MiddlewareMain extends Application {
 	// ------------------------------------
 	// ------- UTILITY FUNCTIONS ----------
 	// ------------------------------------
-	
+
 	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
 	public static String bytesToHex(byte[] bytes) {
@@ -507,35 +527,60 @@ public class MiddlewareMain extends Application {
 			str += (int) b + ", ";
 		return str;
 	}
-	
-	
-	class ListenForServiceProviderCommandThread extends Thread{
+
+	private boolean authenticateCertificate(byte[] signatureBytes) {
+		System.out.println("signedbytes (=cert) to send: " + bytesToDec(signatureBytes));
+		System.out.println("Send signed time bytes with extended APDU");
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, signatureBytes);
+		try {
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			System.out.println("SUCCESFULLY VERIFIED " + r.getSW());
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+
+	}
+
+	class ListenForServiceProviderCommandThread extends Thread {
 		public void run() {
 			ObjectInputStream objectinputstream = null;
 			try {
-				while(true) {
+				while (true) {
 					System.out.println("Listening to service provider...");
 					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
 					ServiceProviderAction received = (ServiceProviderAction) objectinputstream.readObject();
 					System.out.println("received: " + received);
+
+					switch (received.getAction().getCommand()) {
+					case AUTH_SP:
+						System.out.println("AUTH SP COMMAND");
+						sendToServiceProvider("AUTH command received");
+
+						byte[] signatureBytes = received.getCertificate().getSignatureBytes();
+						CAService.getPublicKey();
 					
-					switch(received.getAction().getCommand()) {
-						case AUTH_SP: 	
-							System.out.println("AUTH SP COMMAND");
-							sendToServiceProvider("AUTH command received");
-							break;
-						case GET_DATA:
-							System.out.println("GET DATA COMMAND");
-							break;
-						default:
-							sendToServiceProvider("Command doesn't exists.");
+						authenticateCertificate(signatureBytes);
+						
+						break;
+					case GET_DATA:
+						System.out.println("GET DATA COMMAND");
+						break;
+					default:
+						sendToServiceProvider("Command doesn't exists.");
 					}
-					
-				}	
+
+				}
 			} catch (IOException | ClassNotFoundException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();	
+				e.printStackTrace();
 			}
 		}
+
 	}
 }
