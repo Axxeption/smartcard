@@ -5,7 +5,13 @@ import be.msec.client.connection.Connection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
@@ -54,11 +60,17 @@ public class MiddlewareMain extends Application {
 	private static final byte GET_NAME_INS = 0x24;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
-	static final int port = 8001;
+	private static final byte test = 0x01;
+	static final int portG = 8001;
+	static final int portSP = 8003;
 	private Socket timestampSocket = null;
+	private Socket serviceProviderSocket = null;
 	IConnection c;
 	CommandAPDU a;
 	ResponseAPDU r;
+	
+	private ServerSocket socket;
+    private Socket middlewareSocket;
 
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
@@ -66,8 +78,7 @@ public class MiddlewareMain extends Application {
 //      initRootLayout();
         try {
         	
-//			askName();
-        	
+//			askName();     	
         	// 1. UPDATE_TIME_ON_CARD_ROUTINE
 			if(connectTimestampServer()) {
 				TimeInfoStruct signedTime = askTimeToTimestampServer();
@@ -89,9 +100,37 @@ public class MiddlewareMain extends Application {
 		}
 	}
 
+
+	private void listenToServiceProvider() {
+		ObjectInputStream objectinputstream = null;
+		try {
+			ObjectOutputStream out = new ObjectOutputStream(middlewareSocket.getOutputStream());
+			while(true) {
+				System.out.println("Listening to service provider...");
+				objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
+				Integer received = (Integer) objectinputstream.readObject();
+				System.out.println("received: " + received);
+				
+				byte[] time = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
+				TimeInfoStruct timeinfostruct = new TimeInfoStruct(new byte[4], time);
+				out.writeObject(timeinfostruct);
+				
+			}
+		
+		
+		} catch (IOException | ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
+
+
 	// -------------------------------------------------
 	// ------- TEST METHODES wITH USEFULL CODE ----------
 	// -------------------------------------------------
+
 	public void testSetup()
 			throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
 		// aan de CA kant
@@ -326,6 +365,7 @@ public class MiddlewareMain extends Application {
 			System.out.println("ERROR IN MAKING CONNECTION WITH SIMULATOR: " + e);
 		}
 	}
+
 	
 	// -------------------------------------------------
 	// ------- TIMESTAMP SERVER COMMUNICATION ----------
@@ -339,7 +379,7 @@ public class MiddlewareMain extends Application {
 		
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
-			timestampSocket = sslSocketFactory.createSocket("localhost", port);
+			timestampSocket = sslSocketFactory.createSocket("localhost", portG);
 		} catch (IOException ex) {
 			System.out.println("ERROR WITH CONNECTION TO G: " + ex);
 			return false;
@@ -347,6 +387,18 @@ public class MiddlewareMain extends Application {
 		System.out.println("Connected to timestamp server:" + timestampSocket);
 		return true;
 
+	}
+	
+	public void connectServiceProvider() {
+		try {
+			socket = new ServerSocket(portSP);
+			System.out.println("Serversocket is listening");
+			middlewareSocket = socket.accept();
+			System.out.println("Socket connection accepted");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public TimeInfoStruct askTimeToTimestampServer() throws Exception {
@@ -423,8 +475,6 @@ public class MiddlewareMain extends Application {
 	
 		return true;
 	}
-	
-
 	
 
 	public static void main(String[] args) throws Exception {

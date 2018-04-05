@@ -1,4 +1,5 @@
 package be.msec;
+import be.msec.client.TimeInfoStruct;
 import be.msec.helpers.Controller;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -8,6 +9,10 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.rmi.RemoteException;
 
 public class ServiceProviderMain extends Application {
@@ -15,6 +20,9 @@ public class ServiceProviderMain extends Application {
     private Stage primaryStage;
     private BorderPane rootLayout;
     private Controller currentViewController;
+	private Socket serviceProviderSocket = null;
+	static final int portSP = 8003;
+
 
 
     /**
@@ -33,7 +41,8 @@ public class ServiceProviderMain extends Application {
         this.primaryStage.setTitle("Service Provider overview");
         initRootLayout();
         showMainView();
-
+        connectToMiddleWare();
+        sendTestObjectToMiddleWare();
     }
 
     @Override
@@ -41,8 +50,32 @@ public class ServiceProviderMain extends Application {
 
         System.out.println("Stage is Normaly closed");
     }
+    
+    public void sendTestObjectToMiddleWare() {
+    	TimeInfoStruct timeInfoStruct = null; //just to test...
+		ObjectOutputStream objectoutputstream = null;
+		ObjectInputStream objectinputstream = null;
+		try {
+			System.out.println("Send something to the middleware");
+			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
+			objectoutputstream.writeObject(1);
+			
+			objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
+			timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
+			System.out.println("succesfully received an answer!");
+		}catch (Exception e) {
+			System.out.println(e);
+		}
+    }
+    public void connectToMiddleWare() {
+    	try {
+			serviceProviderSocket = new Socket("localhost", portSP);
+		} catch (IOException ex) {
+			System.out.println("ERROR WITH CONNECTION TO SERVICEPROVIDER: " + ex);
+		}
+		System.out.println("Connected to service provider: " + serviceProviderSocket);
 
-
+    }
     public void initRootLayout() {
         try {
             // Load root layout from fxml file.
