@@ -439,27 +439,19 @@ public class MiddlewareMain extends Application {
 		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
 				timeInfoStruct.getDate().length);
 		
-		System.out.println(toSend.length);
-		System.out.println("date: "+ bytesToDec(timeInfoStruct.getDate()));
-		System.out.println("signed data: " + bytesToDec(timeInfoStruct.getSignedData()));
+//		System.out.println("date: "+ bytesToDec(timeInfoStruct.getDate()));
+//		System.out.println("signed data: " + bytesToDec(timeInfoStruct.getSignedData()));
 		System.out.println(bytesToDec(toSend));
-		System.out.println("Send bytes with extended APDU");
-		// TODO: send the toSend to the card :( 
+		System.out.println("Send bytes with extended APDU"); 
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
-			r = c.transmit(a);	
-			System.out.print("DATA SENDED ? ");
-			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("Wrong Pin size!");
-			else if(r.getSW() == 0x26368) throw new Exception("Wrong Pin size!");
-			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("DONE "+ r.getSW());
+			if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+			System.out.println("DATE UPDATED ");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-	
-
 	}
 
 	public static void main(String[] args) throws Exception {

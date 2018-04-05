@@ -66,6 +66,7 @@ public class TimestampService {
 				System.out.println("Ask for the timestamp!");
 				
 				// government.jks: privatekey van government
+
 				PrivateKey privateKeyGovernment = loadPrivateKeyGovernment();
 	
 				// Get publickey and cerificate form Government certificate file
@@ -92,6 +93,7 @@ public class TimestampService {
 				
 				// bundle time and signature in struct and send back.
 				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedDate, timeInBytes);
+
 				out.writeObject(timeinfostruct);
 			}
 
