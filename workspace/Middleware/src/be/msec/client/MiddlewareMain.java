@@ -80,7 +80,7 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
         this.primaryStage.setTitle("Card reader UI");
-        initRootLayout();
+//        initRootLayout();
         try {
         	
 //        	ConnectSimulator();
@@ -429,7 +429,8 @@ public class MiddlewareMain extends Application {
 		// send the bytes to the card so the time can be updated
 		System.out.println("Length of signed data: " + timeInfoStruct.getSignedData().length); // 256
 		System.out.println("Length of data: " + timeInfoStruct.getDate().length); // 8
-
+		
+		
 		// concatenate all bytes into one big data array, this toSend needs to be given to the card
 		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
 		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
@@ -437,6 +438,8 @@ public class MiddlewareMain extends Application {
 				timeInfoStruct.getDate().length);
 		
 		System.out.println(toSend.length);
+		System.out.println("date: "+ bytesToDec(timeInfoStruct.getDate()));
+		System.out.println("signed data: " + bytesToDec(timeInfoStruct.getSignedData()));
 		System.out.println(bytesToDec(toSend));
 		System.out.println("Send bytes with extended APDU");
 		// TODO: send the toSend to the card :( 

@@ -70,21 +70,23 @@ public class TimestampService {
 				fis.close();
 
 				// government.jks: privatekey van government
-				PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government", "jonasaxel".toCharArray());
+				PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government512", "jonasaxel".toCharArray());
 				System.out.println("The found private key is: " + privateKeyGovernment);
 
 				// get the public key from the government, commented because not needed --> is
 				// already placed as bytearray on the javacard
 				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
-				 "\\TimestampService\\government.cer");
+				 "\\TimestampService\\government512.cer");
 				 CertificateFactory f = CertificateFactory.getInstance("X.509");
 				 X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
 				 RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
 				 
 				 System.out.println("The found public key is: " + publicKeyGovernment);
+				 System.out.println("publickey modulus: "+ publicKeyGovernment.getModulus());
+				 System.out.println("publickey exponent: " + publicKeyGovernment.getPublicExponent());
 				 byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
-				 System.out.println("exp: " + bytesToHex(publicKeyGovernment.getPublicExponent().toByteArray()));
-				 System.out.println("mod: " + bytesToHex(publicKeyGovernment.getModulus().toByteArray()));
+				 System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
+				 System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
 
 				Long time = cal.getTimeInMillis();
 				System.out.println("Time is (in milliseconds): " + time);
@@ -98,9 +100,10 @@ public class TimestampService {
 				byte[] signedData = rsa.sign();
 
 				// just to check if it works
-				// rsa.initVerify(publicKeyGovernment);
-				// rsa.update(dataToSend);
-				// System.out.println("Is it verified? " + rsa.verify(signedData));
+				 rsa.initVerify(publicKeyGovernment);
+				 rsa.update(dataToSend);
+				 System.out.println(bytesToDec(dataToSend));
+				 System.out.println("Is it verified? " + rsa.verify(signedData));
 
 				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedData, dataToSend);
 				out.writeObject(timeinfostruct);
@@ -160,8 +163,15 @@ public class TimestampService {
 		}
 		String str = "";
 		for (int j = 0; j < hexChars.length; j += 2) {
-			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
+			str += "0x" + hexChars[j] + hexChars[j + 1] + ", (byte) ";
 		}
+		return str;
+	}
+	
+	public static String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", (byte) ";
 		return str;
 	}
 
