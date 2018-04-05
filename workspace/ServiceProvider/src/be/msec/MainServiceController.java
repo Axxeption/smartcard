@@ -1,4 +1,5 @@
 package be.msec;
+import be.msec.client.ServiceProviderType;
 import be.msec.helpers.Controller;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -22,7 +23,7 @@ public class MainServiceController extends Controller {
     @FXML
     private Button submit;
 
-    private Main mainController;
+    private ServiceProviderMain mainController;
     private ObservableList<ServiceProvider> services = FXCollections.observableArrayList();
     private ObservableList<ServiceAction> actions = FXCollections.observableArrayList();
     private ServiceProvider selectedServiceProvider;
@@ -47,7 +48,7 @@ public class MainServiceController extends Controller {
                     protected void updateItem(ServiceProvider service, boolean bln) {
                         super.updateItem(service, bln);
                         if (service != null) {
-                                setText(service.getName());
+                                setText(service.getInfo().getName());
 
                         }
                     }
@@ -106,12 +107,21 @@ public class MainServiceController extends Controller {
             }
         });
     }
+    private void generateSPs() {
 
-    public void setMainController(Main mainController) {
+    	services.add(new ServiceProvider("napoleonGames.com", ServiceProviderType.SOCNET));
+    	services.add(new ServiceProvider("studentAtWork.be", ServiceProviderType.GOVERNMENT));
+    	services.add(new ServiceProvider("CompasClub.be", ServiceProviderType.DEFAULT));
+    }
+
+    public void setMainController(ServiceProviderMain mainController) {
         this.mainController = mainController;
         //test data in services steken
-        services.add(new ServiceProvider("test Provider"));
-        actions.add(new ServiceAction("test action"));
+        generateSPs();
+        actions.add(new ServiceAction("authenticate SP",1));
+        actions.add(new ServiceAction("get eGov Data",2));
+        actions.add(new ServiceAction("get socNet data",3));
+        actions.add(new ServiceAction("get default data",4));
 
         serviceList.setItems(services);
         actionList.setItems(actions);
@@ -124,14 +134,11 @@ public class MainServiceController extends Controller {
 
         }
         if(selectedServiceProvider != null){
-            System.out.println(selectedServiceProvider.getName());
-            outputTextArea.setText(outputTextArea.getText()+"\n"+selectedServiceProvider.getName());
+            System.out.println(selectedServiceProvider);
+            outputTextArea.setText(outputTextArea.getText()+"\n"+selectedServiceProvider);
         }
 
     }
-
-
-
 
 
 

@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.rmi.RemoteException;
 
-public class Main extends Application {
+public class ServiceProviderMain extends Application {
 
     private Stage primaryStage;
     private BorderPane rootLayout;
@@ -20,7 +20,7 @@ public class Main extends Application {
     /**
      * Constructor
      */
-    public Main() throws RemoteException {
+    public ServiceProviderMain() throws RemoteException {
     }
 
     public static void main(String[] args) {
@@ -47,7 +47,7 @@ public class Main extends Application {
         try {
             // Load root layout from fxml file.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(Main.class.getResource("RootMenu.fxml"));
+            loader.setLocation(ServiceProviderMain.class.getResource("RootMenu.fxml"));
             rootLayout = (BorderPane) loader.load();
 
             // Show the scene containing the root layout.
@@ -77,7 +77,7 @@ public class Main extends Application {
     public void showMainView() {
         try {
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(Main.class.getResource("mainServiceView.fxml"));
+            loader.setLocation(ServiceProviderMain.class.getResource("mainServiceView.fxml"));
             System.out.println("Loading Main Page");
             AnchorPane loginView = (AnchorPane) loader.load();
             //controller initialiseren + koppelen aan mainClient

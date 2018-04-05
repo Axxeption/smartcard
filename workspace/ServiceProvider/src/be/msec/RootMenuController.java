@@ -5,10 +5,10 @@ import javafx.fxml.FXML;
 
 public class RootMenuController extends Controller {
 
-    private Main main;
+    private ServiceProviderMain serviceProviderMain;
 
-    public void setMain(Main main) {
-        this.main = main;
+    public void setMain(ServiceProviderMain serviceProviderMain) {
+        this.serviceProviderMain = serviceProviderMain;
     }
 
     @FXML

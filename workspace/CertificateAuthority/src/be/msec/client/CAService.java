@@ -103,7 +103,6 @@ public class CAService {
 			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
 		URL d = CAService.class.getClassLoader().getResource("./keys/private.key");
-		System.out.println(d.getPath());
 		File filePrivateKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePrivateKey);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];

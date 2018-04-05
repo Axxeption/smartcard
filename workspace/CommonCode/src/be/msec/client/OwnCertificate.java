@@ -30,13 +30,7 @@ public class OwnCertificate implements Serializable{
 			sig.initSign(privateKey);
 			sig.update(data);
 			signatureBytes = sig.sign();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
+		} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -51,16 +45,10 @@ public class OwnCertificate implements Serializable{
 			sig.initVerify(publicKey);
 	        sig.update(data);
 	        return sig.verify(signatureBytes);
-		} catch (NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		return false;
 		
 	}	
