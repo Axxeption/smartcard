@@ -71,22 +71,22 @@ public class TimestampService {
 
 				// government.jks: privatekey van government
 				PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government512", "jonasaxel".toCharArray());
-				System.out.println("The found private key is: " + privateKeyGovernment);
+				System.out.println("The private key is found.");
 
 				// get the public key from the government, commented because not needed --> is
 				// already placed as bytearray on the javacard
-				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
-				 "\\TimestampService\\government512.cer");
-				 CertificateFactory f = CertificateFactory.getInstance("X.509");
-				 X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
-				 RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
-				 
-				 System.out.println("The found public key is: " + publicKeyGovernment);
-				 System.out.println("publickey modulus: "+ publicKeyGovernment.getModulus());
-				 System.out.println("publickey exponent: " + publicKeyGovernment.getPublicExponent());
-				 byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
-				 System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
-				 System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
+//				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
+//				 "\\TimestampService\\government512.cer");
+//				 CertificateFactory f = CertificateFactory.getInstance("X.509");
+//				 X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
+//				 RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
+//				 
+//				 System.out.println("The found public key is: " + publicKeyGovernment);
+//				 System.out.println("publickey modulus: "+ publicKeyGovernment.getModulus());
+//				 System.out.println("publickey exponent: " + publicKeyGovernment.getPublicExponent());
+//				 byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
+//				 System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
+//				 System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
 
 				Long time = cal.getTimeInMillis();
 				System.out.println("Time is (in milliseconds): " + time);
@@ -100,10 +100,10 @@ public class TimestampService {
 				byte[] signedData = rsa.sign();
 
 				// just to check if it works
-				 rsa.initVerify(publicKeyGovernment);
-				 rsa.update(dataToSend);
-				 System.out.println(bytesToDec(dataToSend));
-				 System.out.println("Is it verified? " + rsa.verify(signedData));
+//				 rsa.initVerify(publicKeyGovernment);
+//				 rsa.update(dataToSend);
+//				 System.out.println(bytesToDec(dataToSend));
+//				 System.out.println("Is it verified? " + rsa.verify(signedData));
 
 				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedData, dataToSend);
 				out.writeObject(timeinfostruct);
