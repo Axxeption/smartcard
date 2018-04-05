@@ -1,6 +1,7 @@
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -63,55 +64,36 @@ public class TimestampService {
 			// this if is just in case you want to ask other things to the timestampserver
 			if (received == 1) {
 				System.out.println("Ask for the timestamp!");
-				Calendar cal = Calendar.getInstance();
-				SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-
-				// get the key from a jks file (once generated with portecle)
-				KeyStore keyStore = KeyStore.getInstance("JKS");
-				String fileName = new java.io.File("").getAbsolutePath() + "\\government.jks"; // \\TimestampService\\government.jks
-				FileInputStream fis = new FileInputStream(fileName);
-				keyStore.load(fis, "jonasaxel".toCharArray());
-				fis.close();
-
+				
 				// government.jks: privatekey van government
-				PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government512", "jonasaxel".toCharArray());
-				System.out.println("The private key is found.");
 
-				// get the public key from the government, commented because not needed --> is
-				// already placed as bytearray on the javacard
-
-//				 FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +
-//				 "\\TimestampService\\government512.cer");
-//				 CertificateFactory f = CertificateFactory.getInstance("X.509");
-//				 X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
-//				 RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
-//				 
-//				 System.out.println("The found public key is: " + publicKeyGovernment);
-//				 System.out.println("publickey modulus: "+ publicKeyGovernment.getModulus());
-//				 System.out.println("publickey exponent: " + publicKeyGovernment.getPublicExponent());
-//				 byte [] publicKeyBytes = publicKeyGovernment.getEncoded();
-//				 System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
-//				 System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
-
-
-				Long time = cal.getTimeInMillis();
-				System.out.println("Time is (in milliseconds): " + time);
-
-				byte[] dataToSend = longToBytes(time);
+				PrivateKey privateKeyGovernment = loadPrivateKeyGovernment();
+	
+				// Get publickey and cerificate form Government certificate file
+				FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"\\government512.cer"); // \\TimestampService\\government512.cer
+				CertificateFactory f = CertificateFactory.getInstance("X.509");
+				X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
+				RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
+				 
+				System.out.println("The found public key is: " + publicKeyGovernment);
+//				System.out.println("publickey modulus: "+ publicKeyGovernment.getModulus());
+//				System.out.println("publickey exponent: " + publicKeyGovernment.getPublicExponent());
+				// Print public key specs, Need to be the same as on the javacard
+				System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
+				System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
+				
+				// Get time 
+				byte[] timeInBytes = getTimeInBytes();
 
 				// put a signature on the timestamp
-				Signature rsa = Signature.getInstance("SHA1withRSA");
-				rsa.initSign(privateKeyGovernment);
-				rsa.update(dataToSend);
-				byte[] signedData = rsa.sign();
+				byte[] signedDate = signData(privateKeyGovernment,timeInBytes);
 
 				// just to check if it works
-//				 rsa.initVerify(publicKeyGovernment);
-//				 rsa.update(dataToSend);
-//				 System.out.println(bytesToDec(dataToSend));
-//				 System.out.println("Is it verified? " + rsa.verify(signedData));
+				System.out.println("Validated: " + validateSignature(publicKeyGovernment, signedDate));
+				
+				// bundle time and signature in struct and send back.
+				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedDate, timeInBytes);
 
-				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedData, dataToSend);
 				out.writeObject(timeinfostruct);
 			}
 
@@ -145,7 +127,42 @@ public class TimestampService {
 		}
 
 	}
+	
+	private static boolean validateSignature(PublicKey publickey, byte[] data) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+		Signature rsa = Signature.getInstance("SHA1withRSA");
+		rsa.initVerify(publickey);
+		rsa.update(data);
+		return rsa.verify(data);
+	}
+	
+	private static byte[] signData(PrivateKey privateKeyGovernment, byte[] data) throws InvalidKeyException, NoSuchAlgorithmException, SignatureException {
+		Signature rsa = Signature.getInstance("SHA1withRSA");
+		rsa.initSign(privateKeyGovernment);
+		rsa.update(data);
+		return rsa.sign();
+	}
+	
+	private static byte[] getTimeInBytes() {
+		Calendar cal = Calendar.getInstance();
+		Long time = cal.getTimeInMillis();
+		System.out.println("Time is (in milliseconds): " + time);
+		return longToBytes(time);
+	}
 
+	private static PrivateKey loadPrivateKeyGovernment() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
+		// get the key from a jks file (once generated with portecle)
+		KeyStore keyStore = KeyStore.getInstance("JKS");
+		String fileName = new java.io.File("").getAbsolutePath() + "\\government.jks"; // \\TimestampService\\government.jks
+		FileInputStream fis = new FileInputStream(fileName);
+		keyStore.load(fis, "jonasaxel".toCharArray());
+		fis.close();
+
+		// government.jks: privatekey van government
+		PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government512", "jonasaxel".toCharArray());
+		System.out.println("The found private key is: " + privateKeyGovernment);
+		return privateKeyGovernment;
+	}
+	
 	public static byte[] longToBytes(long x) {
 		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
 		buffer.putLong(x);

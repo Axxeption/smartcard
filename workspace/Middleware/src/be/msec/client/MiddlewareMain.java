@@ -2,10 +2,7 @@ package be.msec.client;
 
 import be.msec.client.connection.Connection;
 
-import java.awt.RenderingHints.Key;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
@@ -14,7 +11,6 @@ import java.net.Socket;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import be.msec.client.connection.IConnection;
@@ -23,24 +19,18 @@ import be.msec.client.connection.SimulatedConnection;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -50,12 +40,9 @@ import java.util.Arrays;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.shape.Circle;
-import javafx.stage.PopupWindow.AnchorLocation;
 import javafx.stage.Stage;
 import javax.smartcardio.*;
 
@@ -88,31 +75,31 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
         this.primaryStage.setTitle("Card reader UI");
-//        initRootLayout();
+//      initRootLayout();
         try {
         	
-//        	ConnectSimulator();
-	//		ConnectRealDevice();
-//			
-//			askName();
-//			connectTimestampServer();
-//			askTimeToTimestampServer();
-        	connectServiceProvider();
-        	listenToServiceProvider();
-        	
+//			askName();     	
+        	// 1. UPDATE_TIME_ON_CARD_ROUTINE
+			if(connectTimestampServer()) {
+				TimeInfoStruct signedTime = askTimeToTimestampServer();
+			 	if(signedTime !=null) {
+			 		// make connection to the card (simulator) and send the bytes
+					connectToCard(true); // true => simulatedconnection
+					sendTimeToCard(signedTime);
+			 	}
+			}
 
 //			checkChallenge();
 			
 //			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
 //			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
-			
 //			System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
 			
-//        	testSetup();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+
 
 	private void listenToServiceProvider() {
 		ObjectInputStream objectinputstream = null;
@@ -138,6 +125,11 @@ public class MiddlewareMain extends Application {
 		
 		
 	}
+
+
+	// -------------------------------------------------
+	// ------- TEST METHODES wITH USEFULL CODE ----------
+	// -------------------------------------------------
 
 	public void testSetup()
 			throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
@@ -179,6 +171,13 @@ public class MiddlewareMain extends Application {
 
 	}
 
+	/**
+	 * Test Methode 
+	 * First get the certificate with the public key
+	 * then send challenge and check the challenge!
+	 * ( transfer big amount of data)
+	 * @throws Exception
+	 */
 	public void checkChallenge() throws Exception {
 		// first get the certificate with the public key
 		// then send challenge and check the challenge!
@@ -188,36 +187,25 @@ public class MiddlewareMain extends Application {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		byte[] byteCertificate = new byte[256];
 		System.out.println("Ask for the certificate");
-		// eerste is offset, tweede geeft lengte aan
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_CERTIFICATE, (byte) 0x00, (byte) 0x00);
 		r = c.transmit(a);
-		int numberOfBytesLeft = 0;
-
 		if (r.getSW() == SW_VERIFICATION_FAILED)
 			throw new Exception("ERROR, verification failed");
 		else if (r.getSW() != 0x9000) {
 			throw new Exception("ERROR, " + r.getSW()); // print error number if not succeded
 		} else {
 			System.out.println(" status 9000 ! dus oke");
-			System.out.println(r.toString());
-			byteCertificate = Arrays.copyOfRange(r.getBytes(), 0, r.getBytes().length - 2);
+			byteCertificate = Arrays.copyOfRange(r.getBytes(), 0, r.getBytes().length - 2); // -2 bytes to cut off the SW-bytes
 			System.out.println(bytesToHex(byteCertificate));
 
 		}
-		// outputStream.write( byteCertificate );
-		// byte [] byteCertificate2 = Arrays.copyOfRange( r.getData(), 1,
-		// r.getData().length);
-		// outputStream.write( byteCertificate2);
-		// byteCertificate = outputStream.toByteArray();
-		// System.out.println(byteCertificate.length);
-
 		// change Byte array into Certificate object
 		CertificateFactory certFac = CertificateFactory.getInstance("X.509");
 		InputStream is = new ByteArrayInputStream(byteCertificate);
 		X509Certificate certificateObj = (X509Certificate) certFac.generateCertificate(is);
 		System.out.println("Succesfully created certificate on the host app.");
 
-		System.out.println("Now we send something and it must be signed and validated!");
+		// test Sign methode on card
 		System.out.println("Send random byte array :");
 		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 		random.setSeed(1);
@@ -282,7 +270,12 @@ public class MiddlewareMain extends Application {
 			e.printStackTrace();
 		}
 	}
-	 public void initRootLayout() {
+	
+	// ---------------------------
+	// ------- INIT GUI ----------
+	// ---------------------------
+	
+	public void initRootLayout() {
         try {
             // Load root layout from fxml file.
             FXMLLoader loader = new FXMLLoader();
@@ -293,7 +286,6 @@ public class MiddlewareMain extends Application {
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
             //scene.getStylesheets().add("be.msec.stylesheet.css");
-
 
             // Give the controller access to the main app.
             RootMenuController controllerRoot = loader.getController();
@@ -318,18 +310,34 @@ public class MiddlewareMain extends Application {
         rootLayout.setCenter(loginView);
 	}
 	
-	public void ConnectSimulator() throws Exception {
-//		Connect
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-
-		//Simulation:
-		c = new SimulatedConnection();
-
-		// Real Card:
-		System.out.println("Do simulate connecting...");
-		try {
-		c.connect();
+	// ----------------------------------
+	// ------- CONNECT TO CARD ----------
+	// ----------------------------------
+	
+	/**
+	 * Connect to the javacard
+	 * @param simulatedConnection, true= simulated connection ; false = connect to real card terminal
+	 * @throws Exception
+	 */
+	public void connectToCard(boolean simulatedConnection) throws Exception {
 		
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		
+		if(simulatedConnection) {
+			System.out.println("Simulated connection");
+			c = new SimulatedConnection();
+			c.connect();
+			createAppletForSimulator();
+		}else {
+			System.out.println("Real connection");
+			c = new Connection();
+			((Connection) c).setTerminal(0); // depending on which cardreader you use
+			c.connect();
+		}
+	}
+	
+	private void createAppletForSimulator() {
+		try {
 			// 0. create applet (only for simulator!!!)
 			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,
 					new byte[] { (byte) 0xa0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x08, 0x01 }, 0x7f);
@@ -356,49 +364,28 @@ public class MiddlewareMain extends Application {
 		} catch (Exception e) {
 			System.out.println("ERROR IN MAKING CONNECTION WITH SIMULATOR: " + e);
 		}
-		System.out.println("Connected");
-
 	}
 
-	public void ConnectRealDevice() throws Exception {
-		// TODO hier moet de tijd geinitaliseerd worden (als de kaart er word ingestopt)
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-		c = new Connection();
-		((Connection) c).setTerminal(0); // depending on which cardreader you use
-		System.out.println("Do real card connecting...");
-		c.connect();
-		System.out.println("Connected");
-
-		try {
-			//TODO moet nog weg maar is gewoon of te testen als het werkt met de real card!
-			if(loginWithPin(new byte[]{0x31,0x32,0x33,0x34})) {
-				System.out.println("PIN Verified");
-			}
-			
-			System.out.println("Asking serial number");
-			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00, new byte[]{0x31,0x32,0x33,0x34});
-			r = c.transmit(a);
-			if (r.getSW() == SW_VERIFICATION_FAILED)
-				throw new Exception("ERROR");
-			else if (r.getSW() != 0x9000)
-				throw new Exception("Exception on the card: " + r.getSW());
-			String str = new String(r.getData(), StandardCharsets.UTF_8);
-			System.out.println("SN is: " + str);
-		} catch (Exception e) {
-			throw e;
-		}
-
-	}
-
-	public void connectTimestampServer() {
+	
+	// -------------------------------------------------
+	// ------- TIMESTAMP SERVER COMMUNICATION ----------
+	// -------------------------------------------------
+	public boolean connectTimestampServer() {
+		// setup ssl properties
+		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
+        System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
+        System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
+        System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+		
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
 			timestampSocket = sslSocketFactory.createSocket("localhost", portG);
 		} catch (IOException ex) {
 			System.out.println("ERROR WITH CONNECTION TO G: " + ex);
+			return false;
 		}
 		System.out.println("Connected to timestamp server:" + timestampSocket);
+		return true;
 
 	}
 	
@@ -414,7 +401,7 @@ public class MiddlewareMain extends Application {
 		}
 	}
 
-	public void askTimeToTimestampServer() throws Exception {
+	public TimeInfoStruct askTimeToTimestampServer() throws Exception {
 		// hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
 		// hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met
 		// SKg en eenmaal plain text
@@ -422,20 +409,16 @@ public class MiddlewareMain extends Application {
 		ObjectOutputStream objectoutputstream = null;
 		ObjectInputStream objectinputstream = null;
 		try {
-			// System.out.println(timestampSocket);
 			System.out.println("Try to send to the timestampserver");
 
 			try {
 				objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
-				// Als hier een ander getal gestuurd wordt kunnen andere dingen opgevraagd
-				// worden
+				// Command = 1 => GetSignedTime
 				objectoutputstream.writeObject(1);
 				objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
+				// Cast serialized object into new object
 				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
-				// Deze twee byte arrays in timeInfoStruct moeten nu doorgestuurd worden naar de
-				// kaart en daarop moeten deze twee
-				// byte arrays geverifieerd worden
-				// daarna kan byte array vergeleken worden met de laatste vanop de kaart
+				
 				System.out.println("Received date and signedData (both in byte array)");
 				// System.out.println("Date from server: " + timeInfoStruct.getDate());
 				// System.out.println(bytesToDec(timeInfoStruct.getSignedData()));
@@ -447,13 +430,36 @@ public class MiddlewareMain extends Application {
 		} catch (IOException ex) {
 			System.out.println("ERROR WITH RECEIVING TIME: " + ex);
 		}
-
-		// make connection to the card (simulator) and send the bytes
-		ConnectSimulator();
-		sendTimeToCard(timeInfoStruct);
-
+		return timeInfoStruct;
 	}
-
+	
+	// ------------------------------------------
+	// ------- JAVA CARD COMMUNICATION ----------
+	// ------------------------------------------
+	
+	/**
+	 * Send the signedtimestamp to the card so the time can be verifyed and updated
+	 * @param timeInfoStruct
+	 */
+	private boolean sendTimeToCard(TimeInfoStruct timeInfoStruct) {
+		// concatenate all bytes into one big data array, this toSend needs to be given to the card
+		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
+		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
+		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length, timeInfoStruct.getDate().length);
+		
+		System.out.println("Send signed time bytes with extended APDU"); 
+		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
+		try {
+			if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+			System.out.println("DATE UPDATED ");
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
 	
 	public Boolean loginWithPin(byte[] pin) throws Exception {
 		if(pin.length != 4) { // limit length of the pin to prevent dangerous input
@@ -471,39 +477,14 @@ public class MiddlewareMain extends Application {
 	}
 	
 
-	private void sendTimeToCard(TimeInfoStruct timeInfoStruct) {
-		//this line must be commented for real uses! here is just a new byte array made for easy checking on the card
-		//timeInfoStruct = new TimeInfoStruct(new byte[256], new byte[255]);
-		// send the bytes to the card so the time can be updated
-		System.out.println("Length of signed data: " + timeInfoStruct.getSignedData().length); // 256
-		System.out.println("Length of data: " + timeInfoStruct.getDate().length); // 8
-		
-		
-		// concatenate all bytes into one big data array, this toSend needs to be given to the card
-		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
-		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
-		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
-				timeInfoStruct.getDate().length);
-		
-//		System.out.println("date: "+ bytesToDec(timeInfoStruct.getDate()));
-//		System.out.println("signed data: " + bytesToDec(timeInfoStruct.getSignedData()));
-//		System.out.println(bytesToDec(toSend));
-		System.out.println("Send bytes with extended APDU"); 
-		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
-		try {
-			if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("DATE UPDATED ");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-	}
-
 	public static void main(String[] args) throws Exception {
 		launch(args);
 	}
 
+	// ------------------------------------
+	// ------- UTILITY FUNCTIONS ----------
+	// ------------------------------------
+	
 	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
 	public static String bytesToHex(byte[] bytes) {
