@@ -2,17 +2,10 @@ package be.msec.client;
 
 import be.msec.client.connection.Connection;
 
-import java.awt.RenderingHints.Key;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.net.ssl.SSLSocketFactory;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
@@ -20,24 +13,18 @@ import be.msec.client.connection.SimulatedConnection;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -47,12 +34,9 @@ import java.util.Arrays;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.shape.Circle;
-import javafx.stage.PopupWindow.AnchorLocation;
 import javafx.stage.Stage;
 import javax.smartcardio.*;
 
@@ -105,6 +89,9 @@ public class MiddlewareMain extends Application {
 		}
 	}
 
+	// -------------------------------------------------
+	// ------- TEST METHODES wITH USEFULL CODE ----------
+	// -------------------------------------------------
 	public void testSetup()
 			throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
 		// aan de CA kant
@@ -249,7 +236,7 @@ public class MiddlewareMain extends Application {
 	// ------- INIT GUI ----------
 	// ---------------------------
 	
-	 public void initRootLayout() {
+	public void initRootLayout() {
         try {
             // Load root layout from fxml file.
             FXMLLoader loader = new FXMLLoader();
