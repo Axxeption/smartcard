@@ -70,7 +70,6 @@ public class MiddlewareMain extends Application {
 	private static final byte GET_NAME_INS = 0x24;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
-	private static final byte test = 0x01;
 	static final int port = 8001;
 	private Socket timestampSocket = null;
 	IConnection c;
@@ -80,11 +79,11 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
         this.primaryStage.setTitle("Card reader UI");
-//        initRootLayout();
+//      initRootLayout();
         try {
         	
 //        	ConnectSimulator();
-	//		ConnectRealDevice();
+//			ConnectRealDevice();
 //			
 //			askName();
 			connectTimestampServer();
@@ -94,10 +93,8 @@ public class MiddlewareMain extends Application {
 			
 //			InfoStruct infoStruct = new ServiceProviderInfoStruct(null, "een serviceke", 24);
 //			OwnCertificate ownCertificate = CAService.getSignedCertificate(infoStruct);
-			
 //			System.out.println(ownCertificate.verifySignature(CAService.getPublicKey()));
 			
-//        	testSetup();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -143,6 +140,13 @@ public class MiddlewareMain extends Application {
 
 	}
 
+	/**
+	 * Test Methode 
+	 * First get the certificate with the public key
+	 * then send challenge and check the challenge!
+	 * ( transfer big amount of data)
+	 * @throws Exception
+	 */
 	public void checkChallenge() throws Exception {
 		// first get the certificate with the public key
 		// then send challenge and check the challenge!
@@ -168,13 +172,6 @@ public class MiddlewareMain extends Application {
 			System.out.println(bytesToHex(byteCertificate));
 
 		}
-		// outputStream.write( byteCertificate );
-		// byte [] byteCertificate2 = Arrays.copyOfRange( r.getData(), 1,
-		// r.getData().length);
-		// outputStream.write( byteCertificate2);
-		// byteCertificate = outputStream.toByteArray();
-		// System.out.println(byteCertificate.length);
-
 		// change Byte array into Certificate object
 		CertificateFactory certFac = CertificateFactory.getInstance("X.509");
 		InputStream is = new ByteArrayInputStream(byteCertificate);
@@ -356,7 +353,7 @@ public class MiddlewareMain extends Application {
 	}
 
 	public void connectTimestampServer() {
-		System.out.println("Setting ssl properties...");
+		// setup ssl properties
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
         System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
         System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
@@ -385,8 +382,7 @@ public class MiddlewareMain extends Application {
 
 			try {
 				objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
-				// Als hier een ander getal gestuurd wordt kunnen andere dingen opgevraagd
-				// worden
+				// Command = 1 => GetSignedTime
 				objectoutputstream.writeObject(1);
 				objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
 				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
