@@ -9,10 +9,13 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
@@ -71,11 +74,16 @@ public class MiddlewareMain extends Application {
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte test = 0x01;
-	static final int port = 8001;
+	static final int portG = 8001;
+	static final int portSP = 8003;
 	private Socket timestampSocket = null;
+	private Socket serviceProviderSocket = null;
 	IConnection c;
 	CommandAPDU a;
 	ResponseAPDU r;
+	
+	private ServerSocket socket;
+    private Socket middlewareSocket;
 
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
@@ -87,8 +95,11 @@ public class MiddlewareMain extends Application {
 	//		ConnectRealDevice();
 //			
 //			askName();
-			connectTimestampServer();
-			askTimeToTimestampServer();
+//			connectTimestampServer();
+//			askTimeToTimestampServer();
+        	connectServiceProvider();
+        	listenToServiceProvider();
+        	
 
 //			checkChallenge();
 			
@@ -101,6 +112,31 @@ public class MiddlewareMain extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void listenToServiceProvider() {
+		ObjectInputStream objectinputstream = null;
+		try {
+			ObjectOutputStream out = new ObjectOutputStream(middlewareSocket.getOutputStream());
+			while(true) {
+				System.out.println("Listening to service provider...");
+				objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
+				Integer received = (Integer) objectinputstream.readObject();
+				System.out.println("received: " + received);
+				
+				byte[] time = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
+				TimeInfoStruct timeinfostruct = new TimeInfoStruct(new byte[4], time);
+				out.writeObject(timeinfostruct);
+				
+			}
+		
+		
+		} catch (IOException | ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 	}
 
 	public void testSetup()
@@ -356,20 +392,26 @@ public class MiddlewareMain extends Application {
 	}
 
 	public void connectTimestampServer() {
-		System.out.println("Setting ssl properties...");
-		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
-        System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
-        System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
-        System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
-		
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
-			timestampSocket = sslSocketFactory.createSocket("localhost", port);
+			timestampSocket = sslSocketFactory.createSocket("localhost", portG);
 		} catch (IOException ex) {
 			System.out.println("ERROR WITH CONNECTION TO G: " + ex);
 		}
 		System.out.println("Connected to timestamp server:" + timestampSocket);
 
+	}
+	
+	public void connectServiceProvider() {
+		try {
+			socket = new ServerSocket(portSP);
+			System.out.println("Serversocket is listening");
+			middlewareSocket = socket.accept();
+			System.out.println("Socket connection accepted");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void askTimeToTimestampServer() throws Exception {
@@ -445,7 +487,7 @@ public class MiddlewareMain extends Application {
 		
 //		System.out.println("date: "+ bytesToDec(timeInfoStruct.getDate()));
 //		System.out.println("signed data: " + bytesToDec(timeInfoStruct.getSignedData()));
-		System.out.println(bytesToDec(toSend));
+//		System.out.println(bytesToDec(toSend));
 		System.out.println("Send bytes with extended APDU"); 
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
