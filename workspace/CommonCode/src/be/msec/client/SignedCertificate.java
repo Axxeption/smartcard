@@ -11,22 +11,29 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 
-public class OwnCertificate implements Serializable{
+public class SignedCertificate implements Serializable{
 	
-	private InfoStruct infoStruct;
+	private CertificateBasic infoStruct;
 	private byte[] signatureBytes;
 	
 	public byte[] getSignatureBytes() {
 		return signatureBytes;
 	}
+	
+	public CertificateBasic getCertificateBasic() {
+		return infoStruct;
+	}
 
-	public OwnCertificate() {
+	public SignedCertificate() {
 	}
 	
-	public OwnCertificate(InfoStruct infoStruct) {
+	public SignedCertificate(CertificateBasic infoStruct) {
 		this.infoStruct = infoStruct;
 	}
 	
+	public byte[] getBytes() {
+		return infoStruct.getBytes();
+	}
 	
 	public void signCertificate(PrivateKey privateKey) {
 		try {

@@ -84,9 +84,9 @@ public class ServiceProviderMain extends Application {
     	try {
 			serviceProviderSocket = new Socket("localhost", portSP);
 		} catch (IOException ex) {
-			System.out.println("ERROR WITH CONNECTION TO SERVICEPROVIDER: " + ex);
+			System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
-		System.out.println("Connected to service provider: " + serviceProviderSocket);
+		System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
 
     }
     public void initRootLayout() {

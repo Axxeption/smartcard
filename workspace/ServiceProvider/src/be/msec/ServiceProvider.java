@@ -7,28 +7,28 @@ import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 
 import be.msec.client.CAService;
-import be.msec.client.InfoStruct;
-import be.msec.client.OwnCertificate;
-import be.msec.client.ServiceProviderInfoStruct;
+import be.msec.client.CertificateBasic;
+import be.msec.client.SignedCertificate;
+import be.msec.client.CertificateServiceProvider;
 import be.msec.client.ServiceProviderType;
 
 public class ServiceProvider {
-	ServiceProviderInfoStruct serviceProviderInfo;
+	CertificateServiceProvider serviceProviderInfo;
 	RSAPrivateKey privateKey;
-	OwnCertificate certificate;
+	SignedCertificate certificate;
 
 
     public ServiceProvider(String name, ServiceProviderType type) {
     		KeyPair keyPair = generateKey();
 	        privateKey = (RSAPrivateKey) keyPair.getPrivate();
-	        serviceProviderInfo = new ServiceProviderInfoStruct(keyPair.getPublic(), name);
+	        serviceProviderInfo = new CertificateServiceProvider(keyPair.getPublic(), name);
 	        letCASignCertificate();
     }
 
     private KeyPair generateKey() {
 		try {
 			 KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-			 keyGen.initialize(1024);
+			 keyGen.initialize(512);
 	        // Generate Key Pairs, a private key and a public key.
 	        return keyGen.generateKeyPair();
 		} catch (NoSuchAlgorithmException e) {
@@ -40,13 +40,13 @@ public class ServiceProvider {
     }
     
     private void letCASignCertificate() {
-    	InfoStruct infoStruct = serviceProviderInfo;
+    	CertificateBasic infoStruct = serviceProviderInfo;
 		certificate = CAService.getSignedCertificate(infoStruct);
 		System.out.println(certificate.verifySignature(CAService.getPublicKey()));
     }
 
 
-	public ServiceProviderInfoStruct getInfo() {
+	public CertificateServiceProvider getInfo() {
 		return serviceProviderInfo;
 	}
 
@@ -59,7 +59,7 @@ public class ServiceProvider {
 		return serviceProviderInfo.getPublicKey();
 	}
 	
-	public OwnCertificate getCertificate() {
+	public SignedCertificate getCertificate() {
 		return certificate;
 	}
 

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class InfoStruct implements Serializable {
+public class CertificateBasic implements Serializable {
 	
 	/**
 	 * Parse object into byte[]

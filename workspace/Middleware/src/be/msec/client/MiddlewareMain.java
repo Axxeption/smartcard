@@ -81,8 +81,8 @@ public class MiddlewareMain extends Application {
 		// initRootLayout();
 		try {
 			connectToCard(true);
-			authenticateCertificate(new byte[10]);
-			// connectServiceProvider();
+//			authenticateCertificate(new byte[10]);
+			 connectServiceProvider();
 			// askName();
 
 			// UPDATE_TIME_ON_CARD_ROUTINE();
@@ -528,10 +528,22 @@ public class MiddlewareMain extends Application {
 		return str;
 	}
 
-	private boolean authenticateCertificate(byte[] signatureBytes) {
-		System.out.println("signedbytes (=cert) to send: " + bytesToDec(signatureBytes));
-		System.out.println("Send signed time bytes with extended APDU");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, signatureBytes);
+	private boolean authenticateCertificate(ServiceProviderAction received) {
+		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
+		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received.getSignedCertificate().getCertificateBasic();
+		byte[] CertificateBytes = certificateServiceProvider.getBytes();
+		byte[] toSend = new byte[signedCertificateBytes.length + CertificateBytes.length];
+		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
+		System.arraycopy(CertificateBytes, 0, toSend, signedCertificateBytes.length,
+				CertificateBytes.length);
+		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); //64
+		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
+		System.out.println("Length of certificate: " + CertificateBytes.length); //654 --> this can change?
+		System.out.println("Certificate: " + bytesToDec(CertificateBytes));
+		System.out.println("Total to send (concat): " + bytesToDec(toSend));
+		
+		System.out.println("Start sending command for authenticate SP with extended APDU");
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
@@ -561,11 +573,7 @@ public class MiddlewareMain extends Application {
 					case AUTH_SP:
 						System.out.println("AUTH SP COMMAND");
 						sendToServiceProvider("AUTH command received");
-
-						byte[] signatureBytes = received.getCertificate().getSignatureBytes();
-						CAService.getPublicKey();
-					
-						authenticateCertificate(signatureBytes);
+						authenticateCertificate(received);
 						
 						break;
 					case GET_DATA:

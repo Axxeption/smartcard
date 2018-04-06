@@ -3,13 +3,13 @@ package be.msec.client;
 import java.io.Serializable;
 import java.security.PublicKey;
 
-public class ServiceProviderInfoStruct extends InfoStruct implements Serializable {
+public class CertificateServiceProvider extends CertificateBasic implements Serializable {
 	private PublicKey publicKey;
 	private String name;
 	private int validTime;
 	private ServiceProviderType type;
 	
-	public ServiceProviderInfoStruct(PublicKey publicKey, String name) {
+	public CertificateServiceProvider(PublicKey publicKey, String name) {
 		super();
 		this.publicKey = publicKey;
 		this.name = name;
@@ -27,6 +27,10 @@ public class ServiceProviderInfoStruct extends InfoStruct implements Serializabl
 
 	public PublicKey getPublicKey() {
 		return publicKey;
+	}
+	
+	public byte[] getPublicKeyByte() {
+		return publicKey.getEncoded();
 	}
 
 	public void setPublicKey(PublicKey publicKey) {

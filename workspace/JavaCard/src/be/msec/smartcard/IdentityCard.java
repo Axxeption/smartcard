@@ -53,7 +53,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 116, (byte) -105, (byte) -48, (byte) -80, (byte) 109, (byte) 117, (byte) 106, (byte) 88, (byte) 6,
 			(byte) -69, (byte) -42, (byte) -83, (byte) 25 };
 	private byte[] pubExp_CA = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
-	private byte[] pubMod_CA = new byte[] {(byte) -112, (byte) 45, (byte) 83, (byte) -77, (byte) 55, (byte) 18, (byte) -41, (byte) -33, (byte) -104, (byte) -9, (byte) 67, (byte) -105, (byte) 71, (byte) 126, (byte) -21, (byte) -122, (byte) 71, (byte) -26, (byte) -41, (byte) 23, (byte) 107, (byte) -52, (byte) 103, (byte) 114, (byte) -91, (byte) -100, (byte) -52, (byte) 107, (byte) -79, (byte) 4, (byte) 74, (byte) 22, (byte) 110, (byte) -71, (byte) -128, (byte) -113, (byte) -11, (byte) -36, (byte) -63, (byte) -40, (byte) -92, (byte) -55, (byte) 83, (byte) 89, (byte) 98, (byte) -11, (byte) -38, (byte) 26, (byte) -74, (byte) -107, (byte) -29, (byte) -84, (byte) -96, (byte) 24, (byte) 48, (byte) 30, (byte) -33, (byte) 15, (byte) -59, (byte) 6, (byte) 50, (byte) -103, (byte) -4, (byte) 80, (byte) -2, (byte) 91, (byte) 25, (byte) -107, (byte) 69, (byte) 30, (byte) 126, (byte) 44, (byte) 37, (byte) 99, (byte) 23, (byte) 85, (byte) 82, (byte) 76, (byte) -85, (byte) 109, (byte) -57, (byte) -77, (byte) -31, (byte) 107, (byte) -120, (byte) -127, (byte) -110, (byte) -78, (byte) 119, (byte) 22, (byte) -110, (byte) -126, (byte) 89, (byte) 37, (byte) -19, (byte) 7, (byte) 41, (byte) 75, (byte) 46, (byte) 27, (byte) 108, (byte) 20, (byte) -109, (byte) -107, (byte) -58, (byte) -50, (byte) -15, (byte) 65, (byte) 127, (byte) -115, (byte) 25, (byte) -22, (byte) -86, (byte) 26, (byte) 70, (byte) -95, (byte) -101, (byte) 93, (byte) -34, (byte) -40, (byte) 64, (byte) 126, (byte) -91, (byte) -6, (byte) -51, (byte) -58, (byte) -108, (byte) 71};
+	private byte[] pubMod_CA = new byte[] {(byte) -124, (byte) 27, (byte) -72, (byte) 74, (byte) 8, (byte) -8, (byte) 67, (byte) 12, (byte) -34, (byte) -89, (byte) 62, (byte) 2, (byte) 44, (byte) 18, (byte) 88, (byte) 80, (byte) -81, (byte) -34, (byte) -3, (byte) -21, (byte) -84, (byte) -29, (byte) 32, (byte) -105, (byte) 88, (byte) -87, (byte) -68, (byte) 31, (byte) 42, (byte) -32, (byte) -109, (byte) -119, (byte) -102, (byte) 75, (byte) -102, (byte) -93, (byte) 32, (byte) 43, (byte) 71, (byte) 32, (byte) 105, (byte) -91, (byte) -106, (byte) -114, (byte) 56, (byte) -18, (byte) -124, (byte) -97, (byte) -7, (byte) -42, (byte) -81, (byte) -89, (byte) 10, (byte) 51, (byte) 32, (byte) -12, (byte) 92, (byte) 68, (byte) -95, (byte) -88, (byte) 7, (byte) -60, (byte) 11, (byte) 59};
 	private byte[] pubExp_G = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
 	// this length is 65 --> seems impossible? --> cropped first byte (was 0) so now
 	// is length = 64
@@ -318,20 +318,25 @@ public class IdentityCard extends Applet implements ExtendedLength {
 
 	private void authenticate(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
+		byte[] signedCertificate = new byte[64];
+		byte[] certificate = new byte[654];
+		//get pk_SP and signed_pk_SP
+		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
+		Util.arrayCopy(data, (short) (64), certificate, (short) 0, (short) 654);
+		
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-		data[0] = data[0];
 		// this keysize must be the same size as the one given in in setModulus! but
 		// another keylenght is not working??
 		try {
-		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024 , false);
+		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
 		pubk.setExponent(pubExp_CA, offset, (short) 3);
-		// pubk.setModulus(pubMod_G, offset, (short) pubMod_G.length);
-		// signature.init(pubk, Signature.MODE_VERIFY);
-		// boolean result = signature.verify(date, (short) 0, (short) date.length,
-		// signedData, (short) 0,
-		// (short) signedData.length);
+		pubk.setModulus(pubMod_CA, offset, (short) pubMod_CA.length);
+		signature.init(pubk, Signature.MODE_VERIFY);
+		boolean result = signature.verify(certificate, (short) 0, (short) certificate.length, signedCertificate , (short) 0,
+				 (short) signedCertificate .length);
+		result = false;
 		}catch(Exception e) {
-			
+			ISOException.throwIt(ERROR_UNKNOW);
 		}
 	}
 

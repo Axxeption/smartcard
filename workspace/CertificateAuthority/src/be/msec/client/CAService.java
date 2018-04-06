@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -13,6 +14,8 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -33,11 +36,22 @@ public class CAService {
 		return null;
 	}
 	
-	public static OwnCertificate getSignedCertificate(InfoStruct infoStruct) {
-		OwnCertificate cert = new OwnCertificate(infoStruct);
+	public static SignedCertificate getSignedCertificate(CertificateBasic certificateBasic) {
+		SignedCertificate cert = new SignedCertificate(certificateBasic);
 		try {
 			cert.signCertificate(loadPrivateKey("RSA"));
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | URISyntaxException e) {
+			//just to verify:
+			Signature sig = Signature.getInstance("SHA1WithRSA");
+			byte [] data = certificateBasic.getBytes();			
+			sig.initVerify(loadPublicKey("RSA"));
+	        sig.update(data);
+	        System.out.println("is it verified? " + sig.verify(cert.getSignatureBytes()));
+	        RSAPublicKey rsapublicKey = (RSAPublicKey) loadPublicKey("RSA");
+			System.out.println("exp CA pub key: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
+			System.out.println("mod CA pub key: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
+			
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | 
+				URISyntaxException | SignatureException | InvalidKeyException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -51,25 +65,20 @@ public class CAService {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             // Initialize KeyPairGenerator.
-            keyGen.initialize(1024);
+            keyGen.initialize(512);
 
             // Generate Key Pairs, a private key and a public key.
             KeyPair keyPair = keyGen.generateKeyPair();
             PrivateKey privateKey = keyPair.getPrivate();
             PublicKey publicKey = keyPair.getPublic();
-
-            Base64.Encoder encoder = Base64.getEncoder();
-            System.out.println("privateKey: " + encoder.encodeToString(privateKey.getEncoded()));
-            System.out.println("publicKey: " + encoder.encodeToString(publicKey.getEncoded()));
-            
             try {
-				System.out.println("blabla: " + loadPublicKey("RSA"));
+				System.out.println("Check if load works: " + loadPublicKey("RSA"));
 			} catch (InvalidKeySpecException | URISyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
             
-            saveKeyPair(keyPair);
+            
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -81,7 +90,7 @@ public class CAService {
 	private static void saveKeyPair(KeyPair keyPair) throws IOException {
 		PrivateKey privateKey = keyPair.getPrivate();
 		PublicKey publicKey = keyPair.getPublic();
- 
+		
 		// Store Public Key.
 		X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
 				publicKey.getEncoded());
@@ -103,7 +112,7 @@ public class CAService {
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
-		URL d = CAService.class.getClassLoader().getResource("./keys/private.key");
+		URL d = CAService.class.getClassLoader().getResource("./key/private.key");
 		File filePrivateKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePrivateKey);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
@@ -115,7 +124,8 @@ public class CAService {
 		PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(
 				encodedPrivateKey);
 		PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
- 
+		
+		
 		return privateKey;
 	}
 	
@@ -123,7 +133,9 @@ public class CAService {
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Public Key.
-		URL d = CAService.class.getClassLoader().getResource("./keys/public.key");
+		//smartcard/workspace/CertificateAuthority/bin/key
+
+		URL d = CAService.class.getClassLoader().getResource("./key/public.key");
 		File filePublicKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePublicKey);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
@@ -137,10 +149,11 @@ public class CAService {
 		PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 		
 		//print out once to place him on the SC
-//		RSAPublicKey rsapublicKey = (RSAPublicKey) publicKey;
-//		System.out.println("exp: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
-//		System.out.println("mod: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
-	
+		RSAPublicKey rsapublicKey = (RSAPublicKey) publicKey;
+		System.out.println("CA_PK_EXP: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
+		System.out.println("CA_PK_MOD: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
+		System.out.println("Length of PK mod after loading: (bits)" + rsapublicKey.getModulus().bitLength());
+
 		return publicKey;
 	}
 	

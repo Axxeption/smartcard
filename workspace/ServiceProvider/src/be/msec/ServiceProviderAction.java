@@ -2,13 +2,13 @@ package be.msec;
 
 import java.io.Serializable;
 
-import be.msec.client.OwnCertificate;
+import be.msec.client.SignedCertificate;
 
 public class ServiceProviderAction implements Serializable {
 	private ServiceAction action;
-	private OwnCertificate certificate;
+	private SignedCertificate certificate;
 	
-	public ServiceProviderAction(ServiceAction action, OwnCertificate certificate) {
+	public ServiceProviderAction(ServiceAction action, SignedCertificate certificate) {
 		this.action = action;
 		this.certificate = certificate;
 	}
@@ -17,7 +17,7 @@ public class ServiceProviderAction implements Serializable {
 		return action;
 	}
 
-	public OwnCertificate getCertificate() {
+	public SignedCertificate getSignedCertificate() {
 		return certificate;
 	}
 	

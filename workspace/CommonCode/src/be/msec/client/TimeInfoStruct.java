@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.security.PublicKey;
 import java.util.Date;
 
-public class TimeInfoStruct extends InfoStruct {
+public class TimeInfoStruct extends CertificateBasic {
 	private byte [] signedData;
 	private byte[] date;
 	
