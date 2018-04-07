@@ -532,16 +532,22 @@ public class MiddlewareMain extends Application {
 		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
 		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received.getSignedCertificate().getCertificateBasic();
 		byte[] CertificateBytes = certificateServiceProvider.getBytes();
-		byte[] toSend = new byte[signedCertificateBytes.length + CertificateBytes.length];
+		byte[] validEndTime = certificateServiceProvider.getValidTimeBytes(); //length = 8
+		byte[] toSend = new byte[signedCertificateBytes.length + CertificateBytes.length + validEndTime.length];
 		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
 		System.arraycopy(CertificateBytes, 0, toSend, signedCertificateBytes.length,
 				CertificateBytes.length);
+		System.arraycopy(validEndTime, 0, toSend, signedCertificateBytes.length + CertificateBytes.length,
+				validEndTime.length);
+		
 		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); //64
 		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
 		System.out.println("Length of certificate: " + CertificateBytes.length); //654 --> this can change?
 		System.out.println("Certificate: " + bytesToDec(CertificateBytes));
-		System.out.println("Total to send (concat): " + bytesToDec(toSend));
+		System.out.println("Length of validEndTime: " + validEndTime.length);
+		System.out.println("ValidEndTime: " + bytesToDec(validEndTime));
 		
+		System.out.println("Total to send (concat): " + bytesToDec(toSend));
 		System.out.println("Start sending command for authenticate SP with extended APDU");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, toSend);
 		try {

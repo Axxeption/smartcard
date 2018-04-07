@@ -6,13 +6,18 @@ import sun.security.util.Length;
 import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
+
+import java.security.interfaces.RSAKey;
+
 import javacard.framework.*;
 import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
+import javacard.security.AESKey;
 import javacard.security.KeyBuilder;
 import javacard.security.PublicKey;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
+import javacard.security.RandomData;
 import javacard.security.Signature;
 
 public class IdentityCard extends Applet implements ExtendedLength {
@@ -319,14 +324,17 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private void authenticate(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
-		byte[] certificate = new byte[654];
+		//TODO deze lengte (658 verschilt van certificiaat tot certificaat..? :( 
+		byte[] certificate = new byte[658];
+		byte[] validEndTimeCertificate = new byte[8];
 		//get pk_SP and signed_pk_SP
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
-		Util.arrayCopy(data, (short) (64), certificate, (short) 0, (short) 654);
+		Util.arrayCopy(data, (short) (64), certificate, (short) 0, (short) 658);
+		Util.arrayCopy(data, (short) 722, validEndTimeCertificate, (short) 0,(short) 8);
 		
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		// this keysize must be the same size as the one given in in setModulus! but
-		// another keylenght is not working??
+		// another keylenght is not working!! 512 is max
 		try {
 		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
 		pubk.setExponent(pubExp_CA, offset, (short) 3);
@@ -334,7 +342,19 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		signature.init(pubk, Signature.MODE_VERIFY);
 		boolean result = signature.verify(certificate, (short) 0, (short) certificate.length, signedCertificate , (short) 0,
 				 (short) signedCertificate .length);
-		result = false;
+		if(!result) {
+			//misschien iets opgooien dat zegt dat cert niet geldig is?
+			ISOException.throwIt(ERROR_UNKNOW);
+		}
+		if(isSmaller(validEndTimeCertificate, lastValidationTime)) {
+			//throw other exception?
+			ISOException.throwIt(ERROR_UNKNOW);
+		}
+		//if everything okay --> create new symmetric key
+		AESKey symKey = getSymKey();
+		//Encrypt this key with a PK_SP --> first parcel to send back
+		//TODO Now i need the PK of SP but I got only the bytes of the certificate can I build the CertificateObject again?
+		//TODO to get the the PK???
 		}catch(Exception e) {
 			ISOException.throwIt(ERROR_UNKNOW);
 		}
@@ -432,7 +452,15 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		} else
 			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 	}
-
+	private AESKey getSymKey() {
+		//https://stackoverflow.com/questions/15882088/aes-key-from-javacard-to-java-encrypting?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
+		byte[] rnd = JCSystem.makeTransientByteArray((short)32, JCSystem.CLEAR_ON_RESET);
+		randomData.generateData(rnd, (short) 0, (short) rnd.length);
+		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_256, false);
+		symKey.setKey(rnd, (short) 0);
+		return symKey;
+	}
 	private void sign(APDU apdu) {
 		try {
 
