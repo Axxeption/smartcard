@@ -38,10 +38,12 @@ public class SignedCertificate implements Serializable{
 	public void signCertificate(PrivateKey privateKey) {
 		try {
 			byte [] data = infoStruct.getBytes();
+			System.out.println("bytes to sign:  "+bytesToDec(data));
 			Signature sig = Signature.getInstance("SHA1WithRSA");
 			sig.initSign(privateKey);
 			sig.update(data);
 			signatureBytes = sig.sign();
+			System.out.println("signed bytes: "+bytesToDec(signatureBytes));
 		} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -64,5 +66,13 @@ public class SignedCertificate implements Serializable{
 		return false;
 		
 	}	
+	
+	//utility
+	public String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", ";
+		return str;
+	}
 
 }

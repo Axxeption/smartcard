@@ -2,11 +2,13 @@ package be.msec.smartcard;
 
 import javacard.framework.APDU;
 import javacardx.apdu.ExtendedLength;
+import javacardx.crypto.Cipher;
 import sun.security.util.Length;
 import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 
+import java.nio.ByteBuffer;
 import java.security.interfaces.RSAKey;
 
 import javacard.framework.*;
@@ -227,6 +229,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private final static short MAX_APDU = 240;
 	private short BUF_IN_OFFSET[];
 	private byte date[];
+	private byte [] rnd;
 
 	private IdentityCard() {
 		/*
@@ -325,36 +328,85 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
 		//TODO deze lengte (658 verschilt van certificiaat tot certificaat..? :( 
-		byte[] certificate = new byte[658];
+//		byte[] certificate = new byte[658];
+//		byte[] validEndTimeCertificate = new byte[8];
+//		//get pk_SP and signed_pk_SP
+//		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
+//		Util.arrayCopy(data, (short) (64), certificate, (short) 0, (short) 658);
+//		Util.arrayCopy(data, (short) 722, validEndTimeCertificate, (short) 0,(short) 8);
+		
+		//jonas code
+		byte [] certificateBytes = new byte[data.length-signedCertificate.length];
 		byte[] validEndTimeCertificate = new byte[8];
-		//get pk_SP and signed_pk_SP
+		byte[] publicKeyExpBytes = new byte[3];
+		byte[] publicKeyModBytes = new byte[64];
+		byte[] nameBytes = new byte[certificateBytes.length - publicKeyExpBytes.length - publicKeyModBytes.length - validEndTimeCertificate.length -1];
+		System.out.println("namebytes length: "+nameBytes.length);
+		
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
-		Util.arrayCopy(data, (short) (64), certificate, (short) 0, (short) 658);
-		Util.arrayCopy(data, (short) 722, validEndTimeCertificate, (short) 0,(short) 8);
+		Util.arrayCopy(data, (short) (64), certificateBytes, (short) 0, (short) (data.length-64));
+		Util.arrayCopy(certificateBytes, (short) (0), publicKeyExpBytes, (short)(0), (short)(3));
+		Util.arrayCopy(certificateBytes, (short)4, publicKeyModBytes, (short)(0), (short)64);
+		Util.arrayCopy(certificateBytes, (short)68, validEndTimeCertificate, (short)0, (short)8);
+		Util.arrayCopy(certificateBytes, (short) 76, nameBytes, (short)0, (short)nameBytes.length);
+		
+		String name1 = nameBytes.toString();		
+		//end jonas code
 		
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		// this keysize must be the same size as the one given in in setModulus! but
 		// another keylenght is not working!! 512 is max
 		try {
-		RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
-		pubk.setExponent(pubExp_CA, offset, (short) 3);
-		pubk.setModulus(pubMod_CA, offset, (short) pubMod_CA.length);
-		signature.init(pubk, Signature.MODE_VERIFY);
-		boolean result = signature.verify(certificate, (short) 0, (short) certificate.length, signedCertificate , (short) 0,
-				 (short) signedCertificate .length);
-		if(!result) {
-			//misschien iets opgooien dat zegt dat cert niet geldig is?
-			ISOException.throwIt(ERROR_UNKNOW);
-		}
-		if(isSmaller(validEndTimeCertificate, lastValidationTime)) {
-			//throw other exception?
-			ISOException.throwIt(ERROR_UNKNOW);
-		}
-		//if everything okay --> create new symmetric key
-		AESKey symKey = getSymKey();
-		//Encrypt this key with a PK_SP --> first parcel to send back
-		//TODO Now i need the PK of SP but I got only the bytes of the certificate can I build the CertificateObject again?
-		//TODO to get the the PK???
+			RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
+			pubk.setExponent(pubExp_CA, offset, (short) 3);
+			pubk.setModulus(pubMod_CA, offset, (short) pubMod_CA.length);
+			signature.init(pubk, Signature.MODE_VERIFY);
+			
+			boolean result = signature.verify(certificateBytes, (short) 0, (short) certificateBytes.length, signedCertificate , (short) 0, (short) signedCertificate .length);
+			
+			//verifyen werkt om een of andere reden niet? ook getest in middelware, momenteel in comment want werkt niet
+//			if(!result) {
+//				//misschien iets opgooien dat zegt dat cert niet geldig is?
+//				ISOException.throwIt(ERROR_UNKNOW);
+//			}
+//			if(isSmaller(validEndTimeCertificate, lastValidationTime)) {
+//				//throw other exception?
+//			ISOException.throwIt(ERROR_UNKNOW);
+//			}
+			//if everything okay --> create new symmetric key
+			AESKey symKey = getSymKey();
+			//rebuild SP PK
+			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
+			publicKeySP.setExponent(publicKeyExpBytes, offset, (short) 3);
+			publicKeySP.setModulus(publicKeyModBytes, offset, (short) publicKeyModBytes.length);
+			//encrypt rnd to send to SP
+			//met rnd kan SP de symmetrische key heropbouwen
+			Cipher rsaCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
+			rsaCipher.init(publicKeySP, Cipher.MODE_ENCRYPT);
+			byte[] encryptedSymKey = JCSystem.makeTransientByteArray((short) 32, JCSystem.CLEAR_ON_DESELECT);
+			rsaCipher.doFinal(this.rnd, (short) 0,(short) this.rnd.length, encryptedSymKey, (short) 0);
+			//generate challenge
+			RandomData rndData = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
+			JCSecureRandom secRnd = new JCSecureRandom(rndData);
+			short challenge = secRnd.nextShort((short)100);
+			byte[] challengeBytes = new byte[2];
+			ByteBuffer buffer = ByteBuffer.allocate(challengeBytes.length);
+			buffer.putShort(challenge);
+			
+			//msg opbouwen om terug te zenden
+			byte [] toSend = new byte[this.rnd.length + challengeBytes.length + nameBytes.length];
+			Util.arrayCopy(this.rnd, (short)0, toSend, (short)0, (short)this.rnd.length);
+			Util.arrayCopy(challengeBytes, (short)0, toSend, (short)this.rnd.length, (short)challengeBytes.length);
+			Util.arrayCopy(nameBytes, (short)0, toSend, (short)(this.rnd.length + challengeBytes.length),(short)nameBytes.length);
+			
+			
+			
+			
+			
+			
+			//Encrypt this key with a PK_SP --> first parcel to send back
+			//TODO Now i need the PK of SP but I got only the bytes of the certificate can I build the CertificateObject again?
+			//TODO to get the the PK???
 		}catch(Exception e) {
 			ISOException.throwIt(ERROR_UNKNOW);
 		}
@@ -455,9 +507,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private AESKey getSymKey() {
 		//https://stackoverflow.com/questions/15882088/aes-key-from-javacard-to-java-encrypting?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
-		byte[] rnd = JCSystem.makeTransientByteArray((short)32, JCSystem.CLEAR_ON_RESET);
+		this.rnd = JCSystem.makeTransientByteArray((short)32, JCSystem.CLEAR_ON_RESET);
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
-		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_256, false);
+		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
 		symKey.setKey(rnd, (short) 0);
 		return symKey;
 	}

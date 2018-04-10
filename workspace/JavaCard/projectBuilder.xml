@@ -2,8 +2,8 @@
 <project>
     <!-- Global properties -->
     <property name="srcDir" value="${basedir}/src"/>
-    <!--<property name="cardDir" value="C:\Users\kobe\Documents\projects\smartcards\java_card_kit-2_2_2\lib"/>-->
-	<property name="cardDir" value="\\psf\Home\Documents\school\2017-2018\Veilige Software\SmartCards\java_card_kit-2_2_2\lib"/>
+    <!--<property name="cardDir" value="C:\Users\asus\Documents\GitHub\smartcard\java_card_kit-2_2_2\lib"/>-->
+	<property name="cardDir" value="C:\Users\asus\Documents\GitHub\smartcard\java_card_kit-2_2_2\lib"/>
     <property name="targetDir" value="${basedir}/target"/>
 	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
 

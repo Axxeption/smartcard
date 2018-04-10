@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,6 +18,11 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
+//import javacard.security.KeyBuilder;
+//import javacard.security.RSAPublicKey;
+
+import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,6 +58,7 @@ public class MiddlewareMain extends Application {
 
 	private Stage primaryStage;
 	private BorderPane rootLayout;
+	
 
 	private final static byte IDENTITY_CARD_CLA = (byte) 0x80;
 	private static final byte VALIDATE_PIN_INS = 0x22;
@@ -74,6 +82,11 @@ public class MiddlewareMain extends Application {
 
 	private ServerSocket socket;
 	private Socket middlewareSocket;
+	
+	//for testing
+	private byte[] pubMod_CA = new byte[] {(byte) -124, (byte) 27, (byte) -72, (byte) 74, (byte) 8, (byte) -8, (byte) 67, (byte) 12, (byte) -34, (byte) -89, (byte) 62, (byte) 2, (byte) 44, (byte) 18, (byte) 88, (byte) 80, (byte) -81, (byte) -34, (byte) -3, (byte) -21, (byte) -84, (byte) -29, (byte) 32, (byte) -105, (byte) 88, (byte) -87, (byte) -68, (byte) 31, (byte) 42, (byte) -32, (byte) -109, (byte) -119, (byte) -102, (byte) 75, (byte) -102, (byte) -93, (byte) 32, (byte) 43, (byte) 71, (byte) 32, (byte) 105, (byte) -91, (byte) -106, (byte) -114, (byte) 56, (byte) -18, (byte) -124, (byte) -97, (byte) -7, (byte) -42, (byte) -81, (byte) -89, (byte) 10, (byte) 51, (byte) 32, (byte) -12, (byte) 92, (byte) 68, (byte) -95, (byte) -88, (byte) 7, (byte) -60, (byte) 11, (byte) 59};
+	private byte[] pubExp_CA = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
+
 
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
@@ -531,21 +544,74 @@ public class MiddlewareMain extends Application {
 	private boolean authenticateCertificate(ServiceProviderAction received) {
 		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
 		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received.getSignedCertificate().getCertificateBasic();
-		byte[] CertificateBytes = certificateServiceProvider.getBytes();
-		byte[] validEndTime = certificateServiceProvider.getValidTimeBytes(); //length = 8
-		byte[] toSend = new byte[signedCertificateBytes.length + CertificateBytes.length + validEndTime.length];
+//		byte[] CertificateBytes = certificateServiceProvider.getBytes();
+//		byte[] validEndTime = certificateServiceProvider.getValidTimeBytes(); //length = 8
+//		byte[] toSend = new byte[signedCertificateBytes.length + CertificateBytes.length + validEndTime.length];
+//		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
+//		System.arraycopy(CertificateBytes, 0, toSend, signedCertificateBytes.length, CertificateBytes.length);
+//		System.arraycopy(validEndTime, 0, toSend, signedCertificateBytes.length + CertificateBytes.length,
+//				validEndTime.length);
+//		
+//		
+//		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); //64
+//		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
+//		System.out.println("Length of certificate: " + CertificateBytes.length); //654 --> this can change?
+//		System.out.println("Certificate: " + bytesToDec(CertificateBytes));
+//		System.out.println("Length of validEndTime: " + validEndTime.length);
+//		System.out.println("ValidEndTime: " + bytesToDec(validEndTime));
+//		
+		//jonas code
+		byte[] certificateBytes = certificateServiceProvider.getBytes();
+		byte[] toSend = new byte[signedCertificateBytes.length + certificateBytes.length];
 		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
-		System.arraycopy(CertificateBytes, 0, toSend, signedCertificateBytes.length,
-				CertificateBytes.length);
-		System.arraycopy(validEndTime, 0, toSend, signedCertificateBytes.length + CertificateBytes.length,
-				validEndTime.length);
+		System.arraycopy(certificateBytes, 0, toSend, signedCertificateBytes.length, certificateBytes.length);
 		
 		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); //64
 		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
-		System.out.println("Length of certificate: " + CertificateBytes.length); //654 --> this can change?
-		System.out.println("Certificate: " + bytesToDec(CertificateBytes));
-		System.out.println("Length of validEndTime: " + validEndTime.length);
-		System.out.println("ValidEndTime: " + bytesToDec(validEndTime));
+		System.out.println("Length of certificate: " + certificateBytes.length); //654 --> this can change?
+		System.out.println("Certificate: " + bytesToDec(certificateBytes));
+		
+		//test verifying of ca sign
+		SignedCertificate certTest = new SignedCertificate(certificateServiceProvider);
+		try {
+			certTest.signCertificate(CAService.loadPrivateKey("RSA"));
+			System.out.println("signed bytes in middleware:" + bytesToDec(certTest.getSignatureBytes()) );
+			
+			PublicKey pk = CAService.loadPublicKey("RSA");
+			
+			BigInteger mod = new BigInteger(1,this.pubMod_CA);
+			BigInteger exp = new BigInteger(1,this.pubExp_CA);
+
+			System.out.println("mod: "+mod);
+			System.out.println("exp: "+exp);
+			
+			//fout!! verify met key gemaakt uit mod en exp werkt niet 
+			//verify met loadpublickey werkt wel
+			
+			RSAPublicKeySpec rsaPublicKey = new RSAPublicKeySpec(mod, exp);
+			KeyFactory factory = KeyFactory.getInstance("RSA");
+			PublicKey pk2 = factory.generatePublic(rsaPublicKey);
+			
+			Signature sig = Signature.getInstance("SHA1WithRSA");
+			sig.initVerify(pk);
+			sig.update(certTest.getBytes());
+			boolean res = sig.verify(certTest.getSignatureBytes());
+			System.out.println("CA verified with loadpublic: "+res);
+			
+			sig.initVerify(pk2);
+			sig.update(certTest.getBytes());
+			res = sig.verify(certTest.getSignatureBytes());
+			System.out.println("CA verified with mod exp key: "+res);
+			
+			System.out.println("key generated with loadpublic:  "+pk.getEncoded());
+			System.out.println("key generated with mod exp:  "+ pk2.getEncoded());
+
+		} catch(Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		//end jonas code
 		
 		System.out.println("Total to send (concat): " + bytesToDec(toSend));
 		System.out.println("Start sending command for authenticate SP with extended APDU");
