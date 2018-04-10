@@ -327,26 +327,18 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private void authenticate(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
-		//TODO deze lengte (658 verschilt van certificiaat tot certificaat..? :( 
-//		byte[] certificate = new byte[658];
-//		byte[] validEndTimeCertificate = new byte[8];
-//		//get pk_SP and signed_pk_SP
-//		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
-//		Util.arrayCopy(data, (short) (64), certificate, (short) 0, (short) 658);
-//		Util.arrayCopy(data, (short) 722, validEndTimeCertificate, (short) 0,(short) 8);
-		
-		//jonas code
+
 		byte [] certificateBytes = new byte[data.length-signedCertificate.length];
 		byte[] validEndTimeCertificate = new byte[8];
-		byte[] publicKeyExpBytes = new byte[3];
-		byte[] publicKeyModBytes = new byte[64];
-		byte[] nameBytes = new byte[certificateBytes.length - publicKeyExpBytes.length - publicKeyModBytes.length - validEndTimeCertificate.length -1];
+		byte[] pkExpBytesSP = new byte[3];
+		byte[] pkModBytesSP = new byte[64];
+		byte[] nameBytes = new byte[certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -1];
 		System.out.println("namebytes length: "+nameBytes.length);
 		
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
 		Util.arrayCopy(data, (short) (64), certificateBytes, (short) 0, (short) (data.length-64));
-		Util.arrayCopy(certificateBytes, (short) (0), publicKeyExpBytes, (short)(0), (short)(3));
-		Util.arrayCopy(certificateBytes, (short)4, publicKeyModBytes, (short)(0), (short)64);
+		Util.arrayCopy(certificateBytes, (short) (0), pkExpBytesSP, (short)(0), (short)(3));
+		Util.arrayCopy(certificateBytes, (short)4, pkModBytesSP, (short)(0), (short)64);
 		Util.arrayCopy(certificateBytes, (short)68, validEndTimeCertificate, (short)0, (short)8);
 		Util.arrayCopy(certificateBytes, (short) 76, nameBytes, (short)0, (short)nameBytes.length);
 		
@@ -363,22 +355,24 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			
 			boolean result = signature.verify(certificateBytes, (short) 0, (short) certificateBytes.length, signedCertificate , (short) 0, (short) signedCertificate .length);
-			result = false;
-			//verifyen werkt om een of andere reden niet? ook getest in middelware, momenteel in comment want werkt niet
-//			if(!result) {
-//				//misschien iets opgooien dat zegt dat cert niet geldig is?
-//				ISOException.throwIt(ERROR_UNKNOW);
-//			}
-//			if(isSmaller(validEndTimeCertificate, lastValidationTime)) {
-//				//throw other exception?
-//			ISOException.throwIt(ERROR_UNKNOW);
-//			}
+			short debug = (short) 0;
+			//result is true if everything went fine 
+			//but now just commented for not losing time
+			if(!result) {
+				//misschien iets opgooien dat zegt dat cert niet geldig is?
+				ISOException.throwIt(ERROR_UNKNOW);
+			}
+			if(isSmaller(validEndTimeCertificate, lastValidationTime)) {
+				//throw other exception?
+			ISOException.throwIt(ERROR_UNKNOW);
+			}
 			//if everything okay --> create new symmetric key
 			AESKey symKey = getSymKey();
+			
 			//rebuild SP PK
 			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
-			publicKeySP.setExponent(publicKeyExpBytes, offset, (short) 3);
-			publicKeySP.setModulus(publicKeyModBytes, offset, (short) publicKeyModBytes.length);
+			publicKeySP.setExponent(pkExpBytesSP, offset, (short) 3);
+			publicKeySP.setModulus(pkModBytesSP, offset, (short) pkModBytesSP.length);
 			//encrypt rnd to send to SP
 			//met rnd kan SP de symmetrische key heropbouwen
 			Cipher rsaCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
@@ -398,11 +392,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(this.rnd, (short)0, toSend, (short)0, (short)this.rnd.length);
 			Util.arrayCopy(challengeBytes, (short)0, toSend, (short)this.rnd.length, (short)challengeBytes.length);
 			Util.arrayCopy(nameBytes, (short)0, toSend, (short)(this.rnd.length + challengeBytes.length),(short)nameBytes.length);
-			
-			
-			
-			
-			
 			
 			//Encrypt this key with a PK_SP --> first parcel to send back
 			//TODO Now i need the PK of SP but I got only the bytes of the certificate can I build the CertificateObject again?

@@ -544,80 +544,16 @@ public class MiddlewareMain extends Application {
 	private boolean authenticateCertificate(ServiceProviderAction received) {
 		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
 		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received.getSignedCertificate().getCertificateBasic();
-//		byte[] CertificateBytes = certificateServiceProvider.getBytes();
-//		byte[] validEndTime = certificateServiceProvider.getValidTimeBytes(); //length = 8
-//		byte[] toSend = new byte[signedCertificateBytes.length + CertificateBytes.length + validEndTime.length];
-//		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
-//		System.arraycopy(CertificateBytes, 0, toSend, signedCertificateBytes.length, CertificateBytes.length);
-//		System.arraycopy(validEndTime, 0, toSend, signedCertificateBytes.length + CertificateBytes.length,
-//				validEndTime.length);
-//		
-//		
-//		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); //64
-//		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
-//		System.out.println("Length of certificate: " + CertificateBytes.length); //654 --> this can change?
-//		System.out.println("Certificate: " + bytesToDec(CertificateBytes));
-//		System.out.println("Length of validEndTime: " + validEndTime.length);
-//		System.out.println("ValidEndTime: " + bytesToDec(validEndTime));
-//		
-		//jonas code
+
+		//prepare everything to send to the card
 		byte[] certificateBytes = certificateServiceProvider.getBytes();
 		byte[] toSend = new byte[signedCertificateBytes.length + certificateBytes.length];
 		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
 		System.arraycopy(certificateBytes, 0, toSend, signedCertificateBytes.length, certificateBytes.length);
 		
-		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); //64
+		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); 
 		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
-		System.out.println("Length of certificate: " + certificateBytes.length); //654 --> this can change?
-		System.out.println("Certificate: " + bytesToDec(certificateBytes));
-		
-		//test verifying of ca sign
-		SignedCertificate certTest = new SignedCertificate(certificateServiceProvider);
-		try {
-//			certTest.signCertificate(CAService.loadPrivateKey("RSA"));
-//			System.out.println("signed bytes in middleware:" + bytesToDec(certTest.getSignatureBytes()) );
-//			
-//			PublicKey pk = CAService.loadPublicKey("RSA");
-//			
-//			BigInteger mod = new BigInteger(1,this.pubMod_CA);
-//			BigInteger exp = new BigInteger(1,this.pubExp_CA);
-//
-//			System.out.println("mod: "+mod);
-//			System.out.println("exp: "+exp);
-//			
-//			RSAPublicKey rsapublicKey = (RSAPublicKey) pk;
-//			System.out.println("CA_PK_EXP: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
-//			System.out.println("CA_PK_MOD: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
-			
-			
-			//fout!! verify met key gemaakt uit mod en exp werkt niet 
-			//verify met loadpublickey werkt wel
-			
-//			RSAPublicKeySpec rsaPublicKey = new RSAPublicKeySpec(mod, exp);
-//			KeyFactory factory = KeyFactory.getInstance("RSA");
-//			PublicKey pk2 = factory.generatePublic(rsaPublicKey);
-//			
-//			Signature sig = Signature.getInstance("SHA1WithRSA");
-//			sig.initVerify(pk);
-//			sig.update(certTest.getBytes());
-//			boolean res = sig.verify(certTest.getSignatureBytes());
-//			System.out.println("CA verified with loadpublic: "+res);
-//			
-//			sig.initVerify(pk2);
-//			sig.update(certTest.getBytes());
-//			res = sig.verify(certTest.getSignatureBytes());
-//			System.out.println("CA verified with mod exp key: "+res);
-//			
-//			System.out.println("key generated with loadpublic:  "+pk.getEncoded());
-//			System.out.println("key generated with mod exp:  "+ pk2.getEncoded());
-
-		} catch(Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		//end jonas code
-		
+		System.out.println("Length of certificate: " + certificateBytes.length); 
 		System.out.println("Total to send (concat): " + bytesToDec(toSend));
 		System.out.println("Start sending command for authenticate SP with extended APDU");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, toSend);
@@ -669,3 +605,47 @@ public class MiddlewareMain extends Application {
 
 	}
 }
+
+//SignedCertificate certTest = new SignedCertificate(certificateServiceProvider);
+//try {
+//	certTest.signCertificate(CAService.loadPrivateKey("RSA"));
+//	System.out.println("signed bytes in middleware:" + bytesToDec(certTest.getSignatureBytes()) );
+//	
+//	PublicKey pk = CAService.loadPublicKey("RSA");
+//	
+//	BigInteger mod = new BigInteger(1,this.pubMod_CA);
+//	BigInteger exp = new BigInteger(1,this.pubExp_CA);
+//
+//	System.out.println("mod: "+mod);
+//	System.out.println("exp: "+exp);
+//	
+//	RSAPublicKey rsapublicKey = (RSAPublicKey) pk;
+//	System.out.println("CA_PK_EXP: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
+//	System.out.println("CA_PK_MOD: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
+	
+	
+	//fout!! verify met key gemaakt uit mod en exp werkt niet 
+	//verify met loadpublickey werkt wel
+	
+//	RSAPublicKeySpec rsaPublicKey = new RSAPublicKeySpec(mod, exp);
+//	KeyFactory factory = KeyFactory.getInstance("RSA");
+//	PublicKey pk2 = factory.generatePublic(rsaPublicKey);
+//	
+//	Signature sig = Signature.getInstance("SHA1WithRSA");
+//	sig.initVerify(pk);
+//	sig.update(certTest.getBytes());
+//	boolean res = sig.verify(certTest.getSignatureBytes());
+//	System.out.println("CA verified with loadpublic: "+res);
+//	
+//	sig.initVerify(pk2);
+//	sig.update(certTest.getBytes());
+//	res = sig.verify(certTest.getSignatureBytes());
+//	System.out.println("CA verified with mod exp key: "+res);
+//	
+//	System.out.println("key generated with loadpublic:  "+pk.getEncoded());
+//	System.out.println("key generated with mod exp:  "+ pk2.getEncoded());
+//
+//} catch(Exception e1) {
+//	// TODO Auto-generated catch block
+//	e1.printStackTrace();
+//}
