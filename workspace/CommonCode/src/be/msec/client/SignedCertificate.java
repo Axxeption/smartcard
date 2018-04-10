@@ -38,7 +38,7 @@ public class SignedCertificate implements Serializable{
 	public void signCertificate(PrivateKey privateKey) {
 		try {
 			byte [] data = infoStruct.getBytes();
-			System.out.println("bytes to sign:  "+bytesToDec(data));
+			System.out.println("bytes to sign:  "+ bytesToDec(data));
 			Signature sig = Signature.getInstance("SHA1WithRSA");
 			sig.initSign(privateKey);
 			sig.update(data);

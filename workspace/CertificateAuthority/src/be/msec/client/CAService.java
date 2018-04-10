@@ -46,10 +46,10 @@ public class CAService {
 			byte [] data = certificateBasic.getBytes();			
 			sig.initVerify(loadPublicKey("RSA"));
 	        sig.update(data);
-	        System.out.println("is it verified? " + sig.verify(cert.getSignatureBytes()));
+//	        System.out.println("is it verified? " + sig.verify(cert.getSignatureBytes()));
 	        RSAPublicKey rsapublicKey = (RSAPublicKey) loadPublicKey("RSA");
-			System.out.println("exp CA pub key: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
-			System.out.println("mod CA pub key: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
+//			System.out.println("exp CA pub key: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
+//			System.out.println("mod CA pub key: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
 			
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | 
 				URISyntaxException | SignatureException | InvalidKeyException e) {
@@ -150,10 +150,10 @@ public class CAService {
 		PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 		
 		//print out once to place him on the SC
-		RSAPublicKey rsapublicKey = (RSAPublicKey) publicKey;
-		System.out.println("CA_PK_EXP: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
-		System.out.println("CA_PK_MOD: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
-		System.out.println("Length of PK mod after loading: (bits)" + rsapublicKey.getModulus().bitLength());
+//		RSAPublicKey rsapublicKey = (RSAPublicKey) publicKey;
+//		System.out.println("CA_PK_EXP: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
+//		System.out.println("CA_PK_MOD: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
+//		System.out.println("Length of PK mod after loading: (bits)" + rsapublicKey.getModulus().bitLength());
 
 		return publicKey;
 	}

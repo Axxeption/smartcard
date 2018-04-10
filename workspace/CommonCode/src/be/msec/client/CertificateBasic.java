@@ -15,6 +15,7 @@ public class CertificateBasic implements Serializable {
 	 * Parse object into byte[]
 	 * @return
 	 */
+	
 	public byte [] getBytes() {
 //		try{
 //			ByteArrayOutputStream baos = new ByteArrayOutputStream();

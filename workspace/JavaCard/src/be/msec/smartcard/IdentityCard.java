@@ -59,8 +59,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 34, (byte) 114, (byte) -99, (byte) -102, (byte) 43, (byte) -43, (byte) -102, (byte) 71, (byte) 115,
 			(byte) 116, (byte) -105, (byte) -48, (byte) -80, (byte) 109, (byte) 117, (byte) 106, (byte) 88, (byte) 6,
 			(byte) -69, (byte) -42, (byte) -83, (byte) 25 };
+	private byte[] pubMod_CA = new byte[] {(byte) -40, (byte) -96, (byte) 115, (byte) 21, (byte) -10, (byte) -66, (byte) 80, (byte) 28, (byte) -124, (byte) 29, (byte) 98, (byte) -23, (byte) -72, (byte) 60, (byte) 89, (byte) 21, (byte) -37, (byte) -122, (byte) -14, (byte) 94, (byte) -92, (byte) 48, (byte) 98, (byte) -35, (byte) 5, (byte) -37, (byte) -50, (byte) -46, (byte) 21, (byte) -117, (byte) -48, (byte) -20, (byte) 50, (byte) -80, (byte) -41, (byte) -126, (byte) -102, (byte) 63, (byte) -2, (byte) -10, (byte) 3, (byte) -86, (byte) -54, (byte) 105, (byte) -64, (byte) 47, (byte) -23, (byte) -104, (byte) -39, (byte) 35, (byte) 107, (byte) -46, (byte) -73, (byte) 2, (byte) 120, (byte) 112, (byte) -127, (byte) -37, (byte) 117, (byte) -79, (byte) 15, (byte) 9, (byte) 48, (byte) -45}; 
 	private byte[] pubExp_CA = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
-	private byte[] pubMod_CA = new byte[] {(byte) -124, (byte) 27, (byte) -72, (byte) 74, (byte) 8, (byte) -8, (byte) 67, (byte) 12, (byte) -34, (byte) -89, (byte) 62, (byte) 2, (byte) 44, (byte) 18, (byte) 88, (byte) 80, (byte) -81, (byte) -34, (byte) -3, (byte) -21, (byte) -84, (byte) -29, (byte) 32, (byte) -105, (byte) 88, (byte) -87, (byte) -68, (byte) 31, (byte) 42, (byte) -32, (byte) -109, (byte) -119, (byte) -102, (byte) 75, (byte) -102, (byte) -93, (byte) 32, (byte) 43, (byte) 71, (byte) 32, (byte) 105, (byte) -91, (byte) -106, (byte) -114, (byte) 56, (byte) -18, (byte) -124, (byte) -97, (byte) -7, (byte) -42, (byte) -81, (byte) -89, (byte) 10, (byte) 51, (byte) 32, (byte) -12, (byte) 92, (byte) 68, (byte) -95, (byte) -88, (byte) 7, (byte) -60, (byte) 11, (byte) 59};
 	private byte[] pubExp_G = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
 	// this length is 65 --> seems impossible? --> cropped first byte (was 0) so now
 	// is length = 64
@@ -363,7 +363,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			
 			boolean result = signature.verify(certificateBytes, (short) 0, (short) certificateBytes.length, signedCertificate , (short) 0, (short) signedCertificate .length);
-			
+			result = false;
 			//verifyen werkt om een of andere reden niet? ook getest in middelware, momenteel in comment want werkt niet
 //			if(!result) {
 //				//misschien iets opgooien dat zegt dat cert niet geldig is?
