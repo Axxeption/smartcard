@@ -16,9 +16,11 @@ public class ServiceProvider {
 	CertificateServiceProvider serviceProviderInfo;
 	RSAPrivateKey privateKey;
 	SignedCertificate certificate;
+	String name;
 
 
     public ServiceProvider(String name, ServiceProviderType type) {
+    		this.name = name;
     		KeyPair keyPair = generateKey();
 	        privateKey = (RSAPrivateKey) keyPair.getPrivate();
 	        serviceProviderInfo = new CertificateServiceProvider(keyPair.getPublic(), name);
@@ -55,6 +57,14 @@ public class ServiceProvider {
 		return privateKey;
 	}
 	
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	public PublicKey getPublicKey() {
 		return serviceProviderInfo.getPublicKey();
 	}

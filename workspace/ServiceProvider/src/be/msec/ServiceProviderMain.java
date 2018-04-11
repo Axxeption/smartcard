@@ -11,12 +11,24 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
+import java.awt.List;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class ServiceProviderMain extends Application {
 
@@ -25,6 +37,10 @@ public class ServiceProviderMain extends Application {
     private Controller currentViewController;
     private MainServiceController mainController;
 	private Socket serviceProviderSocket = null;
+	private String lastActionSPName = null;
+	private ArrayList<ServiceProvider> serviceProviders;
+	private SecretKeySpec symKey;
+	private IvParameterSpec ivSpec;
 	static final int portSP = 8003;
 
 
@@ -37,8 +53,18 @@ public class ServiceProviderMain extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+    
+    
 
-    @Override
+    public ArrayList<ServiceProvider> getServiceProviders() {
+		return serviceProviders;
+	}
+
+	public void setServiceProviders(ArrayList<ServiceProvider> serviceProviders) {
+		this.serviceProviders = serviceProviders;
+	}
+
+	@Override
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
         this.primaryStage.setTitle("Service Provider overview");
@@ -55,7 +81,8 @@ public class ServiceProviderMain extends Application {
     
     public void sendServiceProviderActionToMiddleWare(ServiceProviderAction action) {
 		ObjectOutputStream objectoutputstream = null;
-		
+		this.lastActionSPName = action.getServiceProvider();
+		System.out.println("lkqfjkljr  "+lastActionSPName);
 		try {
 			System.out.println("Send something to the middleware");
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
@@ -74,28 +101,74 @@ public class ServiceProviderMain extends Application {
     	try {
 			objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
 			
-			if((Challenge)objectinputstream.readObject()!=null) {
-				System.out.println("read obj");
-				Challenge challengeFromSC = (Challenge)objectinputstream.readObject();
-				System.out.println("received challenge "+challengeFromSC.toString());
-				mainController.addToDataLog("Succesfully received challenge: " );
-			} 
-//			else if( (String)objectinputstream.readObject() != null) {
-//				String answer = (String)objectinputstream.readObject();
-//				System.out.println("received string "+answer);
-//				mainController.addToDataLog("Succesfully received: " +answer);
-//
-//			}
-//				
-				
+			obj = objectinputstream.readObject();
+			if(obj instanceof Challenge) {
+				Challenge challengeFromSC = (Challenge)obj;
+				mainController.addToDataLog("Succesfully received challenge" );
+				System.out.println(challengeFromSC.toString());
+				//recreate session key, respond to challenge
+				recreateSessionKey(challengeFromSC);
+			}
+			else if( obj instanceof String) {
+				String answer = (String)obj;
+				System.out.println("received string "+answer);
+				mainController.addToDataLog("Succesfully received: " +answer);
+			}
+			else {
+				System.out.println("unknown obj received");
+			}
 			
-			
-			
+	
 			System.out.println("succesfully received an answer!");
 			
     	}catch (Exception e) {
 			System.out.println(e);
 		}
+    }
+    
+    public void recreateSessionKey(Challenge challenge) {
+    	byte[] nameBytes = challenge.getNameBytes();
+    	byte[] rndBytes = challenge.getRndBytes();
+    	byte [] challengeBytes = challenge.getChallengeBytes();
+    	
+    	byte[] decryptedNameBytes;
+    	byte[] decryptedChallengeBytes;
+    	
+    	for(ServiceProvider sp : serviceProviders) {
+    		if(sp.name.equals(lastActionSPName)) {
+    			System.out.println("recreate session key "+sp.getName());
+    			try {
+					Cipher rsaCipher = Cipher.getInstance("RSA");
+					rsaCipher.init(Cipher.DECRYPT_MODE, (RSAPrivateKey)sp.getPrivateKey());
+					System.out.println();
+					byte [] rnd = rsaCipher.doFinal(rndBytes);
+					//byte[] rnd = new String(decrypted);
+					System.out.println("decrypted rndbytes "+bytesToDec(rnd));
+					
+					
+					//create session key
+					byte[] ivdata = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+					this.ivSpec = new IvParameterSpec(ivdata);
+					this.symKey = new SecretKeySpec(rnd, "AES");
+					
+					Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+					aesCipher.init(Cipher.DECRYPT_MODE, this.symKey, this.ivSpec);
+					decryptedChallengeBytes = aesCipher.doFinal(challengeBytes);
+					decryptedNameBytes = aesCipher.doFinal(nameBytes);
+					
+					System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
+					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
+					
+					
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+    			
+    			
+    		}
+    	}
+    	
     }
     public void connectToMiddleWare() {
     	try {
@@ -155,5 +228,12 @@ public class ServiceProviderMain extends Application {
         }
     }
 
+    //utility
+    public String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", ";
+		return str;
+	}
 
 }
