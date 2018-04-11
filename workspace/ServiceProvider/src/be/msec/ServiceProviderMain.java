@@ -15,6 +15,7 @@ import java.awt.List;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
@@ -131,6 +132,9 @@ public class ServiceProviderMain extends Application {
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
     	
+    	System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
+		System.out.println("encr name bytes   "+bytesToDec(nameBytes));
+    	
     	byte[] decryptedNameBytes;
     	byte[] decryptedChallengeBytes;
     	
@@ -158,7 +162,15 @@ public class ServiceProviderMain extends Application {
 					
 					System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
 					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
+					String name = new String(decryptedNameBytes);
 					
+					
+					BigInteger reqChallenge = new BigInteger(decryptedChallengeBytes);
+					System.out.println(name + "  " + reqChallenge.toString());
+					BigInteger respChallenge =reqChallenge.add(BigInteger.ONE);
+					byte [] respChallengeBytes = respChallenge.toByteArray();
+					
+					//TODO encrypt challenge response
 					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block

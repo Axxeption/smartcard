@@ -561,7 +561,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private AESKey getSymKey() {
 		//https://stackoverflow.com/questions/15882088/aes-key-from-javacard-to-java-encrypting?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
-		this.rnd = JCSystem.makeTransientByteArray((short)32, JCSystem.CLEAR_ON_RESET);
+		this.rnd = JCSystem.makeTransientByteArray((short)16, JCSystem.CLEAR_ON_RESET);
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
 		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
 		symKey.setKey(rnd, (short) 0);
