@@ -8,8 +8,10 @@ import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.interfaces.RSAKey;
+import java.util.Random;
 
 import javacard.framework.*;
 import javacard.framework.JCSystem;
@@ -229,7 +231,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private final static short MAX_APDU = 240;
 	private short BUF_IN_OFFSET[];
 	private byte date[];
-	private byte [] rnd;
+	private byte [] rnd; //used to create session key while authenticating SP
+	private byte [] challenge; //used to verify SP
 
 	private IdentityCard() {
 		/*
@@ -333,6 +336,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		byte[] pkExpBytesSP = new byte[3];
 		byte[] pkModBytesSP = new byte[64];
 		byte[] nameBytes = new byte[certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -1];
+		byte[] nameBytesCopy16 = new byte[16];
+		
 		System.out.println("namebytes length: "+nameBytes.length);
 		
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
@@ -341,6 +346,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Util.arrayCopy(certificateBytes, (short)4, pkModBytesSP, (short)(0), (short)64);
 		Util.arrayCopy(certificateBytes, (short)68, validEndTimeCertificate, (short)0, (short)8);
 		Util.arrayCopy(certificateBytes, (short) 76, nameBytes, (short)0, (short)nameBytes.length);
+		
+		Util.arrayCopy(nameBytes, (short)0, nameBytesCopy16, (short)0, (short)nameBytes.length);
 		
 		String name1 = nameBytes.toString();		
 		//end jonas code
@@ -375,23 +382,49 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			publicKeySP.setModulus(pkModBytesSP, offset, (short) pkModBytesSP.length);
 			//encrypt rnd to send to SP
 			//met rnd kan SP de symmetrische key heropbouwen
-			Cipher rsaCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
-			rsaCipher.init(publicKeySP, Cipher.MODE_ENCRYPT);
-			byte[] encryptedSymKey = JCSystem.makeTransientByteArray((short) 32, JCSystem.CLEAR_ON_DESELECT);
-			rsaCipher.doFinal(this.rnd, (short) 0,(short) this.rnd.length, encryptedSymKey, (short) 0);
+//			Cipher rsaCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
+//			rsaCipher.init(publicKeySP, Cipher.MODE_ENCRYPT);
+//			byte[] encryptedSymKey = JCSystem.makeTransientByteArray((short) 32, JCSystem.CLEAR_ON_DESELECT);
+//			rsaCipher.doFinal(this.rnd, (short) 0,(short) this.rnd.length, encryptedSymKey, (short) 0);
+			
+			Cipher asymCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
+			byte[] encryptedRnd = JCSystem.makeTransientByteArray((short) 64, JCSystem.CLEAR_ON_DESELECT);
+			asymCipher.init((RSAPublicKey)publicKeySP, Cipher.MODE_ENCRYPT);
+			try {
+				asymCipher.doFinal(this.rnd, (short)0, (short)this.rnd.length, encryptedRnd, (short)0);
+
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			
 			//generate challenge
-			RandomData rndData = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
-			JCSecureRandom secRnd = new JCSecureRandom(rndData);
-			short challenge = secRnd.nextShort((short)100);
-			byte[] challengeBytes = new byte[2];
-			ByteBuffer buffer = ByteBuffer.allocate(challengeBytes.length);
-			buffer.putShort(challenge);
+			byte[] challengeBytes = generateRandomBytes();		
+			BigInteger challenge = new BigInteger(challengeBytes);	//for testing
+			//challengebytes symmetrisch encrypteren
+			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+			byte[] encryptedChallengeBytes= new byte[16];
+			byte[] encryptedNameBytes = new byte[16];
+			try {
+				symCipher.doFinal(challengeBytes, (short)0, (short)challengeBytes.length, encryptedChallengeBytes, (short)0);
+				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+				symCipher.doFinal(nameBytesCopy16, (short)0,(short) nameBytesCopy16.length, encryptedNameBytes, (short)0);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			//msg opbouwen om terug te zenden
-			byte [] toSend = new byte[this.rnd.length + challengeBytes.length + nameBytes.length];
-			Util.arrayCopy(this.rnd, (short)0, toSend, (short)0, (short)this.rnd.length);
-			Util.arrayCopy(challengeBytes, (short)0, toSend, (short)this.rnd.length, (short)challengeBytes.length);
-			Util.arrayCopy(nameBytes, (short)0, toSend, (short)(this.rnd.length + challengeBytes.length),(short)nameBytes.length);
+			byte [] toSend = new byte[encryptedRnd.length + encryptedChallengeBytes.length + encryptedNameBytes.length];
+			Util.arrayCopy(encryptedRnd, (short)0, toSend, (short)0, (short)encryptedRnd.length);
+			Util.arrayCopy(encryptedChallengeBytes, (short)0, toSend, (short)encryptedRnd.length, (short)encryptedChallengeBytes.length);
+			Util.arrayCopy(encryptedNameBytes, (short)0, toSend, (short)(encryptedRnd.length + challengeBytes.length),(short)encryptedNameBytes.length);
+			
+			//send msg to SP 
+			if(sendChallengeToSP(apdu, toSend)) {
+				System.out.println("success send challenge");
+			}
 			
 			//Encrypt this key with a PK_SP --> first parcel to send back
 			//TODO Now i need the PK of SP but I got only the bytes of the certificate can I build the CertificateObject again?
@@ -399,6 +432,41 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}catch(Exception e) {
 			ISOException.throwIt(ERROR_UNKNOW);
 		}
+	}
+	
+	private boolean sendChallengeToSP(APDU apdu, byte[] toSend) {
+		short length = (short)toSend.length;
+		try {
+			apdu.setOutgoing();
+			apdu.setOutgoingLength(length);
+			short lenToSend = 32; // send all the data in pieces of each 32 bytes
+			byte counter = 0;
+			while (length > 0) {
+				if (length < 32) { // if data to send is not muliple of 32
+					lenToSend = length;
+				}
+				apdu.sendBytesLong(toSend, (short) (32 * counter), lenToSend); // send part of certificate each
+																					// time.
+				length = (short) (length - 32);
+				counter = (byte) (counter + 1);
+			}
+			
+		}catch(Exception e ) {
+			if (e instanceof APDUException) {
+				APDUException ae = (APDUException) e;
+				short reason = ae.getReason();
+				if (reason == APDUException.BAD_LENGTH)
+					ISOException.throwIt((short) 0x9990);
+				else
+					ISOException.throwIt((short) 0x8887);
+			} else if (e instanceof ArrayIndexOutOfBoundsException) {
+				ISOException.throwIt(ERROR_OUT_OF_BOUNDS);
+			} else {
+				ISOException.throwIt(ERROR_UNKNOW);
+			}
+			return false;
+		}
+		return true;
 	}
 
 	private void updateTime(APDU apdu) {
@@ -501,6 +569,13 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
 		symKey.setKey(rnd, (short) 0);
 		return symKey;
+	}
+	
+	private byte[] generateRandomBytes() {
+		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
+		this.rnd = JCSystem.makeTransientByteArray((short)16, JCSystem.CLEAR_ON_RESET);
+		randomData.generateData(rnd, (short) 0, (short) rnd.length);
+		return rnd;
 	}
 	private void sign(APDU apdu) {
 		try {

@@ -458,6 +458,18 @@ public class MiddlewareMain extends Application {
 		}
 
 	}
+	
+	private void sendToServiceProvider(Challenge challenge) {
+		ObjectOutputStream out;
+		try {
+			out =  new ObjectOutputStream(middlewareSocket.getOutputStream());
+			out.writeObject(challenge);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	// ------------------------------------------
 	// ------- JAVA CARD COMMUNICATION ----------
@@ -561,7 +573,17 @@ public class MiddlewareMain extends Application {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("SUCCESFULLY VERIFIED " + r.getSW());
+			else {
+				System.out.println("SUCCESFULLY VERIFIED " + r.getSW());
+				//get response data and send to SP
+				byte[] response = r.getData();
+				System.out.println(response.length + "  response " + bytesToDec(response));	//first byte = length of response
+				Challenge challengeToSP = new Challenge(Arrays.copyOfRange(response, 1, 65), Arrays.copyOfRange(response, 65, 81), Arrays.copyOfRange(response, 81, response.length));
+				System.out.println(challengeToSP);
+				
+				sendToServiceProvider(challengeToSP);
+				System.out.println("send challenge to SP done");
+			}
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -585,7 +607,7 @@ public class MiddlewareMain extends Application {
 					switch (received.getAction().getCommand()) {
 					case AUTH_SP:
 						System.out.println("AUTH SP COMMAND");
-						sendToServiceProvider("AUTH command received");
+						//sendToServiceProvider("AUTH command received");
 						authenticateCertificate(received);
 						
 						break;

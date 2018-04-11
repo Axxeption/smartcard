@@ -1,4 +1,5 @@
 package be.msec;
+import be.msec.client.Challenge;
 import be.msec.client.TimeInfoStruct;
 import be.msec.controllers.MainServiceController;
 import be.msec.controllers.RootMenuController;
@@ -69,13 +70,29 @@ public class ServiceProviderMain extends Application {
     }
     public void receiveResponseFromMiddleWare() {	
     	ObjectInputStream objectinputstream = null;
-    	Object obj;
+    	Object obj = null;
     	try {
 			objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-			obj = objectinputstream.readObject();
+			
+			if((Challenge)objectinputstream.readObject()!=null) {
+				System.out.println("read obj");
+				Challenge challengeFromSC = (Challenge)objectinputstream.readObject();
+				System.out.println("received challenge "+challengeFromSC.toString());
+				mainController.addToDataLog("Succesfully received challenge: " );
+			} 
+//			else if( (String)objectinputstream.readObject() != null) {
+//				String answer = (String)objectinputstream.readObject();
+//				System.out.println("received string "+answer);
+//				mainController.addToDataLog("Succesfully received: " +answer);
+//
+//			}
+//				
+				
+			
+			
+			
 			System.out.println("succesfully received an answer!");
-			System.out.println(obj.toString());
-			mainController.addToDataLog("Succesfully received: " + obj.toString());
+			
     	}catch (Exception e) {
 			System.out.println(e);
 		}

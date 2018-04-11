@@ -113,9 +113,9 @@ public class MainServiceController extends Controller {
         });
     }
     private void generateSPs() {
-    	services.add(new ServiceProvider("napoleonGames.com", ServiceProviderType.SOCNET));
-    	services.add(new ServiceProvider("studentAtWork.be", ServiceProviderType.GOVERNMENT));
-    	services.add(new ServiceProvider("CompasClub.be", ServiceProviderType.DEFAULT));
+    	services.add(new ServiceProvider("napoleonGames", ServiceProviderType.SOCNET));
+    	services.add(new ServiceProvider("studentAtWork", ServiceProviderType.GOVERNMENT));
+    	services.add(new ServiceProvider("KompasKlub", ServiceProviderType.DEFAULT));
     }
 
     public void setMainController(ServiceProviderMain mainController) {
