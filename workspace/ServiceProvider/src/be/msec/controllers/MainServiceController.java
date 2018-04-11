@@ -1,4 +1,6 @@
 package be.msec.controllers;
+import java.util.ArrayList;
+
 import be.msec.ServiceAction;
 import be.msec.ServiceProvider;
 import be.msec.ServiceProviderAction;
@@ -113,9 +115,19 @@ public class MainServiceController extends Controller {
         });
     }
     private void generateSPs() {
-    	services.add(new ServiceProvider("napoleonGames", ServiceProviderType.SOCNET));
-    	services.add(new ServiceProvider("studentAtWork", ServiceProviderType.GOVERNMENT));
-    	services.add(new ServiceProvider("KompasKlub", ServiceProviderType.DEFAULT));
+    	ArrayList<ServiceProvider> SPs = new ArrayList<>();
+    	ServiceProvider napoleonGames = new ServiceProvider("napoleonGames", ServiceProviderType.SOCNET);
+    	ServiceProvider studentAtWork = new ServiceProvider("studentAtWork", ServiceProviderType.GOVERNMENT);
+    	ServiceProvider kompasKlub = new ServiceProvider("KompasKlub", ServiceProviderType.DEFAULT);
+    	
+    	services.add(napoleonGames);
+    	services.add(studentAtWork);
+    	services.add(kompasKlub);
+    	SPs.add(napoleonGames);
+    	SPs.add(studentAtWork);
+    	SPs.add(kompasKlub);
+    	
+    	spMain.setServiceProviders(SPs);
     }
 
     public void setMainController(ServiceProviderMain mainController) {
@@ -135,6 +147,7 @@ public class MainServiceController extends Controller {
             addToDataLog(selectedServiceProvider.toString());
             addToDataLog(selectedServiceAction.getName());
             addToDataLog("Sending request...");
+            request.setServiceProvider(selectedServiceProvider.getName());
             spMain.sendServiceProviderActionToMiddleWare(request);
             
         }else {	
@@ -142,7 +155,7 @@ public class MainServiceController extends Controller {
         }
 
     }
-
+    
 
     public void addToDataLog(String log) {
     	System.out.println(log);

@@ -382,14 +382,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			publicKeySP.setModulus(pkModBytesSP, offset, (short) pkModBytesSP.length);
 			//encrypt rnd to send to SP
 			//met rnd kan SP de symmetrische key heropbouwen
-//			Cipher rsaCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
-//			rsaCipher.init(publicKeySP, Cipher.MODE_ENCRYPT);
-//			byte[] encryptedSymKey = JCSystem.makeTransientByteArray((short) 32, JCSystem.CLEAR_ON_DESELECT);
-//			rsaCipher.doFinal(this.rnd, (short) 0,(short) this.rnd.length, encryptedSymKey, (short) 0);
 			
 			Cipher asymCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
 			byte[] encryptedRnd = JCSystem.makeTransientByteArray((short) 64, JCSystem.CLEAR_ON_DESELECT);
 			asymCipher.init((RSAPublicKey)publicKeySP, Cipher.MODE_ENCRYPT);
+			
 			try {
 				asymCipher.doFinal(this.rnd, (short)0, (short)this.rnd.length, encryptedRnd, (short)0);
 
