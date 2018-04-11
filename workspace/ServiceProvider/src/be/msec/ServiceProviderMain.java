@@ -1,4 +1,5 @@
 package be.msec;
+import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
 import be.msec.client.TimeInfoStruct;
 import be.msec.controllers.MainServiceController;
@@ -83,7 +84,6 @@ public class ServiceProviderMain extends Application {
     public void sendServiceProviderActionToMiddleWare(ServiceProviderAction action) {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
-		System.out.println("lkqfjkljr  "+lastActionSPName);
 		try {
 			System.out.println("Send something to the middleware");
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
@@ -171,6 +171,12 @@ public class ServiceProviderMain extends Application {
 					byte [] respChallengeBytes = respChallenge.toByteArray();
 					
 					//TODO encrypt challenge response
+					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
+					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
+					//send challenge response back to MW
+					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
+					action.setChallengeBytes(encryptedRespChallenge);
+					sendServiceProviderActionToMiddleWare(action);
 					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block

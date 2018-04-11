@@ -602,7 +602,8 @@ public class MiddlewareMain extends Application {
 					System.out.println("Listening to service provider...");
 					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
 					ServiceProviderAction received = (ServiceProviderAction) objectinputstream.readObject();
-					System.out.println("received: " + received);
+					System.out.println("received: " + received.getAction().getCommand());
+					
 
 					switch (received.getAction().getCommand()) {
 					case AUTH_SP:
@@ -613,6 +614,9 @@ public class MiddlewareMain extends Application {
 						break;
 					case GET_DATA:
 						System.out.println("GET DATA COMMAND");
+						break;
+					case VERIFY_CHALLENGE:
+						System.out.println("VERIFY CHALLENGE COMMAND");
 						break;
 					default:
 						sendToServiceProvider("Command doesn't exists.");
