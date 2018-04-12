@@ -35,6 +35,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private static final byte GET_BIGDATA = 0x29;
 	private static final byte UPDATE_TIME = 0x25;
 	private static final byte AUTHENTICATE_SP = 0x21;
+	private static final byte VERIFY_CHALLENGE = 0x29;
+
 
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -225,6 +227,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private short keySizeInBytes = 64;
 	private short keySizeInBits = 512;
 	private RSAPrivateKey privKey = null;
+	private AESKey symKey;
 
 	private byte messageIndex = 0x00;
 
@@ -313,6 +316,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		case AUTHENTICATE_SP:
 			authenticate(apdu);
 			break;
+		case VERIFY_CHALLENGE:
+			//TODO
+			verifyChallenge(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status word of
 		// the response.
 		// This can be done by using this method. As an argument a short is given that
@@ -326,7 +333,28 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			short a = 0;
 		}
 	}
-
+	
+	private void verifyChallenge(APDU apdu) {
+		byte [] data = receiveBigData(apdu);
+		byte [] responseChallengeBytes = new byte[16];
+		Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+		aesCipher.init(symKey, Cipher.MODE_DECRYPT);
+		aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
+		BigInteger responseChallengeBigInt = new BigInteger(1, responseChallengeBytes);
+		BigInteger challengeBigInt = new BigInteger(1, this.challenge);
+		//verify
+		boolean verified = false;
+		if(responseChallengeBigInt.equals(challengeBigInt.add(BigInteger.ONE))) {
+			verified = true;
+		}
+		if(verified) {
+			System.out.println("challenge verified");
+		}
+		
+		
+		System.out.println();
+	}
+	
 	private void authenticate(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
@@ -374,7 +402,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			ISOException.throwIt(ERROR_UNKNOW);
 			}
 			//if everything okay --> create new symmetric key
-			AESKey symKey = getSymKey();
+			this.symKey = getSymKey();
 			
 			//rebuild SP PK
 			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
@@ -397,7 +425,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			
 			//generate challenge
 			byte[] challengeBytes = generateRandomBytes();		
-			BigInteger challenge = new BigInteger(challengeBytes);	//for testing
+			BigInteger challenge = new BigInteger(1, challengeBytes);	//for testing
+			this.challenge = challengeBytes;
 			//challengebytes symmetrisch encrypteren
 			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
@@ -561,7 +590,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private AESKey getSymKey() {
 		//https://stackoverflow.com/questions/15882088/aes-key-from-javacard-to-java-encrypting?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
-		this.rnd = JCSystem.makeTransientByteArray((short)32, JCSystem.CLEAR_ON_RESET);
+		this.rnd = JCSystem.makeTransientByteArray((short)16, JCSystem.CLEAR_ON_RESET);
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
 		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
 		symKey.setKey(rnd, (short) 0);

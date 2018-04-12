@@ -71,6 +71,7 @@ public class MiddlewareMain extends Application {
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte test = 0x01;
 	private static final byte AUTHENTICATE_SP = 0x21;
+	private static final byte VERIFY_CHALLENGE = 0x29;
 	static final int portG = 8001;
 	static final int portSP = 8003;
 	private Socket timestampSocket = null;
@@ -593,6 +594,28 @@ public class MiddlewareMain extends Application {
 		return true;
 
 	}
+	
+	private boolean verifyChallenge(ServiceProviderAction received) {
+		byte [] toSend = new byte[received.getChallengeBytes().length];
+		System.arraycopy(received.getChallengeBytes(), 0, toSend, 0, received.getChallengeBytes().length);
+		a = new CommandAPDU(IDENTITY_CARD_CLA, VERIFY_CHALLENGE, 0x00, 0x00, toSend);
+		
+		try {
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				System.out.println("succesfully verified challenge");
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+		
+	}
 
 	class ListenForServiceProviderCommandThread extends Thread {
 		public void run() {
@@ -602,7 +625,8 @@ public class MiddlewareMain extends Application {
 					System.out.println("Listening to service provider...");
 					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
 					ServiceProviderAction received = (ServiceProviderAction) objectinputstream.readObject();
-					System.out.println("received: " + received);
+					System.out.println("received: " + received.getAction().getCommand());
+					
 
 					switch (received.getAction().getCommand()) {
 					case AUTH_SP:
@@ -613,6 +637,10 @@ public class MiddlewareMain extends Application {
 						break;
 					case GET_DATA:
 						System.out.println("GET DATA COMMAND");
+						break;
+					case VERIFY_CHALLENGE:
+						System.out.println("VERIFY CHALLENGE COMMAND");
+						verifyChallenge(received);
 						break;
 					default:
 						sendToServiceProvider("Command doesn't exists.");

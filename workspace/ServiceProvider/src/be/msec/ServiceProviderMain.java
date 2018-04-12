@@ -1,4 +1,5 @@
 package be.msec;
+import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
 import be.msec.client.TimeInfoStruct;
 import be.msec.controllers.MainServiceController;
@@ -15,6 +16,7 @@ import java.awt.List;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
@@ -82,7 +84,6 @@ public class ServiceProviderMain extends Application {
     public void sendServiceProviderActionToMiddleWare(ServiceProviderAction action) {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
-		System.out.println("lkqfjkljr  "+lastActionSPName);
 		try {
 			System.out.println("Send something to the middleware");
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
@@ -131,6 +132,9 @@ public class ServiceProviderMain extends Application {
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
     	
+    	System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
+		System.out.println("encr name bytes   "+bytesToDec(nameBytes));
+    	
     	byte[] decryptedNameBytes;
     	byte[] decryptedChallengeBytes;
     	
@@ -158,7 +162,21 @@ public class ServiceProviderMain extends Application {
 					
 					System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
 					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
+					String name = new String(decryptedNameBytes);
 					
+					
+					BigInteger reqChallenge = new BigInteger(decryptedChallengeBytes);
+					System.out.println(name + "  " + reqChallenge.toString());
+					BigInteger respChallenge =reqChallenge.add(BigInteger.ONE);
+					byte [] respChallengeBytes = respChallenge.toByteArray();
+					
+					//TODO encrypt challenge response
+					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
+					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
+					//send challenge response back to MW
+					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
+					action.setChallengeBytes(encryptedRespChallenge);
+					sendServiceProviderActionToMiddleWare(action);
 					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
