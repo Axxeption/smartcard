@@ -1,28 +1,27 @@
 package be.msec.client;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.cert.Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.Calendar;
+import java.util.Random;
 
 public class CAService {
 	
@@ -63,7 +62,8 @@ public class CAService {
 	
 	
 	public static void main(String[] args) {
-        try {
+		//Need tis code to generate CA keys
+        /*try {
         	KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             // Initialize KeyPairGenerator.
             keyGen.initialize(512);
@@ -85,7 +85,10 @@ public class CAService {
         } catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
+		
+		//Need this method to generate certificates
+		generateCommonCertificate();
     }
 	
 	private static void saveKeyPair(KeyPair keyPair) throws IOException {
@@ -106,9 +109,7 @@ public class CAService {
 		fos.write(pkcs8EncodedKeySpec.getEncoded());
 		fos.close();
 	}
-	
-	
-	
+
 	public static PrivateKey loadPrivateKey(String algorithm)
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
@@ -128,6 +129,69 @@ public class CAService {
 		
 		
 		return privateKey;
+	}
+	
+	private static void generateCommonCertificate() {
+		try {
+        	KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            // Initialize KeyPairGenerator.
+            keyGen.initialize(512);
+
+            // Generate Key Pairs, a private key and a public key.
+            KeyPair keyPair = keyGen.generateKeyPair();
+            PrivateKey privateKey = keyPair.getPrivate();
+            PublicKey publicKey = keyPair.getPublic();
+            
+            //generating the common keys
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
+            RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) privateKey;
+            System.out.println("Commoncertificate privatekey exponent: " + bytesToDec(rsaPrivateKey.getPrivateExponent().toByteArray()));
+            System.out.println("Commoncertificate privatekey modulus: " + bytesToDec(rsaPrivateKey.getModulus().toByteArray()));
+            System.out.println("Commoncertificate publickey exponent: " + bytesToDec(rsaPublicKey.getPublicExponent().toByteArray()));
+            System.out.println("Commoncertificate publickey modulus: " + bytesToDec(rsaPublicKey.getModulus().toByteArray()));
+            
+            //creating a common certificate signed by the CA
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            outputStream.write(rsaPublicKey.getPublicExponent().toByteArray());
+            outputStream.write(rsaPublicKey.getModulus().toByteArray());
+            outputStream.write(ByteBuffer.allocate(4).putInt(new Random().nextInt()).array());
+            //this bytes will be signed: pubExponent + pubModulus + randomInt
+            byte[] bytesToSign = outputStream.toByteArray();
+            
+            //sign the bytes
+            Signature sig = Signature.getInstance("SHA1WithRSA");
+			sig.initSign(loadPrivateKey("RSA"));
+			sig.update(bytesToSign);
+			byte[] signatureBytes = sig.sign();
+            
+			//certificate is the information + signature from the CA
+			outputStream = new ByteArrayOutputStream();
+			outputStream.write(bytesToSign);
+			outputStream.write(signatureBytes);
+			byte[] commonCertificate = outputStream.toByteArray();
+			
+			//print out the certificate, the fourth byte is not useful, take care when reconstructing keys
+            System.out.println(bytesToDec(commonCertificate));
+			
+			
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public static PublicKey loadPublicKey(String algorithm)

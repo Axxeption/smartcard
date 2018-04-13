@@ -72,6 +72,7 @@ public class MiddlewareMain extends Application {
 	private static final byte test = 0x01;
 	private static final byte AUTHENTICATE_SP = 0x21;
 	private static final byte VERIFY_CHALLENGE = 0x29;
+	private static final byte AUTHENTICATE_CARD = 0x30;
 	static final int portG = 8001;
 	static final int portSP = 8003;
 	private Socket timestampSocket = null;
@@ -448,23 +449,12 @@ public class MiddlewareMain extends Application {
 		}
 	}
 
-	private void sendToServiceProvider(String response) {
-		ObjectOutputStream out;
-		try {
-			out = new ObjectOutputStream(middlewareSocket.getOutputStream());
-			out.writeObject(response);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
 	
-	private void sendToServiceProvider(Challenge challenge) {
+	private void sendToServiceProvider(Object message) {
 		ObjectOutputStream out;
 		try {
 			out =  new ObjectOutputStream(middlewareSocket.getOutputStream());
-			out.writeObject(challenge);
+			out.writeObject(message);
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -616,6 +606,30 @@ public class MiddlewareMain extends Application {
 		return true;
 		
 	}
+	
+	private void authenticateCardSendChallenge(ServiceProviderAction received) {
+		byte [] toSend = received.getChallengeBytes();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_CARD, 0x00, 0x00, toSend);
+		
+		
+		try {
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				byte[] response = r.getData();
+				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 1, response.length)));
+			}
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+		
+		
+		return;
+	}
 
 	class ListenForServiceProviderCommandThread extends Thread {
 		public void run() {
@@ -641,6 +655,10 @@ public class MiddlewareMain extends Application {
 					case VERIFY_CHALLENGE:
 						System.out.println("VERIFY CHALLENGE COMMAND");
 						verifyChallenge(received);
+						break;
+					case AUTH_CARD:
+						System.out.println("AuthenticateCard COMMAND");
+						authenticateCardSendChallenge(received);
 						break;
 					default:
 						sendToServiceProvider("Command doesn't exists.");

@@ -8,6 +8,8 @@ import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.interfaces.RSAKey;
@@ -36,6 +38,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private static final byte UPDATE_TIME = 0x25;
 	private static final byte AUTHENTICATE_SP = 0x21;
 	private static final byte VERIFY_CHALLENGE = 0x29;
+	private static final byte AUTHENTICATE_CARD = 0x30;
 
 
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
@@ -219,7 +222,40 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 77, (byte) -112, (byte) 43, (byte) -125, (byte) -1, (byte) 101, (byte) -128, (byte) 8, (byte) -63,
 			(byte) 92, (byte) 49, (byte) -78, (byte) -92, (byte) -101, (byte) 35, (byte) -63, (byte) 86, (byte) -36,
 			(byte) 126, (byte) -3, (byte) 2, (byte) 3, (byte) 1, (byte) 0, (byte) 1 };
+	
+	private byte[] commonCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13, 
+			(byte) -113, (byte) 13, (byte) 45, (byte) -34, (byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, 
+			(byte) -55, (byte) 72, (byte) 80, (byte) 45, (byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, 
+			(byte) 119, (byte) -116, (byte) -109, (byte) 30, (byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, 
+			(byte) 103, (byte) -125, (byte) -70, (byte) -46, (byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, 
+			(byte) -94, (byte) 59, (byte) -5, (byte) 32, (byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, 
+			(byte) -106, (byte) -23, (byte) -40, (byte) -23, (byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, 
+			(byte) 31, (byte) 59, (byte) -50, (byte) 89, (byte) 127, (byte) -46, (byte) -109, (byte) -91, (byte) 101, 
+			(byte) 16, (byte) -13, (byte) 41, (byte) 82, (byte) 35, (byte) -59, (byte) 101, (byte) -89, (byte) 66, 
+			(byte) 3, (byte) -59, (byte) -45, (byte) 32, (byte) -118, (byte) -76, (byte) -103, (byte) 21, (byte) 69, 
+			(byte) -97, (byte) -102, (byte) -58, (byte) -82, (byte) 112, (byte) -113, (byte) 120, (byte) 69, (byte) -101, 
+			(byte) -119, (byte) 98, (byte) -41, (byte) -126, (byte) -103, (byte) 25, (byte) -109, (byte) -63, (byte) -108, 
+			(byte) 34, (byte) 61, (byte) 39, (byte) 56, (byte) 76, (byte) 127, (byte) -90, (byte) 29, (byte) -95, (byte) -40, 
+			(byte) 7, (byte) 96, (byte) -20, (byte) -35, (byte) 65, (byte) 119, (byte) 49, (byte) 91, (byte) 99, (byte) 98, 
+			(byte) 66, (byte) -25, (byte) -15, (byte) 41, (byte) -14, (byte) -62, (byte) 5, (byte) 108, (byte) -110, (byte) 37, (byte) -95 }; 
+	private byte[] privExp_ComCer = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51, 
+			(byte) 20, (byte) -55, (byte) 63, (byte) 126, (byte) -34, (byte) 120, (byte) -90, (byte) -16, (byte) 30, 
+			(byte) -66, (byte) 115, (byte) 50, (byte) 108, (byte) 15, (byte) 89, (byte) -78, (byte) -107, (byte) -98, 
+			(byte) 4, (byte) -4, (byte) -117, (byte) -110, (byte) 13, (byte) -93, (byte) -124, (byte) -77, (byte) 34, 
+			(byte) -59, (byte) 37, (byte) 45, (byte) 62, (byte) -81, (byte) 31, (byte) 98, (byte) -118, (byte) -7, 
+			(byte) -114, (byte) -20, (byte) -66, (byte) 93, (byte) -32, (byte) 101, (byte) -27, (byte) -4, (byte) 86, 
+			(byte) -29, (byte) -79, (byte) 24, (byte) 38, (byte) -21, (byte) -104, (byte) -10, (byte) -18, (byte) -5, 
+			(byte) 84, (byte) 77, (byte) -2, (byte) 125};
+	private byte[] privMod_ComCer =  new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34, 
+			(byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, (byte) -55, (byte) 72, (byte) 80, (byte) 45, 
+			(byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, (byte) 119, (byte) -116, (byte) -109, (byte) 30, 
+			(byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, (byte) 103, (byte) -125, (byte) -70, (byte) -46, 
+			(byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, (byte) -94, (byte) 59, (byte) -5, (byte) 32, 
+			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23, 
+			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89, 
+			(byte) 127, (byte) -46, (byte) -109, (byte) -91}; 
 
+			
 	private byte[] serial = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6e };
 	private byte[] name = new byte[] { 0x4A, 0x61, 0x6E, 0x20, 0x56, 0x6F, 0x73, 0x73, 0x61, 0x65, 0x72, 0x74 };
 	private OwnerPIN pin;
@@ -228,6 +264,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private short keySizeInBits = 512;
 	private RSAPrivateKey privKey = null;
 	private AESKey symKey;
+	private boolean auth = false;
 
 	private byte messageIndex = 0x00;
 
@@ -314,11 +351,14 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			updateTime(apdu);
 			break;
 		case AUTHENTICATE_SP:
-			authenticate(apdu);
+			authenticateServiceProvider(apdu);
 			break;
 		case VERIFY_CHALLENGE:
 			//TODO
 			verifyChallenge(apdu);
+			break;
+		case AUTHENTICATE_CARD:
+			authenticateCard(apdu);
 			break;
 		// If no matching instructions are found it is indicated in the status word of
 		// the response.
@@ -334,6 +374,75 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 	}
 	
+	private void authenticateCard(APDU apdu) {
+		//check if SP is already authenticated
+		if(!auth) {
+			System.out.println("Serviceprovider not yet authenticated");
+			return;
+		}
+		
+		//decrypt 
+		byte [] data = receiveBigData(apdu);
+		byte [] responseChallengeBytes = new byte[16];
+		Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+		aesCipher.init(symKey, Cipher.MODE_DECRYPT);
+		aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
+		System.out.println("Bytes: " + bytesToDec(responseChallengeBytes));
+		
+		//Concat challenge and "AUTH"
+		
+        try {
+        	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			outputStream.write(responseChallengeBytes);
+			outputStream.write("AUTH".getBytes());
+		    byte[] bytesToSign = outputStream.toByteArray();
+				
+		    //prepare signature
+		    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+		    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
+			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			signature.init(privk, Signature.MODE_SIGN);
+			
+			//sign
+			byte[] outputBuffer = new byte[100];
+			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
+			System.out.println("Common cer length: " + commonCertificate.length);
+			byte[] sig = new byte[sigLength];
+			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
+			
+			//Concat byte array to send: CommonCert + bytes to sign + sig
+			outputStream = new ByteArrayOutputStream();
+			outputStream.write(commonCertificate);
+			outputStream.write(bytesToSign);
+			outputStream.write(sig);
+			outputStream.write(new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107}); //fill up the length off the message to 224 bytes
+		    byte[] message = outputStream.toByteArray();
+		    byte[] encryptedMessage = new byte[message.length];
+		    System.out.println("message to authenticate card: " + bytesToDec(sig));
+		    
+		    //init symmetric encryption
+		    Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+			try {
+				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
+
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			sendChallengeToSP(apdu, encryptedMessage);
+					
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+       
+		
+	}
+
 	private void verifyChallenge(APDU apdu) {
 		byte [] data = receiveBigData(apdu);
 		byte [] responseChallengeBytes = new byte[16];
@@ -343,19 +452,19 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		BigInteger responseChallengeBigInt = new BigInteger(1, responseChallengeBytes);
 		BigInteger challengeBigInt = new BigInteger(1, this.challenge);
 		//verify
-		boolean verified = false;
+		auth = false;
 		if(responseChallengeBigInt.equals(challengeBigInt.add(BigInteger.ONE))) {
-			verified = true;
+			auth = true;
 		}
-		if(verified) {
-			System.out.println("challenge verified");
+		if(auth) {
+			System.out.println("challenge verified --> service provider verified");
 		}
 		
 		
 		System.out.println();
 	}
 	
-	private void authenticate(APDU apdu) {
+	private void authenticateServiceProvider(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
 
@@ -430,7 +539,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			//challengebytes symmetrisch encrypteren
 			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-			byte[] encryptedChallengeBytes= new byte[16];
+			byte[] encryptedChallengeBytes = new byte[16];
 			byte[] encryptedNameBytes = new byte[16];
 			try {
 				symCipher.doFinal(challengeBytes, (short)0, (short)challengeBytes.length, encryptedChallengeBytes, (short)0);
@@ -587,6 +696,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		} else
 			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 	}
+	
 	private AESKey getSymKey() {
 		//https://stackoverflow.com/questions/15882088/aes-key-from-javacard-to-java-encrypting?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
@@ -603,6 +713,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
 		return rnd;
 	}
+	
 	private void sign(APDU apdu) {
 		try {
 
@@ -684,6 +795,13 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 	}
 
+	public String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", ";
+		return str;
+	}
+	
 	/**
 	 * Method works! Send the whole certificate to the client in pieces of 32 bytes.
 	 * 

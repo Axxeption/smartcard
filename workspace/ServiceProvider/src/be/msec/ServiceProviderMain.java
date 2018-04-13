@@ -1,6 +1,8 @@
 package be.msec;
+import be.msec.client.CAService;
 import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
+import be.msec.client.MessageToAuthCard;
 import be.msec.client.TimeInfoStruct;
 import be.msec.controllers.MainServiceController;
 import be.msec.controllers.RootMenuController;
@@ -13,20 +15,37 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.awt.List;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.rmi.RemoteException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -44,7 +63,7 @@ public class ServiceProviderMain extends Application {
 	private SecretKeySpec symKey;
 	private IvParameterSpec ivSpec;
 	static final int portSP = 8003;
-
+	private byte[] challengeToAuthCard;
 
     /**
      * Constructor
@@ -56,8 +75,6 @@ public class ServiceProviderMain extends Application {
         launch(args);
     }
     
-    
-
     public ArrayList<ServiceProvider> getServiceProviders() {
 		return serviceProviders;
 	}
@@ -89,13 +106,18 @@ public class ServiceProviderMain extends Application {
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
 			objectoutputstream.writeObject(action);
 			
-			//wait for response
-			receiveResponseFromMiddleWare();
+			//wait for response)
+			if(action.getAction().command != CallableMiddelwareMethodes.VERIFY_CHALLENGE){
+				System.out.println("start waiting");	
+				receiveResponseFromMiddleWare();
+			}
+			
 			
 		}catch (Exception e) {
 			System.out.println(e);
 		}
     }
+    
     public void receiveResponseFromMiddleWare() {	
     	ObjectInputStream objectinputstream = null;
     	Object obj = null;
@@ -114,6 +136,9 @@ public class ServiceProviderMain extends Application {
 				String answer = (String)obj;
 				System.out.println("received string "+answer);
 				mainController.addToDataLog("Succesfully received: " +answer);
+			}
+			else if(obj instanceof MessageToAuthCard) {
+				authenticateCard((MessageToAuthCard) obj);
 			}
 			else {
 				System.out.println("unknown obj received");
@@ -156,7 +181,7 @@ public class ServiceProviderMain extends Application {
 					this.symKey = new SecretKeySpec(rnd, "AES");
 					
 					Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
-					aesCipher.init(Cipher.DECRYPT_MODE, this.symKey, this.ivSpec);
+					aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 					decryptedChallengeBytes = aesCipher.doFinal(challengeBytes);
 					decryptedNameBytes = aesCipher.doFinal(nameBytes);
 					
@@ -178,16 +203,160 @@ public class ServiceProviderMain extends Application {
 					action.setChallengeBytes(encryptedRespChallenge);
 					sendServiceProviderActionToMiddleWare(action);
 					
-				} catch (Exception e) {
+				} catch (NoSuchAlgorithmException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} 
-    			
-    			
+				} catch (NoSuchPaddingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidKeyException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidAlgorithmParameterException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalBlockSizeException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (BadPaddingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		    		
     		}
     	}
     	
+    	//start the authentication of the card (step 3)
+    	authenticateCard();
+    	
     }
+    
+    public void authenticateCard() {
+    	mainController.addToDataLog("Start authentication of card" );
+    	//generate random bytes for challenge
+    	byte[] b = new byte[16];
+    	new Random().nextBytes(b);
+    	challengeToAuthCard = b;
+    	byte[] encryptedChallengeBytes = null;
+    	//encrypt challengeBytes
+    	try {
+			Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+			aesCipher.init(Cipher.ENCRYPT_MODE, symKey, ivSpec);
+			encryptedChallengeBytes = aesCipher.doFinal(b);
+			
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	
+    	//generate an action to send to the card
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_CARD), null);
+    	action.setChallengeBytes(encryptedChallengeBytes);
+    	sendServiceProviderActionToMiddleWare(action);
+    	
+    	//start waiting for response
+    	receiveResponseFromMiddleWare();
+    	
+    	
+    }
+    
+    public void authenticateCard(MessageToAuthCard cardMessage) {
+    	System.out.println("DONE " + bytesToDec(cardMessage.getMessage()));
+    	Cipher aesCipher;
+		try {
+			//decrypte message
+			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
+			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
+			System.out.println(bytesToDec(message));
+			
+			//check signature
+			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
+			byte[] signature = Arrays.copyOfRange(message, 72, 136);
+			Signature signer = Signature.getInstance("SHA1WithRSA");
+			signer.initVerify(CAService.loadPublicKey("RSA"));
+			signer.update(signedBytes);
+			if(signer.verify(signature)) {
+				System.out.println("Card has a valid common certificate.");
+			} else {
+				System.out.println("Card doesn't have a valid common certificate.");
+				return;
+			}
+			
+			//check if sign with CommonCert key is ok
+			//first regenerate public key from commoncertificate
+			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 0, 3));
+			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 4, 68));
+			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+			signer.initVerify(KeyFactory.getInstance("RSA").generatePublic(spec));
+			//generate byte array
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			outputStream.write(challengeToAuthCard);
+			outputStream.write("AUTH".getBytes());
+		    byte[] bytesToSign = outputStream.toByteArray();
+		    System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
+		    System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
+			//check sign
+		    
+			
+		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
+				System.out.println("Card is valid, challenge is ok.");
+			} else {
+				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
+				return;
+			}
+			
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+    	
+    }
+    
     public void connectToMiddleWare() {
     	try {
 			serviceProviderSocket = new Socket("localhost", portSP);
@@ -197,6 +366,7 @@ public class ServiceProviderMain extends Application {
 		System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
 
     }
+    
     public void initRootLayout() {
         try {
             // Load root layout from fxml file.
@@ -220,7 +390,6 @@ public class ServiceProviderMain extends Application {
             e.printStackTrace();
         }
     }
-
 
     public Controller getCurrentViewController() {
         return currentViewController;
