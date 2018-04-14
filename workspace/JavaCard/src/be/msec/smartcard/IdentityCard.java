@@ -3,24 +3,20 @@ package be.msec.smartcard;
 import javacard.framework.APDU;
 import javacardx.apdu.ExtendedLength;
 import javacardx.crypto.Cipher;
-import sun.security.util.Length;
 import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.security.interfaces.RSAKey;
-import java.util.Random;
+//TODO beno deze magje niet gebruiken ;) cheater
+//import java.io.ByteArrayOutputStream;
+//import java.io.IOException;
+//import java.math.BigInteger;
 
 import javacard.framework.*;
 import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
 import javacard.security.AESKey;
 import javacard.security.KeyBuilder;
-import javacard.security.PublicKey;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
 import javacard.security.RandomData;
@@ -39,7 +35,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private static final byte AUTHENTICATE_SP = 0x21;
 	private static final byte VERIFY_CHALLENGE = 0x29;
 	private static final byte AUTHENTICATE_CARD = 0x30;
-
 
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -257,18 +252,16 @@ public class IdentityCard extends Applet implements ExtendedLength {
 
 			
 	private byte[] serial = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6e };
-	private byte[] name = new byte[] { 0x4A, 0x61, 0x6E, 0x20, 0x56, 0x6F, 0x73, 0x73, 0x61, 0x65, 0x72, 0x74 };
+	private byte[] name = new byte[] { (byte) 0x4A, (byte)0x61,(byte) 0x6E, (byte)0x20, (byte)0x56, (byte)0x6F, (byte)0x73, (byte)0x73,(byte) 0x61, (byte)0x65,(byte) 0x72,(byte) 0x74 };
 	private OwnerPIN pin;
-	private short offset = 0;
-	private short keySizeInBytes = 64;
-	private short keySizeInBits = 512;
+	private short offset = (short) 0;
+	private short keySizeInBytes =  64;
+	private short keySizeInBits = (short) 512;
 	private RSAPrivateKey privKey = null;
 	private AESKey symKey;
 	private boolean auth = false;
 
-	private byte messageIndex = 0x00;
-
-	private final static short MAX_APDU = 240;
+	private final static short MAX_APDU = (short)240;
 	private short BUF_IN_OFFSET[];
 	private byte date[];
 	private byte [] rnd; //used to create session key while authenticating SP
@@ -282,13 +275,13 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		// max try 3 times
 		pin = new OwnerPIN(PIN_TRY_LIMIT, PIN_SIZE);
 		// pin is 1234
-		pin.update(new byte[] { 0x31, 0x32, 0x33, 0x34 }, (short) 0, PIN_SIZE);
+		pin.update(new byte[] { (byte) 0x31, (byte) 0x32, (byte) 0x33, (byte) 0x34 }, (short) 0, PIN_SIZE);
 		// needed for the signature of a random byte array
 		privKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, keySizeInBits, false);
 		privKey.setExponent(privExponent, offset, keySizeInBytes);
 		privKey.setModulus(privModulus, offset, keySizeInBytes);
 
-		date = new byte[8];
+		date = new byte[(short)8];
 		/*
 		 * This method registers the applet with the JCRE on the card.
 		 */
@@ -308,7 +301,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 * therefore, no longer be used for identification.
 	 */
 	public boolean select() {
-		if (pin.getTriesRemaining() == 0)
+		if (pin.getTriesRemaining() == (short) 0)
 			return false;
 		return true;
 	}
@@ -360,24 +353,18 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		case AUTHENTICATE_CARD:
 			authenticateCard(apdu);
 			break;
-		// If no matching instructions are found it is indicated in the status word of
-		// the response.
-		// This can be done by using this method. As an argument a short is given that
-		// indicates
-		// the type of warning. There are several predefined warnings in the 'ISO7816'
-		// class.
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
 		}catch(Exception e) {
-			short a = 0;
+			ISOException.throwIt(ERROR_UNKNOW);
 		}
 	}
 	
 	private void authenticateCard(APDU apdu) {
 		//check if SP is already authenticated
 		if(!auth) {
-			System.out.println("Serviceprovider not yet authenticated");
+//			System.out.println("Serviceprovider not yet authenticated");
 			return;
 		}
 		
@@ -387,57 +374,60 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 		aesCipher.init(symKey, Cipher.MODE_DECRYPT);
 		aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
-		System.out.println("Bytes: " + bytesToDec(responseChallengeBytes));
+//		System.out.println("Bytes: " + bytesToDec(responseChallengeBytes));
 		
 		//Concat challenge and "AUTH"
 		
-        try {
-        	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			outputStream.write(responseChallengeBytes);
-			outputStream.write("AUTH".getBytes());
-		    byte[] bytesToSign = outputStream.toByteArray();
-				
-		    //prepare signature
-		    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-		    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
-			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
-			signature.init(privk, Signature.MODE_SIGN);
-			
-			//sign
-			byte[] outputBuffer = new byte[100];
-			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
-			System.out.println("Common cer length: " + commonCertificate.length);
-			byte[] sig = new byte[sigLength];
-			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
-			
-			//Concat byte array to send: CommonCert + bytes to sign + sig
-			outputStream = new ByteArrayOutputStream();
-			outputStream.write(commonCertificate);
-			outputStream.write(bytesToSign);
-			outputStream.write(sig);
-			outputStream.write(new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107}); //fill up the length off the message to 224 bytes
-		    byte[] message = outputStream.toByteArray();
-		    byte[] encryptedMessage = new byte[message.length];
-		    System.out.println("message to authenticate card: " + bytesToDec(sig));
-		    
-		    //init symmetric encryption
-		    Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-			try {
-				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
-
-			}catch(Exception e) {
-				e.printStackTrace();
-			}
-			
-			sendChallengeToSP(apdu, encryptedMessage);
+        try { 
+        	//TODO this bytearray output stream does not work with the real card!!
+        	//class java.io.ByteArrayOutputStream not found in export file io.exp
+//        	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//			outputStream.write(responseChallengeBytes);
+//			//TODO beno this auth.getbytes make use of string --> not possible on real card :(
+////			outputStream.write("AUTH".getBytes());
+//		    byte[] bytesToSign = outputStream.toByteArray();
+//				
+//		    //prepare signature
+//		    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+//		    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
+//			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+//			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+//			signature.init(privk, Signature.MODE_SIGN);
+//			
+//			//sign
+//			byte[] outputBuffer = new byte[100];
+//			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
+////			System.out.println("Common cer length: " + commonCertificate.length);
+//			byte[] sig = new byte[sigLength];
+//			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
+//			
+//			//Concat byte array to send: CommonCert + bytes to sign + sig
+//			outputStream = new ByteArrayOutputStream();
+//			outputStream.write(commonCertificate);
+//			outputStream.write(bytesToSign);
+//			outputStream.write(sig);
+//			outputStream.write(new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107}); //fill up the length off the message to 224 bytes
+//		    byte[] message = outputStream.toByteArray();
+//		    byte[] encryptedMessage = new byte[message.length];
+////		    System.out.println("message to authenticate card: " + bytesToDec(sig));
+//		    
+//		    //init symmetric encryption
+//		    Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+//			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+//			try {
+//				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
+//
+//			}catch(Exception e) {
+//				e.printStackTrace();
+//			}
+//			
+//			sendChallengeToSP(apdu, encryptedMessage);
 					
 			
 			
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			ISOException.throwIt(ERROR_UNKNOW);
 		}
        
 		
@@ -449,33 +439,32 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 		aesCipher.init(symKey, Cipher.MODE_DECRYPT);
 		aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
-		BigInteger responseChallengeBigInt = new BigInteger(1, responseChallengeBytes);
-		BigInteger challengeBigInt = new BigInteger(1, this.challenge);
+		//TODO beno Biginteger cannot be used on real smart card!! --> commented
+//		BigInteger responseChallengeBigInt = new BigInteger(1, responseChallengeBytes);
+//		BigInteger challengeBigInt = new BigInteger(1, this.challenge);
 		//verify
 		auth = false;
-		if(responseChallengeBigInt.equals(challengeBigInt.add(BigInteger.ONE))) {
-			auth = true;
-		}
+//		if(responseChallengeBigInt.equals(challengeBigInt.add(BigInteger.ONE))) {
+//			auth = true;
+//		}
 		if(auth) {
-			System.out.println("challenge verified --> service provider verified");
+//			System.out.println("challenge verified --> service provider verified");
 		}
 		
-		
-		System.out.println();
 	}
 	
 	private void authenticateServiceProvider(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
-
-		byte [] certificateBytes = new byte[data.length-signedCertificate.length];
-		byte[] validEndTimeCertificate = new byte[8];
-		byte[] pkExpBytesSP = new byte[3];
-		byte[] pkModBytesSP = new byte[64];
-		byte[] nameBytes = new byte[certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -1];
-		byte[] nameBytesCopy16 = new byte[16];
 		
-		System.out.println("namebytes length: "+nameBytes.length);
+		byte [] certificateBytes = new byte[ (short) ( data.length - signedCertificate.length) ];
+		byte[] validEndTimeCertificate = new byte[(short)8];
+		byte[] pkExpBytesSP = new byte[(short)3];
+		byte[] pkModBytesSP = new byte[(short)64];
+		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -1)];
+		byte[] nameBytesCopy16 = new byte[(short)16];
+		
+//		System.out.println("namebytes length: "+nameBytes.length);
 		
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
 		Util.arrayCopy(data, (short) (64), certificateBytes, (short) 0, (short) (data.length-64));
@@ -485,8 +474,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Util.arrayCopy(certificateBytes, (short) 76, nameBytes, (short)0, (short)nameBytes.length);
 		
 		Util.arrayCopy(nameBytes, (short)0, nameBytesCopy16, (short)0, (short)nameBytes.length);
-		
-		String name1 = nameBytes.toString();		
+				
 		//end jonas code
 		
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
@@ -499,7 +487,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			
 			boolean result = signature.verify(certificateBytes, (short) 0, (short) certificateBytes.length, signedCertificate , (short) 0, (short) signedCertificate .length);
-			short debug = (short) 0;
 			//result is true if everything went fine 
 			//but now just commented for not losing time
 			if(!result) {
@@ -514,12 +501,12 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			this.symKey = getSymKey();
 			
 			//rebuild SP PK
-			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
+			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short) (512) , false);
 			publicKeySP.setExponent(pkExpBytesSP, offset, (short) 3);
-			publicKeySP.setModulus(pkModBytesSP, offset, (short) pkModBytesSP.length);
-			//encrypt rnd to send to SP
-			//met rnd kan SP de symmetrische key heropbouwen
-			
+			publicKeySP.setModulus(pkModBytesSP, offset, (short) (pkModBytesSP.length));
+//			//encrypt rnd to send to SP
+//			//met rnd kan SP de symmetrische key heropbouwen
+//			
 			Cipher asymCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
 			byte[] encryptedRnd = JCSystem.makeTransientByteArray((short) 64, JCSystem.CLEAR_ON_DESELECT);
 			asymCipher.init((RSAPublicKey)publicKeySP, Cipher.MODE_ENCRYPT);
@@ -528,42 +515,39 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				asymCipher.doFinal(this.rnd, (short)0, (short)this.rnd.length, encryptedRnd, (short)0);
 
 			}catch(Exception e) {
-				e.printStackTrace();
+				ISOException.throwIt(ERROR_UNKNOW);
 			}
 			
 			
 			//generate challenge
 			byte[] challengeBytes = generateRandomBytes();		
-			BigInteger challenge = new BigInteger(1, challengeBytes);	//for testing
+//			BigInteger challenge = new BigInteger(1, challengeBytes);	//for testing
 			this.challenge = challengeBytes;
 			//challengebytes symmetrisch encrypteren
 			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-			byte[] encryptedChallengeBytes = new byte[16];
-			byte[] encryptedNameBytes = new byte[16];
+			byte[] encryptedChallengeBytes = new byte[(short) 16];
+			byte[] encryptedNameBytes = new byte[(short)16];
 			try {
 				symCipher.doFinal(challengeBytes, (short)0, (short)challengeBytes.length, encryptedChallengeBytes, (short)0);
 				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
 				symCipher.doFinal(nameBytesCopy16, (short)0,(short) nameBytesCopy16.length, encryptedNameBytes, (short)0);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				ISOException.throwIt(ERROR_UNKNOW);
 			}
 			
 			//msg opbouwen om terug te zenden
-			byte [] toSend = new byte[encryptedRnd.length + encryptedChallengeBytes.length + encryptedNameBytes.length];
-			Util.arrayCopy(encryptedRnd, (short)0, toSend, (short)0, (short)encryptedRnd.length);
+			byte [] toSend = new byte[(short) (encryptedRnd.length + encryptedChallengeBytes.length + encryptedNameBytes.length)];
+			Util.arrayCopy(encryptedRnd, (short)0, toSend, (short)0, (short) encryptedRnd.length);
 			Util.arrayCopy(encryptedChallengeBytes, (short)0, toSend, (short)encryptedRnd.length, (short)encryptedChallengeBytes.length);
 			Util.arrayCopy(encryptedNameBytes, (short)0, toSend, (short)(encryptedRnd.length + challengeBytes.length),(short)encryptedNameBytes.length);
 			
 			//send msg to SP 
 			if(sendChallengeToSP(apdu, toSend)) {
-				System.out.println("success send challenge");
+//				System.out.println("success send challenge");
 			}
-			
-			//Encrypt this key with a PK_SP --> first parcel to send back
-			//TODO Now i need the PK of SP but I got only the bytes of the certificate can I build the CertificateObject again?
-			//TODO to get the the PK???
+
 		}catch(Exception e) {
 			ISOException.throwIt(ERROR_UNKNOW);
 		}
@@ -622,7 +606,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			boolean result = signature.verify(date, (short) 0, (short) date.length, signedData, (short) 0,
 					(short) signedData.length);
-
+			if(result) {
+				//TODO Axel complete code
+			}
 			// now save the time to the card
 			if (isSmaller(lastValidationTime, date)) {
 				lastValidationTime = date;
@@ -631,8 +617,14 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			ISOException.throwIt(ERROR_UNKNOW);
 		}
 	}
-
-	// if array1 < array2 --> true
+	
+	/**
+	 * Method that calculates with byte array (represents an number) is
+	 * smaller  if array1 < array2 --> true;
+	 * 
+	 * @param byte[], byte[]
+	 * @return boolean
+	 */
 	private boolean isSmaller(byte[] array1, byte[] array2) {
 		if (array1.length != array2.length) {
 			if (array1.length < array2.length) {
@@ -641,7 +633,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				return false;
 			}
 		} else {
-			for (int i = 0; i < array1.length; i++) {
+			for (short i = 0; i < array1.length; i++) {
 				if (array1[i] > array2[i]) {
 					return false;
 				}
@@ -743,7 +735,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 	}
 
-	private void getCertificate(APDU apdu) {
+//	private void getCertificate(APDU apdu) {
 		// if the pin is validated --> return certificate
 		// byte [] partOfCertificate = new byte[240];
 		// byte[] buffer = apdu.getBuffer();
@@ -759,7 +751,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		// apdu.setOutgoingLength((short)partOfCertificate.length);
 		// apdu.sendBytesLong(partOfCertificate,(short)0,(short)partOfCertificate.length);
 		// }
-	}
+//	}
 
 	/*
 	 * This method checks whether the user is authenticated and sends the serial
@@ -795,12 +787,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 	}
 
-	public String bytesToDec(byte[] barray) {
-		String str = "";
-		for (byte b : barray)
-			str += (int) b + ", ";
-		return str;
-	}
 	
 	/**
 	 * Method works! Send the whole certificate to the client in pieces of 32 bytes.

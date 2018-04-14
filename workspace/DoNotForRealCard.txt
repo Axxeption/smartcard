@@ -1,0 +1,9 @@
+wat niet doen: 
+
+} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+
+die eerste screenshot is goed! gwn (short) (bewerking)

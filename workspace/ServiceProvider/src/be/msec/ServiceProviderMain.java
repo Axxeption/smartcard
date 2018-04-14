@@ -195,7 +195,7 @@ public class ServiceProviderMain extends Application {
 					BigInteger respChallenge =reqChallenge.add(BigInteger.ONE);
 					byte [] respChallengeBytes = respChallenge.toByteArray();
 					
-					//TODO encrypt challenge response
+					//TODO beno encrypt challenge response
 					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
 					//send challenge response back to MW

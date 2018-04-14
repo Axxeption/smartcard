@@ -3,7 +3,10 @@
     <!-- Global properties -->
     <property name="srcDir" value="${basedir}/src"/>
     <!--<property name="cardDir" value="C:\Users\Benoit\AppData\Roaming\Local Libraries\Local Documents\SmartCards\java_card_kit-2_2_2\libb"/>-->
-	<property name="cardDir" value="C:\Users\Benoit\AppData\Roaming\Local Libraries\Local Documents\SmartCards\java_card_kit-2_2_2\lib"/>
+	<!-- <property name="cardDir" value="C:\Users\Benoit\AppData\Roaming\Local Libraries\Local Documents\SmartCards\java_card_kit-2_2_2\lib"/>
+    --> 
+	<property name="cardDir" value="C:\Users\vulst\Documents\School_4elict\Veilige_software\smartcard\java_card_kit-2_2_2\lib"/>
+	  
     <property name="targetDir" value="${basedir}/target"/>
 	<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
 
