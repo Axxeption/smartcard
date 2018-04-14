@@ -44,6 +44,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 
 	private final static short ERROR_OUT_OF_BOUNDS = (short) 0x8001;
 	private final static short ERROR_UNKNOW = (short) 0x8888;
+	private final static short ERROR_WRONG_TIME = (short) 0x8002;
 
 	private byte[] privModulus = new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107, (byte) 82, (byte) 25,
 			(byte) -66, (byte) 34, (byte) 5, (byte) -58, (byte) 75, (byte) -39, (byte) -54, (byte) 43, (byte) 25,
@@ -606,15 +607,13 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			boolean result = signature.verify(date, (short) 0, (short) date.length, signedData, (short) 0,
 					(short) signedData.length);
-			if(result) {
-				//TODO Axel complete code
-			}
-			// now save the time to the card
-			if (isSmaller(lastValidationTime, date)) {
+			if(result && isSmaller(lastValidationTime, date)) {
 				lastValidationTime = date;
+			}else {
+				ISOException.throwIt(ERROR_UNKNOW);
 			}
 		} catch (Exception e) {
-			ISOException.throwIt(ERROR_UNKNOW);
+			ISOException.throwIt(ERROR_WRONG_TIME);
 		}
 	}
 	
