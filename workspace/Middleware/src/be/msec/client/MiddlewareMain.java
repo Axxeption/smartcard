@@ -408,6 +408,7 @@ public class MiddlewareMain extends Application {
 	private void sendToServiceProvider(Object message) {
 		ObjectOutputStream out;
 		try {
+			System.out.println("SENDING TO SP");
 			out =  new ObjectOutputStream(middlewareSocket.getOutputStream());
 			out.writeObject(message);
 			
