@@ -16,7 +16,9 @@ import javacard.framework.*;
 import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
 import javacard.security.AESKey;
+import javacard.security.InitializedMessageDigest;
 import javacard.security.KeyBuilder;
+import javacard.security.MessageDigest;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
 import javacard.security.RandomData;
@@ -35,7 +37,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private static final byte AUTHENTICATE_SP = 0x21;
 	private static final byte VERIFY_CHALLENGE = 0x29;
 	private static final byte AUTHENTICATE_CARD = 0x30;
-
+	private static final byte RELEASE_ATTRIBUTE = 0x31;
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
 
@@ -45,7 +47,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private final static short ERROR_OUT_OF_BOUNDS = (short) 0x8001;
 	private final static short ERROR_UNKNOW = (short) 0x8888;
 	private final static short ERROR_WRONG_TIME = (short) 0x8002;
+	private final static short ERROR_WRONG_RIGHTS = (short) 0x8003;
+	byte [] nameBytesCopy16;
 
+	
 	private byte[] privModulus = new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107, (byte) 82, (byte) 25,
 			(byte) -66, (byte) 34, (byte) 5, (byte) -58, (byte) 75, (byte) -39, (byte) -54, (byte) 43, (byte) 25,
 			(byte) -117, (byte) 80, (byte) -62, (byte) 51, (byte) 19, (byte) 59, (byte) -70, (byte) -100, (byte) 85,
@@ -250,8 +255,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23, 
 			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89, 
 			(byte) 127, (byte) -46, (byte) -109, (byte) -91}; 
-
-			
+	
+	byte [] K_u = new byte[] {(byte) 1, (byte) 2, (byte) 3 }; //id of the card
+	private InitializedMessageDigest sha1;		
 	private byte[] serial = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6e };
 	private byte[] name = new byte[] { (byte) 0x4A, (byte)0x61,(byte) 0x6E, (byte)0x20, (byte)0x56, (byte)0x6F, (byte)0x73, (byte)0x73,(byte) 0x61, (byte)0x65,(byte) 0x72,(byte) 0x74 };
 	private OwnerPIN pin;
@@ -288,6 +294,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		 */
 		register();
 		BUF_IN_OFFSET = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_DESELECT);
+		sha1 = MessageDigest.getInitializedMessageDigestInstance(MessageDigest.ALG_SHA, false);
 	}
 
 	/*
@@ -354,6 +361,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		case AUTHENTICATE_CARD:
 			authenticateCard(apdu);
 			break;
+		case RELEASE_ATTRIBUTE:
+			releaseAttribute(apdu);
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
@@ -362,6 +371,44 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 	}
 	
+	/**
+	 * Method releases the asked attributes if the SP has the rights
+	 * 
+	 * @param apdu
+	 * @return byte[]
+	 */
+	private void releaseAttribute(APDU apdu) {
+		byte [] askedData = receiveBigData(apdu);
+		byte [] query = new byte[] {(byte) 2, (byte) 0 };
+		if(isSmaller(askedData, maxRights)) {
+			//get the synomym for the SP
+			byte [] synomym = new byte[19];
+			byte [] synomymHashed = new byte[20]; //sha1 gives ouput of 20 btyes
+			Util.arrayCopy(K_u, (short) 0 , synomym, (short) 0 , (short) K_u.length);
+			Util.arrayCopy(nameBytesCopy16, (short) (0), synomym , (short) K_u.length, (short) 16);
+			InitializedMessageDigest hash = sha1;
+			hash.reset();
+//			hash.update(synomym, (short) 0, (short) (K_u.length + nameBytesCopy16.length));
+			hash.doFinal(synomym, (short) 0 , (short) (K_u.length + nameBytesCopy16.length), synomymHashed, (short) 0);
+			
+			//get the asked data
+			byte [] queryResults = solveQuery(query);
+			
+			//set everything togheter in one big byte array and send it back
+			byte [] sendBack = new byte[ (short) (queryResults.length + synomymHashed.length)];
+			Util.arrayCopy(synomymHashed, (short) 0 , sendBack, (short) 0 , (short) synomymHashed.length);
+			Util.arrayCopy(queryResults, (short) 0 , sendBack, (short) synomymHashed.length , (short) queryResults.length);
+			
+			//TODO send back but first check if okey
+		}
+		
+	}
+
+	private byte[] solveQuery(byte[] query) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	private void authenticateCard(APDU apdu) {
 		//check if SP is already authenticated
 		if(!auth) {
@@ -463,7 +510,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		byte[] pkExpBytesSP = new byte[(short)3];
 		byte[] pkModBytesSP = new byte[(short)64];
 		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -3)];
-		byte[] nameBytesCopy16 = new byte[(short)16];
+		nameBytesCopy16 = new byte[(short)16];
 		maxRights = new byte[2];
 		//		System.out.println("namebytes length: "+nameBytes.length);
 		
