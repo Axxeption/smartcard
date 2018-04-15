@@ -587,7 +587,7 @@ public class MiddlewareMain extends Application {
 	
 	private void getDataFromCard(ServiceProviderAction receivedQuery) {
 		System.out.println("Getting data from card");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
+		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
 		try {
 			r = c.transmit(a);
 			if (r.getSW() == SW_VERIFICATION_FAILED)

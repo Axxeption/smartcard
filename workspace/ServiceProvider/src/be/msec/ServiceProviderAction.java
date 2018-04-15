@@ -8,6 +8,7 @@ public class ServiceProviderAction implements Serializable {
 	private ServiceAction action;
 	private SignedCertificate certificate;
 	private String serviceProvider;
+	private short dataQuery;
 	private byte[]challengeBytes;
 	
 	public ServiceProviderAction(ServiceAction action) {
@@ -17,7 +18,13 @@ public class ServiceProviderAction implements Serializable {
 		this.action = action;
 		this.certificate = certificate;
 	}
-
+	
+	public short getDataQuery() {
+		return dataQuery;
+	}
+	public void setDataQuery(short dataQuery) {
+		this.dataQuery = dataQuery;
+	}
 	public ServiceAction getAction() {
 		return action;
 	}
