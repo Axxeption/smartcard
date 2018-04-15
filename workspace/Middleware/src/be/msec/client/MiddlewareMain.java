@@ -100,7 +100,7 @@ public class MiddlewareMain extends Application {
 		try {
 //			UPDATE_TIME_ON_CARD_ROUTINE();
 			connectToCard(true);
-			 connectServiceProvider();
+			connectServiceProvider();
 			// askName();
 
 			// UPDATE_TIME_ON_CARD_ROUTINE();
@@ -540,8 +540,13 @@ public class MiddlewareMain extends Application {
 			e.printStackTrace();
 			return false;
 		}
-		return true;
-
+		
+		ServiceProviderAction query;
+		
+		//TODO delete this part --> just for testing
+        getDataFromCard();
+        return true;
+        
 	}
 	
 	private boolean verifyChallenge(ServiceProviderAction received) {
@@ -586,7 +591,7 @@ public class MiddlewareMain extends Application {
 		return;
 	}
 	
-	private void getDataFromCard(ServiceProviderAction receivedQuery) {
+	private void getDataFromCard() {
 		System.out.println("Getting data from card");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
 		try {
@@ -628,7 +633,7 @@ public class MiddlewareMain extends Application {
 				}
             }
             System.out.println("pin valid");
-            getDataFromCard(query);
+//            getDataFromCard(query);
 		}
 	}
 
