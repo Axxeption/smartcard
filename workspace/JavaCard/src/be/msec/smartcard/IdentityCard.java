@@ -7,6 +7,10 @@ import javacard.framework.Applet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 
+import java.io.ByteArrayOutputStream;
+
+import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
+
 //TODO beno deze magje niet gebruiken ;) cheater
 //import java.io.ByteArrayOutputStream;
 //import java.io.IOException;
@@ -279,14 +283,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else {
 //			byte [] askedData = receiveBigData(apdu);
-//			System.out.println(askedData[0]);
-//			System.out.println(askedData[1]);
-//			System.out.println(askedData[2]);
-//			System.out.println(askedData[3]);
-//			System.out.println(askedData[4]);
-//			System.out.println(askedData[5]);
-//			System.out.println(askedData[6]);
-//			System.out.println(askedData[7]);
 
 			short query = (byte) 1;
 			if(query <= maxRights) {
@@ -309,19 +305,20 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				Util.arrayCopy(synomymHashed, (short) 0 , sendBack, (short) 0 , (short) synomymHashed.length);
 				Util.arrayCopy(queryResults, (short) 0 , sendBack, (short) synomymHashed.length , (short) queryResults.length);
 				
-				//encrypt the data tosend with the Ks
-				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-				symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
-				byte[] encryptedData = new byte[(short) 16];
-				sendBack = padding(sendBack);
-				try {
-					symCipher.doFinal(sendBack, (short)0, (short)sendBack.length, encryptedData, (short)0);
-				} catch (Exception e) {
-					ISOException.throwIt(ERROR_UNKNOW);
-				}
-				System.out.println("The data is succesfully encrypted");
+				//TODO works only with 16byte array! encrypt the data tosend with the Ks
+				
+//				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+//				symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
+//				byte[] encryptedData = new byte[(short) 16];
+//				sendBack = new byte[16];
+//				try {
+//					symCipher.doFinal(sendBack, (short)0, (short)sendBack.length, encryptedData, (short)0);
+//				} catch (Exception e) {
+//					ISOException.throwIt(ERROR_UNKNOW);
+//				}
+//				System.out.println("The data is succesfully encrypted");
 				//send everything back can be big!
-				if(sendBigFile(apdu, encryptedData)) {
+				if(sendBigFile(apdu, sendBack)) {
 					System.out.println("The data is succesfully transferred!");
 				}
 			}
@@ -366,47 +363,47 @@ public class IdentityCard extends Applet implements ExtendedLength {
         try { 
         	//TODO this bytearray output stream does not work with the real card!!
         	//class java.io.ByteArrayOutputStream not found in export file io.exp
-//        	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//			outputStream.write(responseChallengeBytes);
-//			//TODO beno this auth.getbytes make use of string --> not possible on real card :(
-////			outputStream.write("AUTH".getBytes());
-//		    byte[] bytesToSign = outputStream.toByteArray();
-//				
-//		    //prepare signature
-//		    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-//		    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
-//			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-//			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
-//			signature.init(privk, Signature.MODE_SIGN);
-//			
-//			//sign
-//			byte[] outputBuffer = new byte[100];
-//			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
-////			System.out.println("Common cer length: " + commonCertificate.length);
-//			byte[] sig = new byte[sigLength];
-//			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
-//			
-//			//Concat byte array to send: CommonCert + bytes to sign + sig
-//			outputStream = new ByteArrayOutputStream();
-//			outputStream.write(commonCertificate);
-//			outputStream.write(bytesToSign);
-//			outputStream.write(sig);
-//			outputStream.write(new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107}); //fill up the length off the message to 224 bytes
-//		    byte[] message = outputStream.toByteArray();
-//		    byte[] encryptedMessage = new byte[message.length];
-////		    System.out.println("message to authenticate card: " + bytesToDec(sig));
-//		    
-//		    //init symmetric encryption
-//		    Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-//			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-//			try {
-//				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
-//
-//			}catch(Exception e) {
-//				e.printStackTrace();
-//			}
-//			
-//			sendChallengeToSP(apdu, encryptedMessage);
+        	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			outputStream.write(responseChallengeBytes);
+			//TODO beno this auth.getbytes make use of string --> not possible on real card :(
+//			outputStream.write("AUTH".getBytes());
+		    byte[] bytesToSign = outputStream.toByteArray();
+				
+		    //prepare signature
+		    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+		    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
+			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			signature.init(privk, Signature.MODE_SIGN);
+			
+			//sign
+			byte[] outputBuffer = new byte[100];
+			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
+//			System.out.println("Common cer length: " + commonCertificate.length);
+			byte[] sig = new byte[sigLength];
+			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
+			
+			//Concat byte array to send: CommonCert + bytes to sign + sig
+			outputStream = new ByteArrayOutputStream();
+			outputStream.write(commonCertificate);
+			outputStream.write(bytesToSign);
+			outputStream.write(sig);
+			outputStream.write(new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107}); //fill up the length off the message to 224 bytes
+		    byte[] message = outputStream.toByteArray();
+		    byte[] encryptedMessage = new byte[message.length];
+//		    System.out.println("message to authenticate card: " + bytesToDec(sig));
+		    
+		    //init symmetric encryption
+		    Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+			try {
+				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
+
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			sendBigFile(apdu, encryptedMessage);
 	
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -706,10 +703,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private byte[] solveQuery(short query) {
 		byte [] result = null;
 		byte [] enter = new byte[] {(byte) 0xa};
+		short numberOfAttributes = 1;
 		switch(query) {
 		case((short) 1):
 			//gives default back = synomym + age
-			short numberOfAttributes = 2;
+			numberOfAttributes = 2;
 			result = new byte[synomym.length + att_age.length + numberOfAttributes];
 			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
 			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
@@ -717,13 +715,54 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
 			break;
 		case((short) 2):
-			
+			//gives the betting type: synonym + age + country + name
+			numberOfAttributes = 4;
+			result = new byte[synomym.length + att_age.length + att_country.length + att_name.length + numberOfAttributes];
+			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
+			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (synomym.length + att_age.length + 2), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 2), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length+ 3), (short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 3), (short) 1);
 			break;
 		case((short) 3):
-			
+			//gives the social networking type: synonym + name + country + age + gender
+			numberOfAttributes = 5;
+			result = new byte[synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + numberOfAttributes];
+			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
+			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (synomym.length + att_age.length + 2), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 2), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 3), (short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 3), (short) 1);
+			Util.arrayCopy(att_gender, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 4), (short) att_gender.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + 4), (short) 1);
+			break;
+		case((short) 4):
+			//gives the social networking type: synonym + name + country + age + gender + birth date + address 
+			numberOfAttributes = 7;
+			result = new byte[synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_address.length + numberOfAttributes];
+			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
+			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (synomym.length + att_age.length + 2), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 2), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 3), (short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 3), (short) 1);
+			Util.arrayCopy(att_gender, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 4), (short) att_gender.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + 4), (short) 1);			
+			Util.arrayCopy(att_birthDate, (short) 0, result, (short) (synomym.length + att_age.length + att_name.length + att_country.length + att_name.length + 5), (short) att_birthDate.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + 5), (short) 1);			
+			Util.arrayCopy(att_address, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_name.length + 6), (short) att_address.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_address.length + 5), (short) 1);
 			break;
 		default:
-			
+			return null;
 
 		}
 		return result;

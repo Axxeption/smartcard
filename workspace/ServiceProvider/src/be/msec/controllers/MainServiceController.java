@@ -116,7 +116,7 @@ public class MainServiceController extends Controller {
     	
     private void getData(int query){
         if(selectedServiceProvider != null){
-            ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.AUTH_SP), selectedServiceProvider.getCertificate());
+            ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.AUTH_CARD), selectedServiceProvider.getCertificate());
             addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
             addToDataLog("Sending request...");
             request.setServiceProvider(selectedServiceProvider.getName());
