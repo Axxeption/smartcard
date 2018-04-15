@@ -71,10 +71,10 @@ public class MiddlewareMain extends Application {
 	private static final byte GET_NAME_INS = 0x24;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
-	private static final byte test = 0x01;
 	private static final byte AUTHENTICATE_SP = 0x21;
 	private static final byte VERIFY_CHALLENGE = 0x29;
 	private static final byte AUTHENTICATE_CARD = 0x30;
+	private static final byte RELEASE_ATTRIBUTE = 0x31;
 	static final int portG = 8001;
 	static final int portSP = 8003;
 	private Socket timestampSocket = null;
@@ -98,8 +98,8 @@ public class MiddlewareMain extends Application {
 		this.primaryStage.setTitle("Card reader UI");
 		launchPinInputScreen();
 		try {
+//			UPDATE_TIME_ON_CARD_ROUTINE();
 			connectToCard(true);
-//			authenticateCertificate(new byte[10]);
 			 connectServiceProvider();
 			// askName();
 
@@ -117,55 +117,15 @@ public class MiddlewareMain extends Application {
 			TimeInfoStruct signedTime = askTimeToTimestampServer();
 			if (signedTime != null) {
 				// make connection to the card (simulator) and send the bytes
-				connectToCard(true); // true => simulatedconnection
+				connectToCard(false); // true => simulatedconnection
 				sendTimeToCard(signedTime);
 			}
 		}
 	}
-	
 	// -------------------------------------------------
 	// ------- TEST METHODES wITH USEFULL CODE ----------
 	// -------------------------------------------------
 
-	public void testSetup()
-			throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
-		// aan de CA kant
-		KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-		kpg.initialize(2048);
-		KeyPair kp = kpg.genKeyPair();
-
-		KeyFactory fact = KeyFactory.getInstance("RSA");
-		RSAPublicKeySpec publicKeyCARSA = fact.getKeySpec(kp.getPublic(), RSAPublicKeySpec.class);
-		RSAPrivateKeySpec privateKeyCARSA = fact.getKeySpec(kp.getPrivate(), RSAPrivateKeySpec.class);
-
-		PublicKey publicKeyCA = fact.generatePublic(publicKeyCARSA);
-		PrivateKey privateKeyCA = fact.generatePrivate(privateKeyCARSA);
-
-		// aan de kant van G
-		// maak eerst een keypair aan
-		kpg.initialize(2048);
-		kp = kpg.genKeyPair();
-
-		fact = KeyFactory.getInstance("RSA");
-		RSAPublicKeySpec publicKeyGovernment = fact.getKeySpec(kp.getPublic(), RSAPublicKeySpec.class);
-		RSAPrivateKeySpec privateKeyGovernment = fact.getKeySpec(kp.getPrivate(), RSAPrivateKeySpec.class);
-		PublicKey publicKeyG = fact.generatePublic(publicKeyGovernment);
-		PrivateKey privateKeyG = fact.generatePrivate(privateKeyGovernment);
-
-		// digital signature met privkey van CA
-		Signature rsa = Signature.getInstance("SHA1withRSA");
-		rsa.initSign(privateKeyCA);
-		// OwnCertificate certificateG = new OwnCertificate(publicKeyG, "government",
-		// 365);
-		// rsa.update(certificateG.getBytes());
-		byte[] signedCertificateG = rsa.sign();
-
-		// nu kan op de smartcard gechecked worden of dat de publickey van G klopt!
-		rsa.initVerify(publicKeyCA);
-		// rsa.update(certificateG.getBytes());
-		System.out.println("Is it verified? " + rsa.verify(signedCertificateG));
-
-	}
 
 	/**
 	 * Test Methode First get the certificate with the public key then send
@@ -474,7 +434,8 @@ public class MiddlewareMain extends Application {
 		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
 				timeInfoStruct.getDate().length);
 
-		System.out.println("Send signed time bytes with extended APDU");
+		System.out.println("Send signed time bytes with extended APDU with length: " + toSend.length);
+		toSend = new byte[10];
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
@@ -625,7 +586,20 @@ public class MiddlewareMain extends Application {
 	}
 	
 	private void getDataFromCard(ServiceProviderAction receivedQuery) {
-		askName();
+		System.out.println("Getting data from card");
+		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
+		try {
+			r = c.transmit(a);
+			if (r.getSW() == SW_VERIFICATION_FAILED)
+				throw new Exception("Not verified, no access");
+			else if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			String str = new String(r.getData(), StandardCharsets.UTF_8);
+			System.out.println("data is: " + str);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	
