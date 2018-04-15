@@ -256,6 +256,14 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89, 
 			(byte) 127, (byte) -46, (byte) -109, (byte) -91}; 
 	
+	private byte[] att_name = new byte[] {(byte) 0x4b,(byte) 0x6f,(byte) 0x62,(byte) 0x65,(byte) 0x20,(byte) 0x56,(byte) 0x61,(byte) 0x6e,(byte) 0x20,(byte) 0x52,(byte) 0x65,(byte) 0x75,(byte) 0x73,(byte) 0x65,(byte) 0x6c};
+	private byte[] att_address = new byte[] {(byte) 0x4c,(byte) 0x61,(byte) 0x6e,(byte) 0x67,(byte) 0x65,(byte) 0x20,(byte) 0x45,(byte) 0x6c,(byte) 0x7a,(byte) 0x65,(byte) 0x6e,(byte) 0x73,(byte) 0x74,(byte) 0x72,(byte) 0x61,(byte) 0x61,(byte) 0x74,(byte) 0x20,(byte) 0x32,(byte) 0x30,(byte) 0x39,(byte) 0x2c,(byte) 0x20,(byte) 0x38,(byte) 0x32,(byte) 0x30,(byte) 0x30,(byte) 0x20,(byte) 0x42,(byte) 0x72,(byte) 0x75,(byte) 0x67,(byte) 0x67,(byte) 0x65};
+	private byte[] att_country = new byte[] {(byte) 0x42,(byte) 0x65,(byte) 0x6c,(byte) 0x67,(byte) 0x69,(byte) 0x75,(byte) 0x6d};
+	private byte[] att_birthDate = new byte[] {(byte) 0x31,(byte) 0x31,(byte) 0x2f,(byte) 0x30,(byte) 0x35,(byte) 0x2f,(byte) 0x31,(byte) 0x39,(byte) 0x39,(byte) 0x36};
+	private byte[] att_age = new byte[] {(byte) 0x32,(byte) 0x32};
+	private byte[] att_gender = new byte[] {(byte) 0x6d,(byte) 0x61,(byte) 0x6c,(byte) 0x65};
+	private byte[] att_picture = new byte[] {};
+	
 	byte [] K_u = new byte[] {(byte) 1, (byte) 2, (byte) 3 }; //id of the card
 	private InitializedMessageDigest sha1;		
 	private byte[] serial = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6e };
@@ -379,7 +387,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else {
 			byte [] askedData = receiveBigData(apdu);
-			byte [] query = new byte[] {(byte) 2, (byte) 0 };
+			short query = (byte) 2;
 			if(isSmaller(askedData, maxRights)) {
 				//get the synomym for the SP
 				byte [] synomym = new byte[19];
@@ -405,8 +413,21 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		
 	}
 
-	private byte[] solveQuery(byte[] query) {
-		// TODO Auto-generated method stub
+	private byte[] solveQuery(short query) {
+		switch(query) {
+		case((short) 1):
+			
+			break;
+		case((short) 2):
+			
+			break;
+		case((short) 3):
+			
+			break;
+		default:
+			
+
+		}
 		return null;
 	}
 
