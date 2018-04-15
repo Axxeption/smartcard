@@ -321,7 +321,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	
 	public void process(APDU apdu) throws ISOException {
 		// A reference to the buffer, where the APDU data is stored, is retrieved.
-		try {
 		byte[] buffer = apdu.getBuffer();
 
 		// If the APDU selects the applet, no further processing is required.
@@ -370,9 +369,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		// class.
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
-		}
-		}catch(Exception e) {
-			short a = 0;
 		}
 	}
 	
