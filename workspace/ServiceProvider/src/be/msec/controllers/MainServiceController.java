@@ -103,18 +103,29 @@ public class MainServiceController extends Controller {
         serviceList.setItems(services);
     }
 
-    public void getData(){
+    public void getData_egov(){
+    	getData(7);
+    }
+    public void getData_socnet(){
+    	getData(2);
+    }
+    
+    public void getData_default() {
+    	getData(0);
+    }
+    
+    private void getData(int query){
         if(selectedServiceProvider != null){
             ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
             addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
             addToDataLog("Sending request...");
             request.setServiceProvider(selectedServiceProvider.getName());
+            request.setDataQuery((short) query);
             spMain.sendCommandToMiddleware(request,true);
             
         }else {	
         	addToDataLog("Select a ServiceProvider and an action!");
         }
-
     }
     
 

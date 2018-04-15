@@ -363,7 +363,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			authenticateServiceProvider(apdu);
 			break;
 		case VERIFY_CHALLENGE:
-			//TODO
 			verifyChallenge(apdu);
 			break;
 		case AUTHENTICATE_CARD:
@@ -386,7 +385,16 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		if (!pin.isValidated())
 			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else {
-//			byte [] askedData = receiveBigData(apdu);
+			byte [] askedData = receiveBigData(apdu);
+			System.out.println(askedData[0]);
+			System.out.println(askedData[1]);
+			System.out.println(askedData[2]);
+			System.out.println(askedData[3]);
+			System.out.println(askedData[4]);
+			System.out.println(askedData[5]);
+			System.out.println(askedData[6]);
+			System.out.println(askedData[7]);
+
 			short query = (byte) 2;
 			if(query <= maxRights) {
 				//get the synomym for the SP

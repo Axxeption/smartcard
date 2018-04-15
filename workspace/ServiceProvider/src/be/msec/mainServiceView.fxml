@@ -38,7 +38,10 @@
                                     <ListView fx:id="serviceList" prefHeight="295.0" prefWidth="200.0" />
                                     <AnchorPane prefHeight="277.0" prefWidth="141.0">
                                        <children>
-                                          <Button fx:id="getData" layoutX="9.0" layoutY="270.0" mnemonicParsing="false" onAction="#getData" prefHeight="25.0" prefWidth="105.0" text="Get data" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" />
+                                          <Button fx:id="getData" layoutX="9.0" layoutY="270.0" mnemonicParsing="false" onAction="#getData_default" prefHeight="25.0" prefWidth="105.0" text="Get default data" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" />
+                                          <Button fx:id="getData1" layoutX="9.0" layoutY="239.0" mnemonicParsing="false" onAction="#getData_default" prefHeight="25.0" prefWidth="105.0" text="Get ... data" />
+                                          <Button fx:id="getData2" layoutX="9.0" layoutY="206.0" mnemonicParsing="false" onAction="#getData_socnet" prefHeight="25.0" prefWidth="105.0" text="Get SocNet data" />
+                                          <Button fx:id="getData3" layoutX="9.0" layoutY="175.0" mnemonicParsing="false" onAction="#getData_egov" prefHeight="25.0" prefWidth="105.0" text="Get  eGov data" />
                                        </children>
                                     </AnchorPane>
                                  </children>
