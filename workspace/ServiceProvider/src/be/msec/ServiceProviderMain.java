@@ -3,6 +3,7 @@ import be.msec.client.CAService;
 import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
 import be.msec.client.MessageToAuthCard;
+import be.msec.client.SignedCertificate;
 import be.msec.client.TimeInfoStruct;
 import be.msec.controllers.MainServiceController;
 import be.msec.controllers.RootMenuController;
@@ -118,9 +119,12 @@ public class ServiceProviderMain extends Application {
     }
     
     
-    public void authentication(Challenge challenge) {
-    	recreateSessionKey(challenge);
-    	authenticateCard();
+    public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
+    	// 2. authenticate SP
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
+    	action.setServiceProvider(selectedServiceProvider.getName());
+    	sendCommandToMiddleware(action,true);
+    	
     }
     
     public void recreateSessionKey(Challenge challenge) {
@@ -264,13 +268,18 @@ public class ServiceProviderMain extends Application {
 			e.printStackTrace();
 		} 
 		
-    	submitDataQuery();
     }
     
-    public void submitDataQuery() {
-    	//generate an action to send to the card
-    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("get data from middelware", CallableMiddelwareMethodes.GET_DATA));
-    	sendCommandToMiddleware(action,true);
+    public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	// Do Authentication
+    	authenticateServiceProvider(selectedServiceProvider);
+
+    	// Get data
+    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+        request.setServiceProvider(selectedServiceProvider.getName());
+        request.setDataQuery((short) query);
+        
+    	sendCommandToMiddleware(request,true);
     }
     
     
@@ -281,6 +290,10 @@ public class ServiceProviderMain extends Application {
 			System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
 		System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
+		
+		// start listener thread
+		ListenForMiddelwareCommandThread listenerThread = new ListenForMiddelwareCommandThread();
+		listenerThread.start();
 
     }
     
@@ -337,24 +350,27 @@ public class ServiceProviderMain extends Application {
 		public void run() {
 			ObjectInputStream objectinputstream = null;
 			while (true) {
+				System.out.println("Listening for MW...");
 		    	Object obj = null;
 		    	try {
 					objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
 					
 					obj = objectinputstream.readObject();
+					System.out.println("OBJECT RECEIVED");
 					if(obj instanceof Challenge) {
 						Challenge challengeFromSC = (Challenge)obj;
 						mainController.addToDataLog("Succesfully received challenge" );
-						System.out.println(challengeFromSC.toString());
+						System.out.println("CHALLENGE RECEIVED");
 						//recreate session key, respond to challenge
 						recreateSessionKey(challengeFromSC);
 					}
 					else if( obj instanceof String) {
 						String answer = (String)obj;
-						System.out.println("received string "+answer);
+						System.out.println("STRING RECEIVEC, "+answer);
 						mainController.addToDataLog("Succesfully received: " +answer);
 					}
 					else if(obj instanceof MessageToAuthCard) {
+						System.out.println("MESSTOAUTHCARD RECEIVED");
 						authenticateCard((MessageToAuthCard) obj);
 					}
 					else {

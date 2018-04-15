@@ -113,15 +113,12 @@ public class MainServiceController extends Controller {
     public void getData_default() {
     	getData(0);
     }
-    
+    	
     private void getData(int query){
         if(selectedServiceProvider != null){
-            ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
-            addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
-            addToDataLog("Sending request...");
-            request.setServiceProvider(selectedServiceProvider.getName());
-            request.setDataQuery((short) query);
-            spMain.sendCommandToMiddleware(request,true);
+            addToDataLog(selectedServiceProvider.getName() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
+            addToDataLog("Button pressed, sending request for data...");
+            spMain.submitDataQuery(selectedServiceProvider,query);
             
         }else {	
         	addToDataLog("Select a ServiceProvider and an action!");
