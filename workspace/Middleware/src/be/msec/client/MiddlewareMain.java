@@ -47,6 +47,7 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
@@ -58,6 +59,7 @@ public class MiddlewareMain extends Application {
 
 	private Stage primaryStage;
 	private BorderPane rootLayout;
+	private MiddlewareController middlewareController;
 	
 
 	private final static byte IDENTITY_CARD_CLA = (byte) 0x80;
@@ -81,6 +83,7 @@ public class MiddlewareMain extends Application {
 	CommandAPDU a;
 	ResponseAPDU r;
 	boolean connectedWithSC = false;
+	boolean pinVerified = false;
 
 	private ServerSocket socket;
 	private Socket middlewareSocket;
@@ -93,7 +96,7 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
 		this.primaryStage.setTitle("Card reader UI");
-		// initRootLayout();
+		launchPinInputScreen();
 		try {
 			connectToCard(true);
 //			authenticateCertificate(new byte[10]);
@@ -119,7 +122,7 @@ public class MiddlewareMain extends Application {
 			}
 		}
 	}
-
+	
 	// -------------------------------------------------
 	// ------- TEST METHODES wITH USEFULL CODE ----------
 	// -------------------------------------------------
@@ -235,14 +238,6 @@ public class MiddlewareMain extends Application {
 			// ins geeft aan wat er moet gebeuren --> dit getal staat ook vast in applet
 			// new byte[] geeft de pincode aan dus dit zou je normaal ingeven door de
 			// gebruiker
-			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
-			r = c.transmit(a);
-			System.out.print("Pin ok? ");
-			if (r.getSW() == SW_VERIFICATION_FAILED)
-				throw new Exception("PIN INVALID");
-			else if (r.getSW() != 0x9000)
-				throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("PIN Verified");
 
 			System.out.println("Asking serial number");
 			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
@@ -275,7 +270,7 @@ public class MiddlewareMain extends Application {
 	// ------- INIT GUI ----------
 	// ---------------------------
 
-	public void initRootLayout() {
+	public void launchPinInputScreen() {
 		try {
 			// Load root layout from fxml file.
 			FXMLLoader loader = new FXMLLoader();
@@ -306,8 +301,8 @@ public class MiddlewareMain extends Application {
 		AnchorPane loginView = (AnchorPane) loader.load();
 
 		// controller initialiseren + koppelen aan mainClient
-		MiddlewareController controller = loader.getController();
-		controller.setMain(this);
+		middlewareController = loader.getController();
+		middlewareController.setMain(this);
 		rootLayout.setCenter(loginView);
 	}
 
@@ -502,14 +497,16 @@ public class MiddlewareMain extends Application {
 		System.out.println(bytesToHex(pin));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, pin);
 		r = c.transmit(a);
-		System.out.print("Pin ok? ");
-		if (r.getSW() == SW_VERIFICATION_FAILED)
-			return false;
+		System.out.print("Pin ok? " + r.getSW());
+		if (r.getSW() == SW_VERIFICATION_FAILED) {
+			pinVerified = false;
+			return false;}
 		else if (r.getSW() == 0x26368)
 			throw new Exception("Wrong Pin size!");
 		else if (r.getSW() != 0x9000)
 			throw new Exception("Exception on the card: " + r.getSW());
 
+		pinVerified = true;
 		return true;
 	}
 
@@ -611,7 +608,6 @@ public class MiddlewareMain extends Application {
 		byte [] toSend = received.getChallengeBytes();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_CARD, 0x00, 0x00, toSend);
 		
-		
 		try {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
@@ -624,11 +620,41 @@ public class MiddlewareMain extends Application {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-	
-		
-		
+		}	
 		return;
+	}
+	
+	private void getDataFromCard(ServiceProviderAction receivedQuery) {
+		askName();
+		
+	}
+	
+	class WaitForPinThread extends Thread{
+		ServiceProviderAction query;
+		
+		public WaitForPinThread(ServiceProviderAction query) {
+			this.query = query;
+		}
+		public void run() {
+			Platform.runLater(new Runnable() {
+	            @Override public void run() {
+	            	primaryStage.setAlwaysOnTop(true);
+	            	primaryStage.setAlwaysOnTop(false);
+	            	middlewareController.setMainMessage("Enter pin to get data...");
+            	}
+			});
+            while(!pinVerified) {
+            	try {
+					Thread.sleep(1000);
+					System.out.println("wait for pin ...");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+            System.out.println("pin valid");
+            getDataFromCard(query);
+		}
 	}
 
 	class ListenForServiceProviderCommandThread extends Thread {
@@ -638,27 +664,29 @@ public class MiddlewareMain extends Application {
 				while (true) {
 					System.out.println("Listening to service provider...");
 					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
-					ServiceProviderAction received = (ServiceProviderAction) objectinputstream.readObject();
-					System.out.println("received: " + received.getAction().getCommand());
+					ServiceProviderAction receivedObject = (ServiceProviderAction) objectinputstream.readObject();
+					System.out.println("received: " + receivedObject.getAction().getCommand());
 					
 
-					switch (received.getAction().getCommand()) {
+					switch (receivedObject.getAction().getCommand()) {
 					case AUTH_SP:
 						System.out.println("AUTH SP COMMAND");
 						//sendToServiceProvider("AUTH command received");
-						authenticateCertificate(received);
+						authenticateCertificate(receivedObject);
 						
 						break;
 					case GET_DATA:
 						System.out.println("GET DATA COMMAND");
+						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
+						pinWaitingThread.start();
 						break;
 					case VERIFY_CHALLENGE:
 						System.out.println("VERIFY CHALLENGE COMMAND");
-						verifyChallenge(received);
+						verifyChallenge(receivedObject);
 						break;
 					case AUTH_CARD:
 						System.out.println("AuthenticateCard COMMAND");
-						authenticateCardSendChallenge(received);
+						authenticateCardSendChallenge(receivedObject);
 						break;
 					default:
 						sendToServiceProvider("Command doesn't exists.");

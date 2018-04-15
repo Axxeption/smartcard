@@ -10,6 +10,9 @@ public class ServiceProviderAction implements Serializable {
 	private String serviceProvider;
 	private byte[]challengeBytes;
 	
+	public ServiceProviderAction(ServiceAction action) {
+		this.action = action;
+	}
 	public ServiceProviderAction(ServiceAction action, SignedCertificate certificate) {
 		this.action = action;
 		this.certificate = certificate;

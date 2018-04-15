@@ -15,11 +15,11 @@ public class MiddlewareController  {
 	MiddlewareMain main;
 	
 	@FXML
-	public TextField pin_textfield;
+	private TextField pin_textfield;
 	@FXML
-	public TextArea logTextArea;
+	private TextArea logTextArea;
 	@FXML
-	public Label outputLabel;
+	private Label outputLabel;
 	
 	public MiddlewareController() {
 	}
@@ -49,6 +49,10 @@ public class MiddlewareController  {
 	
 	public void log(String msg) {
 		logTextArea.setText(logTextArea.getText()+"\n"+msg);
+	}
+	
+	public void setMainMessage(String msg) {
+		outputLabel.setText(msg);
 	}
 	
 	public void askName(ActionEvent event) {

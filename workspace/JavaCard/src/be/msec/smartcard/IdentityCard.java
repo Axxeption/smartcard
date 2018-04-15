@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.interfaces.RSAKey;
+import java.util.Arrays;
 import java.util.Random;
 
 import javacard.framework.*;
@@ -282,7 +283,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		// max try 3 times
 		pin = new OwnerPIN(PIN_TRY_LIMIT, PIN_SIZE);
 		// pin is 1234
-		pin.update(new byte[] { 0x31, 0x32, 0x33, 0x34 }, (short) 0, PIN_SIZE);
+		byte[] pinBytes = new byte[] { 0x31, 0x32, 0x33, 0x34 };
+		pin.update(pinBytes, (short) 0, PIN_SIZE);
 		// needed for the signature of a random byte array
 		privKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, keySizeInBits, false);
 		privKey.setExponent(privExponent, offset, keySizeInBytes);
@@ -428,7 +430,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
 
 			}catch(Exception e) {
-				e.printStackTrace();
+				System.out.println(e);
 			}
 			
 			sendChallengeToSP(apdu, encryptedMessage);
@@ -437,7 +439,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e);
 		}
        
 		
@@ -486,7 +488,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		
 		Util.arrayCopy(nameBytes, (short)0, nameBytesCopy16, (short)0, (short)nameBytes.length);
 		
-		String name1 = nameBytes.toString();		
+		//String name1 = Arrays.toString(nameBytes); // TODO werkt wrs niet op kaart	
 		//end jonas code
 		
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
@@ -528,7 +530,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				asymCipher.doFinal(this.rnd, (short)0, (short)this.rnd.length, encryptedRnd, (short)0);
 
 			}catch(Exception e) {
-				e.printStackTrace();
+				System.out.println(e);
 			}
 			
 			
@@ -547,7 +549,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				symCipher.doFinal(nameBytesCopy16, (short)0,(short) nameBytesCopy16.length, encryptedNameBytes, (short)0);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println(e);
 			}
 			
 			//msg opbouwen om terug te zenden
@@ -687,14 +689,20 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	}
 
 	private void validatePIN(APDU apdu) {
-		byte[] buffer = apdu.getBuffer();
-		if (buffer[ISO7816.OFFSET_LC] == PIN_SIZE) {
-			// This method is used to copy the incoming data in the APDU buffer.
-			apdu.setIncomingAndReceive();
-			if (pin.check(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE) == false)
-				ISOException.throwIt(SW_VERIFICATION_FAILED);
-		} else
-			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+			byte[] buffer = apdu.getBuffer();
+			System.out.println(apdu.getOffsetCdata());
+			System.out.println(buffer[5]);
+			System.out.println(buffer[6]);
+			System.out.println(buffer[7]);
+			System.out.println(buffer[8]);
+			if (apdu.getIncomingLength() == PIN_SIZE) {
+				// This method is used to copy the incoming data in the APDU buffer.
+				apdu.setIncomingAndReceive();
+				if (pin.check(buffer, apdu.getOffsetCdata(), PIN_SIZE) == false)
+					ISOException.throwIt(SW_VERIFICATION_FAILED);
+			} else
+				ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+
 	}
 	
 	private AESKey getSymKey() {

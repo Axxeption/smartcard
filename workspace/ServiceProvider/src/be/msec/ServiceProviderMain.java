@@ -98,7 +98,8 @@ public class ServiceProviderMain extends Application {
         System.out.println("Stage is Normaly closed");
     }
     
-    public void sendServiceProviderActionToMiddleWare(ServiceProviderAction action) {
+    
+    public void sendCommandToMiddleware(ServiceProviderAction action,boolean waitForResponse) {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
 		try {
@@ -107,49 +108,19 @@ public class ServiceProviderMain extends Application {
 			objectoutputstream.writeObject(action);
 			
 			//wait for response)
-			if(action.getAction().command != CallableMiddelwareMethodes.VERIFY_CHALLENGE){
-				System.out.println("start waiting");	
-				receiveResponseFromMiddleWare();
+			if(waitForResponse){
+				System.out.println("Commando needs response from MW! ...");	
 			}
-			
 			
 		}catch (Exception e) {
 			System.out.println(e);
 		}
     }
     
-    public void receiveResponseFromMiddleWare() {	
-    	ObjectInputStream objectinputstream = null;
-    	Object obj = null;
-    	try {
-			objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-			
-			obj = objectinputstream.readObject();
-			if(obj instanceof Challenge) {
-				Challenge challengeFromSC = (Challenge)obj;
-				mainController.addToDataLog("Succesfully received challenge" );
-				System.out.println(challengeFromSC.toString());
-				//recreate session key, respond to challenge
-				recreateSessionKey(challengeFromSC);
-			}
-			else if( obj instanceof String) {
-				String answer = (String)obj;
-				System.out.println("received string "+answer);
-				mainController.addToDataLog("Succesfully received: " +answer);
-			}
-			else if(obj instanceof MessageToAuthCard) {
-				authenticateCard((MessageToAuthCard) obj);
-			}
-			else {
-				System.out.println("unknown obj received");
-			}
-			
-	
-			System.out.println("succesfully received an answer!");
-			
-    	}catch (Exception e) {
-			System.out.println(e);
-		}
+    
+    public void authentication(Challenge challenge) {
+    	recreateSessionKey(challenge);
+    	authenticateCard();
     }
     
     public void recreateSessionKey(Challenge challenge) {
@@ -189,7 +160,6 @@ public class ServiceProviderMain extends Application {
 					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
 					String name = new String(decryptedNameBytes);
 					
-					
 					BigInteger reqChallenge = new BigInteger(decryptedChallengeBytes);
 					System.out.println(name + "  " + reqChallenge.toString());
 					BigInteger respChallenge =reqChallenge.add(BigInteger.ONE);
@@ -198,30 +168,16 @@ public class ServiceProviderMain extends Application {
 					//TODO encrypt challenge response
 					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
+					
 					//send challenge response back to MW
 					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
 					action.setChallengeBytes(encryptedRespChallenge);
-					sendServiceProviderActionToMiddleWare(action);
+					sendCommandToMiddleware(action,false);
 					
-				} catch (NoSuchAlgorithmException e) {
+				} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (NoSuchPaddingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvalidKeyException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvalidAlgorithmParameterException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalBlockSizeException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (BadPaddingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				} 
 		    		
     		}
     	}
@@ -244,35 +200,16 @@ public class ServiceProviderMain extends Application {
 			aesCipher.init(Cipher.ENCRYPT_MODE, symKey, ivSpec);
 			encryptedChallengeBytes = aesCipher.doFinal(b);
 			
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidAlgorithmParameterException e) {
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     	
     	
     	//generate an action to send to the card
-    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_CARD), null);
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_CARD));
     	action.setChallengeBytes(encryptedChallengeBytes);
-    	sendServiceProviderActionToMiddleWare(action);
-    	
-    	//start waiting for response
-    	receiveResponseFromMiddleWare();
-    	
+    	sendCommandToMiddleware(action,true);
     	
     }
     
@@ -322,40 +259,20 @@ public class ServiceProviderMain extends Application {
 				return;
 			}
 			
-		} catch (NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException | InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidAlgorithmParameterException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		
-    	
+    	submitDataQuery();
     }
+    
+    public void submitDataQuery() {
+    	//generate an action to send to the card
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("get data from middelware", CallableMiddelwareMethodes.GET_DATA));
+    	sendCommandToMiddleware(action,true);
+    }
+    
     
     public void connectToMiddleWare() {
     	try {
@@ -415,6 +332,48 @@ public class ServiceProviderMain extends Application {
         }
     }
 
+    
+    class ListenForMiddelwareCommandThread extends Thread {
+		public void run() {
+			ObjectInputStream objectinputstream = null;
+			while (true) {
+		    	Object obj = null;
+		    	try {
+					objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
+					
+					obj = objectinputstream.readObject();
+					if(obj instanceof Challenge) {
+						Challenge challengeFromSC = (Challenge)obj;
+						mainController.addToDataLog("Succesfully received challenge" );
+						System.out.println(challengeFromSC.toString());
+						//recreate session key, respond to challenge
+						recreateSessionKey(challengeFromSC);
+					}
+					else if( obj instanceof String) {
+						String answer = (String)obj;
+						System.out.println("received string "+answer);
+						mainController.addToDataLog("Succesfully received: " +answer);
+					}
+					else if(obj instanceof MessageToAuthCard) {
+						authenticateCard((MessageToAuthCard) obj);
+					}
+					else {
+						System.out.println("unknown obj received");
+					}
+					
+					System.out.println("succesfully received an answer!");
+					
+		    	}catch (Exception e) {
+					System.out.println(e);
+				}
+
+			}
+		}
+
+	}
+    
+    
+    
     //utility
     public String bytesToDec(byte[] barray) {
 		String str = "";

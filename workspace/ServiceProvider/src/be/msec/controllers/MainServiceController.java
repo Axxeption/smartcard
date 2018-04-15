@@ -24,17 +24,13 @@ public class MainServiceController extends Controller {
     @FXML
     private ListView<ServiceProvider> serviceList;
     @FXML
-    private ListView<ServiceAction> actionList;
-    @FXML
     private TextArea outputTextArea;
     @FXML
-    private Button submit;
+    private Button getData;
 
     private ServiceProviderMain spMain;
     private ObservableList<ServiceProvider> services = FXCollections.observableArrayList();
-    private ObservableList<ServiceAction> actions = FXCollections.observableArrayList();
     private ServiceProvider selectedServiceProvider;
-    private ServiceAction selectedServiceAction;
 
 
     public MainServiceController() {
@@ -43,7 +39,7 @@ public class MainServiceController extends Controller {
 
     @FXML
     private void initialize() {
-        submit.setDefaultButton(true);
+        getData.setDefaultButton(true);
         serviceList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         serviceList.setCellFactory(new Callback<ListView<ServiceProvider>, ListCell<ServiceProvider>>() {
             @Override
@@ -74,42 +70,12 @@ public class MainServiceController extends Controller {
             }
         });
 
-        actionList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        actionList.setCellFactory(new Callback<ListView<ServiceAction>, ListCell<ServiceAction>>() {
-            @Override
-            public ListCell<ServiceAction> call(ListView<ServiceAction> p) {
-
-                ListCell<ServiceAction> cell = new ListCell<ServiceAction>() {
-
-                    @Override
-                    protected void updateItem(ServiceAction action, boolean bln) {
-                        super.updateItem(action, bln);
-                        if (action != null) {
-                            setText(action.getName());
-
-                        }
-                    }
-                };
-                return cell;
-            }
-        });
-        actionList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<ServiceAction>() {
-            @Override
-            public void changed(ObservableValue<? extends ServiceAction> observable, ServiceAction oldValue, ServiceAction newValue) {
-                // Your action here
-                if (newValue != null) {
-                    selectedServiceAction = newValue;
-
-                }
-            }
-        });
-
     }
 
     private void setEnterEventHandler(Node root) {
         root.addEventHandler(KeyEvent.KEY_PRESSED, ev -> {
             if (ev.getCode() == KeyCode.ENTER) {
-                submit.fire();
+                getData.fire();
                 ev.consume();
             }
         });
@@ -134,21 +100,16 @@ public class MainServiceController extends Controller {
         this.spMain = mainController;
         //test data in services steken
         generateSPs();
-        actions.add(new ServiceAction("authenticate SP",CallableMiddelwareMethodes.AUTH_SP));
-        actions.add(new ServiceAction("get Data",CallableMiddelwareMethodes.GET_DATA));
-
         serviceList.setItems(services);
-        actionList.setItems(actions);
     }
 
-    public void submit(){
-        if(selectedServiceProvider != null && selectedServiceAction !=null){
-            ServiceProviderAction request = new ServiceProviderAction(selectedServiceAction, selectedServiceProvider.getCertificate());
-            addToDataLog(selectedServiceProvider.toString());
-            addToDataLog(selectedServiceAction.getName());
+    public void getData(){
+        if(selectedServiceProvider != null){
+            ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+            addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
             addToDataLog("Sending request...");
             request.setServiceProvider(selectedServiceProvider.getName());
-            spMain.sendServiceProviderActionToMiddleWare(request);
+            spMain.sendCommandToMiddleware(request,true);
             
         }else {	
         	addToDataLog("Select a ServiceProvider and an action!");
