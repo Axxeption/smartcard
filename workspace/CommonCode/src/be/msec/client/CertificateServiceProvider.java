@@ -13,11 +13,12 @@ public class CertificateServiceProvider extends CertificateBasic implements Seri
 	private ServiceProviderType type;
 	private byte[] publicKeyExpBytes;
 	private byte[] publicKeyModBytes;
+	private byte[] maxRight;
 	
-	public CertificateServiceProvider(PublicKey publicKey, String name) {
+	public CertificateServiceProvider(PublicKey publicKey, String name, short max) {
 		super();
 		this.publicKey = publicKey;
-		
+		this.maxRight = toBytes(max);
 		RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
 		this.publicKeyExpBytes = rsaPublicKey.getPublicExponent().toByteArray();
 		this.publicKeyModBytes = rsaPublicKey.getModulus().toByteArray();
@@ -30,12 +31,13 @@ public class CertificateServiceProvider extends CertificateBasic implements Seri
 		
 		byte[] nameBytes = this.name.getBytes();
 		byte[] validTimeBytes = longToBytes(this.validTime);
-		byte[] certificateBytes = new byte[publicKeyExpBytes.length + publicKeyModBytes.length + nameBytes.length + validTimeBytes.length ];
+		byte[] certificateBytes = new byte[publicKeyExpBytes.length + publicKeyModBytes.length + nameBytes.length + validTimeBytes.length +2];
 		
 		System.arraycopy(this.publicKeyExpBytes, 0, certificateBytes, 0, this.publicKeyExpBytes.length);
 		System.arraycopy(this.publicKeyModBytes, 0, certificateBytes, this.publicKeyExpBytes.length, this.publicKeyModBytes.length);
 		System.arraycopy(validTimeBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length  , validTimeBytes.length);
-		System.arraycopy(nameBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length, nameBytes.length);
+		System.arraycopy(maxRight, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length , maxRight.length);
+		System.arraycopy(nameBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length + 2, nameBytes.length);
 		
 		super.setBytes(certificateBytes);
 		System.out.println(this.name);
@@ -44,19 +46,26 @@ public class CertificateServiceProvider extends CertificateBasic implements Seri
 		System.out.println("validbyteslength  "+validTimeBytes.length);
 		System.out.println("name length "+nameBytes.length + "  "+ nameBytes.toString());
 		System.out.println(certificateBytes.length+ "cert bytes beforesend: "+bytesToDec(certificateBytes));
-
+		
+		
+		System.out.println("the maxrigh byte array: " + maxRight + " has a length of: " + maxRight.length);
 	}
+	
+	public byte[] toBytes(short s) {
+	    return new byte[]{(byte)(s & 0x00FF),(byte)((s & 0xFF00)>>8)};
+	}
+	
 	
 	public byte[] getBytesForSC() {
 		byte[] nameBytes = this.name.getBytes();
 		byte[] validTimeBytes = longToBytes(this.validTime);
 		byte[] certificateBytes = new byte[publicKeyExpBytes.length + publicKeyModBytes.length + nameBytes.length + validTimeBytes.length ];
-		
+
 		System.arraycopy(this.publicKeyExpBytes, 0, certificateBytes, 0, this.publicKeyExpBytes.length);
 		System.arraycopy(this.publicKeyModBytes, 0, certificateBytes, this.publicKeyExpBytes.length, this.publicKeyModBytes.length);
 		System.arraycopy(validTimeBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length  , validTimeBytes.length);
-		System.arraycopy(nameBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length, nameBytes.length);
-		
+		System.arraycopy(maxRight, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length , maxRight.length);
+		System.arraycopy(nameBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length + 2, nameBytes.length);
 		return certificateBytes;
 	}
 	
@@ -114,4 +123,5 @@ public class CertificateServiceProvider extends CertificateBasic implements Seri
 			str += (int) b + ", ";
 		return str;
 	}
+	
 }

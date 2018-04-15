@@ -5,5 +5,7 @@ wat niet doen:
 				e.printStackTrace();
 			}
 
-
+wel: ISOException.throwIt(ERROR_UNKNOW);
 die eerste screenshot is goed! gwn (short) (bewerking)
+
+dit is ok: byte [] responseChallengeBytes = new byte[16];

@@ -95,9 +95,8 @@ public class MiddlewareMain extends Application {
 		this.primaryStage.setTitle("Card reader UI");
 		// initRootLayout();
 		try {
-			UPDATE_TIME_ON_CARD_ROUTINE();
-//			connectToCard(true);
-//			authenticateCertificate(new byte[10]);
+//			UPDATE_TIME_ON_CARD_ROUTINE();
+			connectToCard(true);
 			 connectServiceProvider();
 			// askName();
 

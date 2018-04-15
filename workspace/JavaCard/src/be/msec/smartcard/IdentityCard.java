@@ -267,7 +267,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private byte date[];
 	private byte [] rnd; //used to create session key while authenticating SP
 	private byte [] challenge; //used to verify SP
-
+	private byte [] maxRights; 
 	private IdentityCard() {
 		/*
 		 * During instantiation of the applet, all objects are created. In this example,
@@ -462,18 +462,18 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		byte[] validEndTimeCertificate = new byte[(short)8];
 		byte[] pkExpBytesSP = new byte[(short)3];
 		byte[] pkModBytesSP = new byte[(short)64];
-		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -1)];
+		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -3)];
 		byte[] nameBytesCopy16 = new byte[(short)16];
-		
-//		System.out.println("namebytes length: "+nameBytes.length);
+		maxRights = new byte[2];
+		//		System.out.println("namebytes length: "+nameBytes.length);
 		
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
 		Util.arrayCopy(data, (short) (64), certificateBytes, (short) 0, (short) (data.length-64));
 		Util.arrayCopy(certificateBytes, (short) (0), pkExpBytesSP, (short)(0), (short)(3));
 		Util.arrayCopy(certificateBytes, (short)4, pkModBytesSP, (short)(0), (short)64);
 		Util.arrayCopy(certificateBytes, (short)68, validEndTimeCertificate, (short)0, (short)8);
-		Util.arrayCopy(certificateBytes, (short) 76, nameBytes, (short)0, (short)nameBytes.length);
-		
+		Util.arrayCopy(certificateBytes, (short) 76 , maxRights, (short) 0 , (short) 2) ;
+		Util.arrayCopy(certificateBytes, (short) 78, nameBytes, (short)0, (short)nameBytes.length);
 		Util.arrayCopy(nameBytes, (short)0, nameBytesCopy16, (short)0, (short)nameBytes.length);
 				
 		//end jonas code
