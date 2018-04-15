@@ -120,7 +120,6 @@ public class ServiceProviderMain extends Application {
     
     public void authentication(Challenge challenge) {
     	recreateSessionKey(challenge);
-    	authenticateCard();
     }
     
     public void recreateSessionKey(Challenge challenge) {

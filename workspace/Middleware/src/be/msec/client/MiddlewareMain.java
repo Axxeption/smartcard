@@ -540,10 +540,9 @@ public class MiddlewareMain extends Application {
 			return false;
 		}
 		
-		ServiceProviderAction query;
 		
 		//TODO delete this part --> just for testing
-        getDataFromCard();
+		getDataFromCard(received);
         return true;
         
 	}
@@ -590,9 +589,10 @@ public class MiddlewareMain extends Application {
 		return;
 	}
 	
-	private void getDataFromCard() {
+	private void getDataFromCard(ServiceProviderAction receivedQuery) {
 		System.out.println("Getting data from card");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
+		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
+//		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
 		try {
 			r = c.transmit(a);
 			if (r.getSW() == SW_VERIFICATION_FAILED)
@@ -658,6 +658,7 @@ public class MiddlewareMain extends Application {
 						System.out.println("GET DATA COMMAND");
 						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
 						pinWaitingThread.start();
+						
 						break;
 					case VERIFY_CHALLENGE:
 						System.out.println("VERIFY CHALLENGE COMMAND");
@@ -680,47 +681,3 @@ public class MiddlewareMain extends Application {
 
 	}
 }
-
-//SignedCertificate certTest = new SignedCertificate(certificateServiceProvider);
-//try {
-//	certTest.signCertificate(CAService.loadPrivateKey("RSA"));
-//	System.out.println("signed bytes in middleware:" + bytesToDec(certTest.getSignatureBytes()) );
-//	
-//	PublicKey pk = CAService.loadPublicKey("RSA");
-//	
-//	BigInteger mod = new BigInteger(1,this.pubMod_CA);
-//	BigInteger exp = new BigInteger(1,this.pubExp_CA);
-//
-//	System.out.println("mod: "+mod);
-//	System.out.println("exp: "+exp);
-//	
-//	RSAPublicKey rsapublicKey = (RSAPublicKey) pk;
-//	System.out.println("CA_PK_EXP: " + bytesToDec(rsapublicKey.getPublicExponent().toByteArray()));
-//	System.out.println("CA_PK_MOD: " + bytesToDec(rsapublicKey.getModulus().toByteArray()));
-	
-	
-	//fout!! verify met key gemaakt uit mod en exp werkt niet 
-	//verify met loadpublickey werkt wel
-	
-//	RSAPublicKeySpec rsaPublicKey = new RSAPublicKeySpec(mod, exp);
-//	KeyFactory factory = KeyFactory.getInstance("RSA");
-//	PublicKey pk2 = factory.generatePublic(rsaPublicKey);
-//	
-//	Signature sig = Signature.getInstance("SHA1WithRSA");
-//	sig.initVerify(pk);
-//	sig.update(certTest.getBytes());
-//	boolean res = sig.verify(certTest.getSignatureBytes());
-//	System.out.println("CA verified with loadpublic: "+res);
-//	
-//	sig.initVerify(pk2);
-//	sig.update(certTest.getBytes());
-//	res = sig.verify(certTest.getSignatureBytes());
-//	System.out.println("CA verified with mod exp key: "+res);
-//	
-//	System.out.println("key generated with loadpublic:  "+pk.getEncoded());
-//	System.out.println("key generated with mod exp:  "+ pk2.getEncoded());
-//
-//} catch(Exception e1) {
-//	// TODO Auto-generated catch block
-//	e1.printStackTrace();
-//}
