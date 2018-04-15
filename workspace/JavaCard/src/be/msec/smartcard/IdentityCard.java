@@ -281,7 +281,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private byte date[];
 	private byte [] rnd; //used to create session key while authenticating SP
 	private byte [] challenge; //used to verify SP
-	private byte [] maxRights; 
+	private short maxRights; 
 	private IdentityCard() {
 		/*
 		 * During instantiation of the applet, all objects are created. In this example,
@@ -386,10 +386,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		if (!pin.isValidated())
 			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else {
-			byte [] askedData = receiveBigData(apdu);
+//			byte [] askedData = receiveBigData(apdu);
 			short query = (byte) 2;
-			if(isSmaller(askedData, maxRights)) {
+			if(query <= maxRights) {
 				//get the synomym for the SP
+				// 19 = 16 + 3
 				byte [] synomym = new byte[19];
 				byte [] synomymHashed = new byte[20]; //sha1 gives ouput of 20 btyes
 				Util.arrayCopy(K_u, (short) 0 , synomym, (short) 0 , (short) K_u.length);
@@ -535,7 +536,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		byte[] pkModBytesSP = new byte[(short)64];
 		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -3)];
 		nameBytesCopy16 = new byte[(short)16];
-		maxRights = new byte[2];
+		byte [] maxRightByteArray = new byte [2];
 		//		System.out.println("namebytes length: "+nameBytes.length);
 		
 		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
@@ -543,10 +544,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Util.arrayCopy(certificateBytes, (short) (0), pkExpBytesSP, (short)(0), (short)(3));
 		Util.arrayCopy(certificateBytes, (short)4, pkModBytesSP, (short)(0), (short)64);
 		Util.arrayCopy(certificateBytes, (short)68, validEndTimeCertificate, (short)0, (short)8);
-		Util.arrayCopy(certificateBytes, (short) 76 , maxRights, (short) 0 , (short) 2) ;
+		Util.arrayCopy(certificateBytes, (short) 76 , maxRightByteArray, (short) 0 , (short) 2) ;
 		Util.arrayCopy(certificateBytes, (short) 78, nameBytes, (short)0, (short)nameBytes.length);
 		Util.arrayCopy(nameBytes, (short)0, nameBytesCopy16, (short)0, (short)nameBytes.length);
-
+		
+		maxRights = maxRightByteArray[0];
 		//end jonas code
 		
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
