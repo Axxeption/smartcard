@@ -476,33 +476,6 @@ public class MiddlewareMain extends Application {
 		launch(args);
 	}
 
-	// ------------------------------------
-	// ------- UTILITY FUNCTIONS ----------
-	// ------------------------------------
-
-	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
-
-	public static String bytesToHex(byte[] bytes) {
-		char[] hexChars = new char[bytes.length * 2];
-		for (int j = 0; j < bytes.length; j++) {
-			int v = bytes[j] & 0xFF;
-			hexChars[j * 2] = hexArray[v >>> 4];
-			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-		}
-		String str = "";
-		for (int j = 0; j < hexChars.length; j += 2) {
-			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
-		}
-		return str;
-	}
-
-	public String bytesToDec(byte[] barray) {
-		String str = "";
-		for (byte b : barray)
-			str += (int) b + ", ";
-		return str;
-	}
-
 	private boolean authenticateCertificate(ServiceProviderAction received) {
 		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
 		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received.getSignedCertificate().getCertificateBasic();
@@ -540,10 +513,6 @@ public class MiddlewareMain extends Application {
 			e.printStackTrace();
 			return false;
 		}
-		
-		
-		//TODO delete this part --> just for testing
-		getDataFromCard(received);
         return true;
         
 	}
@@ -580,7 +549,8 @@ public class MiddlewareMain extends Application {
 				throw new Exception("Exception on the card: " + r.getSW());
 			else {
 				byte[] response = r.getData();
-				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 1, response.length)));
+				System.out.println(bytesToHex(response));
+				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
 			}
 			
 		} catch (Exception e) {
@@ -590,7 +560,7 @@ public class MiddlewareMain extends Application {
 		return;
 	}
 	
-	private void getDataFromCard(ServiceProviderAction receivedQuery) {
+	private String getDataFromCard(ServiceProviderAction receivedQuery) {
 		System.out.println("Getting data from card");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
 //		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
@@ -602,11 +572,12 @@ public class MiddlewareMain extends Application {
 				throw new Exception("Exception on the card: " + r.getSW());
 			String str = new String(r.getData(), StandardCharsets.UTF_8);
 			System.out.println("data is: " + str);
+			return str;
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		return null;
 	}
 	
 	class WaitForPinThread extends Thread{
@@ -633,7 +604,8 @@ public class MiddlewareMain extends Application {
 				}
             }
             System.out.println("pin valid");
-//            getDataFromCard(query);
+            String data = getDataFromCard(query);
+            sendToServiceProvider(data);
 		}
 	}
 
@@ -679,6 +651,32 @@ public class MiddlewareMain extends Application {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	// ------------------------------------
+	// ------- UTILITY FUNCTIONS ----------
+	// ------------------------------------
 
+	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+	public static String bytesToHex(byte[] bytes) {
+		char[] hexChars = new char[bytes.length * 2];
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		String str = "";
+		for (int j = 0; j < hexChars.length; j += 2) {
+			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
+		}
+		return str;
+	}
+
+	public String bytesToDec(byte[] barray) {
+		String str = "";
+		for (byte b : barray)
+			str += (int) b + ", ";
+		return str;
 	}
 }

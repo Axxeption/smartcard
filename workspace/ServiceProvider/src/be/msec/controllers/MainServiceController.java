@@ -115,15 +115,11 @@ public class MainServiceController extends Controller {
     }
     	
     private void getData(int query){
-        if(selectedServiceProvider != null){
-            ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.AUTH_CARD), selectedServiceProvider.getCertificate());
+        if(selectedServiceProvider != null){	
             addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
             addToDataLog("Sending request...");
-            request.setServiceProvider(selectedServiceProvider.getName());
-            request.setDataQuery((short) query);
-            spMain.sendCommandToMiddleware(request,true);
+            spMain.submitDataQuery(selectedServiceProvider, query);
 
-            
         }else {	
         	addToDataLog("Select a ServiceProvider and an action!");
         }

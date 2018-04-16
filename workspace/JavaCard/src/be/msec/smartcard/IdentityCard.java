@@ -400,7 +400,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
 
 			}catch(Exception e) {
-				e.printStackTrace();
+				
 			}
 			
 			sendBigFile(apdu, encryptedMessage);

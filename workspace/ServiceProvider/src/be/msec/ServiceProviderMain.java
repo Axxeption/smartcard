@@ -33,7 +33,9 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
@@ -95,12 +97,10 @@ public class ServiceProviderMain extends Application {
 
     @Override
     public void stop() {
-
         System.out.println("Stage is Normaly closed");
     }
-    
-    
-    public void sendCommandToMiddleware(ServiceProviderAction action,boolean waitForResponse) {
+
+	public void sendCommandToMiddleware(ServiceProviderAction action,boolean waitForResponse) {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
 		try {
@@ -121,6 +121,7 @@ public class ServiceProviderMain extends Application {
     
 
     public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
+    	// STEP 2
     	// 2. authenticate SP
     	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
     	action.setServiceProvider(selectedServiceProvider.getName());
@@ -129,6 +130,7 @@ public class ServiceProviderMain extends Application {
     }
     
     public void recreateSessionKey(Challenge challenge) {
+    	// STEP 3, after challenge response from MW.
     	byte[] nameBytes = challenge.getNameBytes();
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
@@ -155,6 +157,7 @@ public class ServiceProviderMain extends Application {
 					byte[] ivdata = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 					this.ivSpec = new IvParameterSpec(ivdata);
 					this.symKey = new SecretKeySpec(rnd, "AES");
+					System.out.println("SETTING SESSION KEY!!!! " + symKey);
 					
 					Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 					aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
@@ -193,6 +196,7 @@ public class ServiceProviderMain extends Application {
     }
     
     public void authenticateCard() {
+    	// STEP 4
     	mainController.addToDataLog("Start authentication of card" );
     	//generate random bytes for challenge
     	byte[] b = new byte[16];
@@ -219,7 +223,9 @@ public class ServiceProviderMain extends Application {
     }
     
     public void authenticateCard(MessageToAuthCard cardMessage) {
-    	System.out.println("DONE " + bytesToDec(cardMessage.getMessage()));
+    	// STEP 5, after second response from MW
+    	System.out.println("AUTH CARD WITH MESSAGE");
+    	System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
     	Cipher aesCipher;
 		try {
 			//decrypte message
@@ -272,14 +278,15 @@ public class ServiceProviderMain extends Application {
     }
     
     public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	// STEP 1
     	// Do Authentication
     	authenticateServiceProvider(selectedServiceProvider);
 
+    	//STEP 7
     	// Get data
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
-        
     	sendCommandToMiddleware(request,true);
     }
     
@@ -366,6 +373,7 @@ public class ServiceProviderMain extends Application {
 						recreateSessionKey(challengeFromSC);
 					}
 					else if( obj instanceof String) {
+						// STEP 8
 						String answer = (String)obj;
 						System.out.println("STRING RECEIVEC, "+answer);
 						mainController.addToDataLog("Succesfully received: " +answer);
@@ -390,9 +398,28 @@ public class ServiceProviderMain extends Application {
 	}
     
     
-    
-    //utility
-    public String bytesToDec(byte[] barray) {
+
+	// ------------------------------------
+	// ------- UTILITY FUNCTIONS ----------
+	// ------------------------------------
+
+	private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+	public static String bytesToHex(byte[] bytes) {
+		char[] hexChars = new char[bytes.length * 2];
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		String str = "";
+		for (int j = 0; j < hexChars.length; j += 2) {
+			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
+		}
+		return str;
+	}
+
+	public String bytesToDec(byte[] barray) {
 		String str = "";
 		for (byte b : barray)
 			str += (int) b + ", ";
