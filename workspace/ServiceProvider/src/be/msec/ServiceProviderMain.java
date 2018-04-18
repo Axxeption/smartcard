@@ -104,13 +104,17 @@ public class ServiceProviderMain extends Application {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
 		try {
-			System.out.println("Send something to the middleware");
+			System.out.println("Send action to the middleware: " + action.getAction().getName());
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
 			objectoutputstream.writeObject(action);
 			
 			//wait for response)
 			if(waitForResponse){
-				System.out.println("Commando needs response from MW! ...");	
+				//System.out.println("Commando needs response from MW! ...");	
+			}else {
+				//als ge ni moet wachten moet ge toch efkes wachten
+				wait(1000);
+				
 			}
 			
 		}catch (Exception e) {
@@ -135,8 +139,8 @@ public class ServiceProviderMain extends Application {
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
     	
-    	System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
-		System.out.println("encr name bytes   "+bytesToDec(nameBytes));
+    	//System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
+		//System.out.println("encr name bytes   "+bytesToDec(nameBytes));
     	
     	byte[] decryptedNameBytes;
     	byte[] decryptedChallengeBytes;
@@ -150,7 +154,7 @@ public class ServiceProviderMain extends Application {
 					System.out.println();
 					byte [] rnd = rsaCipher.doFinal(rndBytes);
 					//byte[] rnd = new String(decrypted);
-					System.out.println("decrypted rndbytes "+bytesToDec(rnd));
+					//System.out.println("decrypted rndbytes "+bytesToDec(rnd));
 					
 					
 					//create session key
@@ -164,8 +168,8 @@ public class ServiceProviderMain extends Application {
 					decryptedChallengeBytes = aesCipher.doFinal(challengeBytes);
 					decryptedNameBytes = aesCipher.doFinal(nameBytes);
 					
-					System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
-					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
+					//System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
+					//System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
 					String name = new String(decryptedNameBytes);
 					
 					byte [] respChallengeBytes = addOne_Bad(decryptedChallengeBytes);
@@ -175,7 +179,7 @@ public class ServiceProviderMain extends Application {
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
 					
 					//send challenge response back to MW
-					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
+					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge, session key", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
 					action.setChallengeBytes(encryptedRespChallenge);
 					sendCommandToMiddleware(action,false); // verwacht niks terug
 					
@@ -219,14 +223,14 @@ public class ServiceProviderMain extends Application {
     public void authenticateCard(MessageToAuthCard cardMessage) {
     	// STEP 5, after second response from MW
     	System.out.println("AUTH CARD WITH MESSAGE");
-    	System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
+    	//System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
     	Cipher aesCipher;
 		try {
 			//decrypte message
 			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
-			System.out.println(bytesToDec(message));
+			//System.out.println(bytesToDec(message));
 			
 			//check signature
 			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
@@ -235,9 +239,9 @@ public class ServiceProviderMain extends Application {
 			signer.initVerify(CAService.loadPublicKey("RSA"));
 			signer.update(signedBytes);
 			if(signer.verify(signature)) {
-				System.out.println("Card has a valid common certificate.");
+				System.out.println("Card has a valid common certificate. (authenticate card)");
 			} else {
-				System.out.println("Card doesn't have a valid common certificate.");
+				//System.out.println("Card doesn't have a valid common certificate.");
 				return;
 			}
 			
@@ -252,13 +256,13 @@ public class ServiceProviderMain extends Application {
 			outputStream.write(challengeToAuthCard);
 			outputStream.write("AUTH".getBytes());
 		    byte[] bytesToSign = outputStream.toByteArray();
-		    System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
-		    System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
+		    //System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
+		    //System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
 			//check sign
 		    
 			
 		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
-				System.out.println("Card is valid, challenge is ok.");
+				System.out.println("Card is valid, challenge is ok. (authenticate card)");
 			} else {
 				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
 				return;
@@ -292,9 +296,9 @@ public class ServiceProviderMain extends Application {
     	try {
 			serviceProviderSocket = new Socket("localhost", portSP);
 		} catch (IOException ex) {
-			System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
+			//System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
-		System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
+		//System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
 		
 		// start listener thread
 		ListenForMiddelwareCommandThread listenerThread = new ListenForMiddelwareCommandThread();

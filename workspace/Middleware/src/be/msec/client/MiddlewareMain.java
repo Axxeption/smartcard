@@ -141,7 +141,7 @@ public class MiddlewareMain extends Application {
 		// ask for the public key (certificate)
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		byte[] byteCertificate = new byte[256];
-		System.out.println("Ask for the certificate");
+		//System.out.println("Ask for the certificate");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_CERTIFICATE, (byte) 0x00, (byte) 0x00);
 		r = c.transmit(a);
 		if (r.getSW() == SW_VERIFICATION_FAILED)
@@ -149,26 +149,26 @@ public class MiddlewareMain extends Application {
 		else if (r.getSW() != 0x9000) {
 			throw new Exception("ERROR, " + r.getSW()); // print error number if not succeded
 		} else {
-			System.out.println(" status 9000 ! dus oke");
+			//System.out.println(" status 9000 ! dus oke");
 			byteCertificate = Arrays.copyOfRange(r.getBytes(), 0, r.getBytes().length - 2); // -2 bytes to cut off the
 																							// SW-bytes
-			System.out.println(bytesToHex(byteCertificate));
+			//System.out.println(bytesToHex(byteCertificate));
 
 		}
 		// change Byte array into Certificate object
 		CertificateFactory certFac = CertificateFactory.getInstance("X.509");
 		InputStream is = new ByteArrayInputStream(byteCertificate);
 		X509Certificate certificateObj = (X509Certificate) certFac.generateCertificate(is);
-		System.out.println("Succesfully created certificate on the host app.");
+		//System.out.println("Succesfully created certificate on the host app.");
 
 		// test Sign methode on card
-		System.out.println("Send random byte array :");
+		//System.out.println("Send random byte array :");
 		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 		random.setSeed(1);
 		// send 10 random bytes
 		byte[] randbytes = new byte[20];
 		random.nextBytes(randbytes);
-		System.out.println(bytesToDec(randbytes));
+		//System.out.println(bytesToDec(randbytes));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_RANDOM_BYTE, 0x00, 0x00, randbytes);
 		r = c.transmit(a);
 		if (r.getSW() == SW_VERIFICATION_FAILED)
@@ -176,7 +176,7 @@ public class MiddlewareMain extends Application {
 		else if (r.getSW() != 0x9000)
 			throw new Exception("Exception on the card: " + r.getSW());
 
-		System.out.println("Signed is:");
+		//System.out.println("Signed is:");
 		Signature signature = Signature.getInstance("SHA1withRSA");
 		signature.initVerify(certificateObj.getPublicKey());
 		signature.update(randbytes);
@@ -186,9 +186,9 @@ public class MiddlewareMain extends Application {
 		// duurgestuurd.
 		// Nu is dit niet het geval dus mogen de twee laatste er ook niet afgeknipt
 		// worden. Dus steeds checken met debugger!
-		System.out.println(bytesToDec(signedBytes));
+		//System.out.println(bytesToDec(signedBytes));
 		boolean ok = signature.verify(signedBytes);
-		System.out.println(ok);
+		//System.out.println(ok);
 	}
 
 	public void askName() {
@@ -199,7 +199,7 @@ public class MiddlewareMain extends Application {
 			// new byte[] geeft de pincode aan dus dit zou je normaal ingeven door de
 			// gebruiker
 
-			System.out.println("Asking serial number");
+			//System.out.println("Asking serial number");
 			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_SERIAL_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
 			r = c.transmit(a);
 			if (r.getSW() == SW_VERIFICATION_FAILED)
@@ -207,10 +207,10 @@ public class MiddlewareMain extends Application {
 			else if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
 			String str = new String(r.getData(), StandardCharsets.UTF_8);
-			System.out.println("SN is: " + str);
+			//System.out.println("SN is: " + str);
 
 			// 3. ask name
-			System.out.println("Get name");
+			//System.out.println("Get name");
 			a = new CommandAPDU(IDENTITY_CARD_CLA, GET_NAME_INS, 0x00, 0x00, new byte[] { 0x31, 0x32, 0x33, 0x34 });
 			r = c.transmit(a);
 			if (r.getSW() == SW_VERIFICATION_FAILED)
@@ -281,14 +281,14 @@ public class MiddlewareMain extends Application {
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			if (simulatedConnection) {
-				System.out.println("Simulated connection");
+				//System.out.println("Simulated connection");
 				c = new SimulatedConnection();
 
 				c.connect();
 
 				createAppletForSimulator();
 			} else {
-				System.out.println("Real connection");
+				//System.out.println("Real connection");
 				c = new Connection();
 				((Connection) c).setTerminal(0); // depending on which cardreader you use
 				c.connect();
@@ -306,14 +306,14 @@ public class MiddlewareMain extends Application {
 			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,
 					new byte[] { (byte) 0xa0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x08, 0x01 }, 0x7f);
 			r = c.transmit(a);
-			System.out.println(r);
+			//System.out.println(r);
 			if (r.getSW() != 0x9000)
 				throw new Exception("select installer applet failed");
 
 			a = new CommandAPDU(0x80, 0xB8, 0x00, 0x00,
 					new byte[] { 0xb, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00 }, 0x7f);
 			r = c.transmit(a);
-			System.out.println(r);
+			//System.out.println(r);
 			if (r.getSW() != 0x9000)
 				throw new Exception("Applet creation failed");
 
@@ -435,14 +435,15 @@ public class MiddlewareMain extends Application {
 		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
 				timeInfoStruct.getDate().length);
 
-		System.out.println("Send signed time bytes with extended APDU with length: " + toSend.length);
+		//
+		//System.out.println("Send signed time bytes with extended APDU with length: " + toSend.length);
 		toSend = new byte[10];
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("DATE UPDATED ");
+			//System.out.println("DATE UPDATED ");
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -456,7 +457,7 @@ public class MiddlewareMain extends Application {
 		if (pin.length != 4) { // limit length of the pin to prevent dangerous input
 			throw new Exception("Pin has to be 4 characters");
 		}
-		System.out.println(bytesToHex(pin));
+		//System.out.println(bytesToHex(pin));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, pin);
 		r = c.transmit(a);
 		System.out.print("Pin ok? " + r.getSW());
@@ -486,26 +487,26 @@ public class MiddlewareMain extends Application {
 		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
 		System.arraycopy(certificateBytes, 0, toSend, signedCertificateBytes.length, certificateBytes.length);
 		
-		System.out.println("Length of signed certificate: " + signedCertificateBytes.length); 
-		System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
-		System.out.println("Length of certificate: " + certificateBytes.length); 
-		System.out.println("Total to send (concat): " + bytesToDec(toSend));
-		System.out.println("Start sending command for authenticate SP with extended APDU");
+		//System.out.println("Length of signed certificate: " + signedCertificateBytes.length); 
+		//System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
+		//System.out.println("Length of certificate: " + certificateBytes.length); 
+		//System.out.println("Total to send (concat): " + bytesToDec(toSend));
+		//System.out.println("Start sending command for authenticate SP with extended APDU");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
 			else {
-				System.out.println("SUCCESFULLY VERIFIED " + r.getSW());
+				//System.out.println("SUCCESFULLY VERIFIED " + r.getSW());
 				//get response data and send to SP
 				byte[] response = r.getData();
 				System.out.println(response.length + "  response " + bytesToDec(response));	//first byte = length of response
 				Challenge challengeToSP = new Challenge(Arrays.copyOfRange(response, 1, 65), Arrays.copyOfRange(response, 65, 81), Arrays.copyOfRange(response, 81, response.length));
-				System.out.println(challengeToSP);
+				//System.out.println(challengeToSP);
 				
 				sendToServiceProvider(challengeToSP);
-				System.out.println("send challenge to SP done");
+				//System.out.println("send challenge to SP done");
 			}
 
 		} catch (Exception e) {
@@ -563,7 +564,7 @@ public class MiddlewareMain extends Application {
 	}
 	
 	private String getDataFromCard(ServiceProviderAction receivedQuery) {
-		System.out.println("Getting data from card");
+		//System.out.println("Getting data from card");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
 //		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
 		try {
@@ -616,10 +617,10 @@ public class MiddlewareMain extends Application {
 			ObjectInputStream objectinputstream = null;
 			try {
 				while (true) {
-					System.out.println("Listening to service provider...");
+					//System.out.println("Listening to service provider...");
 					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
 					ServiceProviderAction receivedObject = (ServiceProviderAction) objectinputstream.readObject();
-					System.out.println("received: " + receivedObject.getAction().getCommand());
+					//System.out.println("received: " + receivedObject.getAction().getCommand());
 					
 
 					switch (receivedObject.getAction().getCommand()) {

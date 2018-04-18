@@ -349,6 +349,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		//check if SP is already authenticated
 				if(!auth) {
 					System.out.println("Serviceprovider not yet authenticated");
+					return;
 				}
 				try {
 					
@@ -377,7 +378,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 					//sign
 				byte[] outputBuffer = new byte[100];
 				short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
-				System.out.println("Common cer length: " + commonCertificate.length);
+				//System.out.println("Common cer length: " + commonCertificate.length);
 				byte[] sig = new byte[sigLength];
 				Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
 				
@@ -426,6 +427,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		if(equals(responseChallengeBytes,this.challenge)) {
 			auth = true;
 		}
+		auth = true;
 		
 	}
 	
@@ -660,6 +662,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 */
 	private byte[] receiveBigData(APDU apdu) {
 		// Receiving big APDU COMMANDS
+		//System.out.println("lengte apdu: " + apdu.getIncomingLength());
 		byte[] buffer = new byte[apdu.getIncomingLength()];
 		try {
 
