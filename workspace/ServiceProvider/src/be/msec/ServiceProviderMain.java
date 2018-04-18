@@ -111,10 +111,7 @@ public class ServiceProviderMain extends Application {
 			//wait for response)
 			if(waitForResponse){
 				//System.out.println("Commando needs response from MW! ...");	
-			}else {
-				//als ge ni moet wachten moet ge toch efkes wachten
-				wait(1000);
-				
+				ListenForMiddelware();
 			}
 			
 		}catch (Exception e) {
@@ -127,6 +124,7 @@ public class ServiceProviderMain extends Application {
     public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
     	// STEP 2
     	// 2. authenticate SP
+    	System.out.println("2. auth service provider, SP");
     	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
     	action.setServiceProvider(selectedServiceProvider.getName());
     	sendCommandToMiddleware(action,true);
@@ -135,6 +133,7 @@ public class ServiceProviderMain extends Application {
     
     public void recreateSessionKey(Challenge challenge) {
     	// STEP 3, after challenge response from MW.
+    	System.out.println("3. recreateSessionKey, SP");
     	byte[] nameBytes = challenge.getNameBytes();
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
@@ -195,6 +194,7 @@ public class ServiceProviderMain extends Application {
     
     public void authenticateCard() {
     	// STEP 4
+    	System.out.println("4. auth card, SP");
     	mainController.addToDataLog("Start authentication of card" );
     	//generate random bytes for challenge
     	byte[] b = new byte[16];
@@ -209,8 +209,10 @@ public class ServiceProviderMain extends Application {
 			
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
 			// TODO Auto-generated catch block
+			System.out.println("ERROR IN auth card, SP :");
+			System.out.println(symKey.getEncoded() +"  "+ ivSpec.getIV());
 			e.printStackTrace();
-		}
+		}	
     	
     	
     	//generate an action to send to the card
@@ -222,7 +224,7 @@ public class ServiceProviderMain extends Application {
     
     public void authenticateCard(MessageToAuthCard cardMessage) {
     	// STEP 5, after second response from MW
-    	System.out.println("AUTH CARD WITH MESSAGE");
+    	System.out.println("5. AUTH CARD WITH MESSAGE");
     	//System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
     	Cipher aesCipher;
 		try {
@@ -276,15 +278,17 @@ public class ServiceProviderMain extends Application {
     }
     
     public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	System.out.println("1, Start query, SP");
     	// STEP 1
     	// Do Authentication
     	authenticateServiceProvider(selectedServiceProvider);
-    	
+    
     	// STEP 4
     	//start the authentication of the card (step 3)
     	authenticateCard();
     	//STEP 7
     	// Get data
+    	System.out.println("7. Get Data, SP");
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
@@ -299,10 +303,6 @@ public class ServiceProviderMain extends Application {
 			//System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
 		//System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
-		
-		// start listener thread
-		ListenForMiddelwareCommandThread listenerThread = new ListenForMiddelwareCommandThread();
-		listenerThread.start();
 
     }
     
@@ -354,49 +354,43 @@ public class ServiceProviderMain extends Application {
         }
     }
 
-    
-    class ListenForMiddelwareCommandThread extends Thread {
-		public void run() {
-			ObjectInputStream objectinputstream = null;
-			while (true) {
-				System.out.println("Listening for MW...");
-		    	Object obj = null;
-		    	try {
-					objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-					
-					obj = objectinputstream.readObject();
-					System.out.println("OBJECT RECEIVED");
-					if(obj instanceof Challenge) {
-						Challenge challengeFromSC = (Challenge)obj;
-						mainController.addToDataLog("Succesfully received challenge" );
-						System.out.println("CHALLENGE RECEIVED");
-						//recreate session key, respond to challenge
-						recreateSessionKey(challengeFromSC);
-					}
-					else if( obj instanceof String) {
-						// STEP 8
-						String answer = (String)obj;
-						System.out.println("STRING RECEIVEC, "+answer);
-						mainController.addToDataLog("Succesfully received: " +answer);
-					}
-					else if(obj instanceof MessageToAuthCard) {
-						System.out.println("MESSTOAUTHCARD RECEIVED");
-						authenticateCard((MessageToAuthCard) obj);
-					}
-					else {
-						System.out.println("unknown obj received "+ obj);
-					}
-					
-					System.out.println("succesfully received an answer!");
-					
-		    	}catch (Exception e) {
-					System.out.println(e);
-				}
-
+    private void ListenForMiddelware() {
+    	System.out.println("Listening for MW...");
+    	Object obj = null;
+    	try {
+			ObjectInputStream objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
+			
+			obj = objectinputstream.readObject();
+			System.out.println("OBJECT RECEIVED");
+			if(obj instanceof Challenge) {
+				Challenge challengeFromSC = (Challenge)obj;
+				mainController.addToDataLog("Succesfully received challenge" );
+				System.out.println("CHALLENGE RECEIVED");
+				//recreate session key, respond to challenge
+				recreateSessionKey(challengeFromSC);
+				notify();
 			}
+			else if( obj instanceof String) {
+				// STEP 8
+				String answer = (String)obj;
+				System.out.println("STRING RECEIVEC, "+answer);
+				mainController.addToDataLog("Succesfully received: " +answer);
+			}
+			else if(obj instanceof MessageToAuthCard) {
+				System.out.println("MESSTOAUTHCARD RECEIVED");
+				authenticateCard((MessageToAuthCard) obj);
+			}
+			else {
+				System.out.println("UNKNOW OBJECT received "+ obj);
+			}
+			
+			System.out.println("succesfully received an answer!");
+			
+    	}catch (Exception e) {
+			System.out.println(e);
 		}
+    }
 
-	}
     
     
 
