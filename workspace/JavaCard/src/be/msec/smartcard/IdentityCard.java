@@ -8,6 +8,8 @@ import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
+import java.util.Arrays;
 
 import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
 
@@ -52,6 +54,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private final static short ERROR_UNKNOW = (short) 0x8888;
 	private final static short ERROR_WRONG_TIME = (short) 0x8002;
 	private final static short ERROR_WRONG_RIGHTS = (short) 0x8003;
+	private final static short ENCRYPT_ERROR = (short) 0x8004;
 	byte [] nameBytesCopy16;
 
 	
@@ -347,6 +350,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				if(!auth) {
 					System.out.println("Serviceprovider not yet authenticated");
 				}
+				try {
+					
 				
 				//decrypt 
 				byte [] data = receiveBigData(apdu);
@@ -357,10 +362,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				
 				
 		 
-				byte[] auth = "AUTH".getBytes();
-		       	byte[] bytesToSign = new byte[responseChallengeBytes.length + auth.length];
+				byte[] authBytes = "AUTH".getBytes();
+		       	byte[] bytesToSign = new byte[responseChallengeBytes.length + authBytes.length];
 		       	Util.arrayCopy(responseChallengeBytes, (short) 0, bytesToSign, (short) 0,(short) responseChallengeBytes.length);
-		       	Util.arrayCopy(auth, (short) 0, bytesToSign, (short) 15,(short) auth.length);
+		       	Util.arrayCopy(authBytes, (short) 0, bytesToSign, (short) 15,(short) authBytes.length);
 					
 			    //prepare signature
 			    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
@@ -386,14 +391,20 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				    //init symmetric encryption
 				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+				
 				try {
 					symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
 					
 				}catch(Exception e) {
-					e.printStackTrace();
+					ISOException.throwIt(ENCRYPT_ERROR);
+				}
+				
+				sendBigFile(apdu, encryptedMessage);
+				}catch(Exception e) {
+					ISOException.throwIt(ENCRYPT_ERROR);
 				}
 					
-				sendBigFile(apdu, encryptedMessage);
+				
 	}
 
 	/**
@@ -408,16 +419,12 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 		aesCipher.init(symKey, Cipher.MODE_DECRYPT);
 		aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
-		//TODO beno Biginteger cannot be used on real smart card!! --> commented
-//		BigInteger responseChallengeBigInt = new BigInteger(1, responseChallengeBytes);
-//		BigInteger challengeBigInt = new BigInteger(1, this.challenge);
+		
+		//Add one
+		this.challenge = addOne_Bad(this.challenge);
 		//verify
-		auth = false;
-//		if(responseChallengeBigInt.equals(challengeBigInt.add(BigInteger.ONE))) {
-//			auth = true;
-//		}
-		if(auth) {
-//			System.out.println("challenge verified --> service provider verified");
+		if(equals(responseChallengeBytes,this.challenge)) {
+			auth = true;
 		}
 		
 	}
@@ -772,5 +779,29 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
 		return rnd;
 	}
+	
+	public static byte[] addOne_Bad(byte[] A) {
+	    short lastPosition = (short)(A.length - 1); 
+	    // Looping from right to left
+	    A[lastPosition] += 1;
+	    
+	    // mogelijk da als alle bytes 0xFF zijn dat er dan niets wordt bij opgeteld
+	    return A;         
+	}
+	
+	public static boolean equals(byte[] array1, byte[] array2) {
+    	short length = (short) array1.length;
+    	short length2 = (short) array2.length;
+    	if(length != length2) {
+    		return false;
+    	}
+    	
+    	for (short i = (short)(length-1); i >= 0; i = (short)(i-1)) {
+	        if(array1[i] != array2[i]) {
+	        	return false;
+	        }
+	    }
+    	return true;
+    }
 	
 }

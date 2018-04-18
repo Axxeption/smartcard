@@ -168,10 +168,7 @@ public class ServiceProviderMain extends Application {
 					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
 					String name = new String(decryptedNameBytes);
 					
-					BigInteger reqChallenge = new BigInteger(decryptedChallengeBytes);
-					System.out.println(name + "  " + reqChallenge.toString());
-					BigInteger respChallenge =reqChallenge.add(BigInteger.ONE);
-					byte [] respChallengeBytes = respChallenge.toByteArray();
+					byte [] respChallengeBytes = addOne_Bad(decryptedChallengeBytes);
 					
 					//TODO beno encrypt challenge response
 					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
@@ -180,7 +177,7 @@ public class ServiceProviderMain extends Application {
 					//send challenge response back to MW
 					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
 					action.setChallengeBytes(encryptedRespChallenge);
-					sendCommandToMiddleware(action,false);
+					sendCommandToMiddleware(action,false); // verwacht niks terug
 					
 				} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
 					// TODO Auto-generated catch block
@@ -189,9 +186,6 @@ public class ServiceProviderMain extends Application {
 		    		
     		}
     	}
-    	
-    	//start the authentication of the card (step 3)
-    	authenticateCard();
     	
     }
     
@@ -281,7 +275,10 @@ public class ServiceProviderMain extends Application {
     	// STEP 1
     	// Do Authentication
     	authenticateServiceProvider(selectedServiceProvider);
-
+    	
+    	// STEP 4
+    	//start the authentication of the card (step 3)
+    	authenticateCard();
     	//STEP 7
     	// Get data
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
@@ -383,7 +380,7 @@ public class ServiceProviderMain extends Application {
 						authenticateCard((MessageToAuthCard) obj);
 					}
 					else {
-						System.out.println("unknown obj received");
+						System.out.println("unknown obj received "+ obj);
 					}
 					
 					System.out.println("succesfully received an answer!");
@@ -424,6 +421,14 @@ public class ServiceProviderMain extends Application {
 		for (byte b : barray)
 			str += (int) b + ", ";
 		return str;
+	}
+	
+	public static byte[] addOne_Bad(byte[] A) {
+	    short lastPosition = (short)(A.length - 1); 
+	    // Looping from right to left
+	    A[lastPosition] += 1;
+	    
+	    return A;         
 	}
 
 }

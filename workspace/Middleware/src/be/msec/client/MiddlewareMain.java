@@ -550,6 +550,8 @@ public class MiddlewareMain extends Application {
 			else {
 				byte[] response = r.getData();
 				System.out.println(bytesToHex(response));
+				// TODO: ER ZIT HIER NOG EEN FOUT ERGENS. Ik weet niet of het door de kaart komt. heb offset veranderd naar 0 . Stond op 1. 
+				// response zou een veelvoud van 16 bytes moeten zijn zodat de sp kan decrypteren. 
 				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
 			}
 			
