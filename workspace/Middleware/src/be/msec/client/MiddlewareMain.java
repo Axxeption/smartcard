@@ -560,7 +560,7 @@ public class MiddlewareMain extends Application {
 		return;
 	}
 	
-	private String getDataFromCard(ServiceProviderAction receivedQuery) {
+	private byte[] getDataFromCard(ServiceProviderAction receivedQuery) {
 		System.out.println("Getting data from card");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
 //		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
@@ -570,9 +570,11 @@ public class MiddlewareMain extends Application {
 				throw new Exception("Not verified, no access");
 			else if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
+//			
+			System.out.println("received encrypted data from the card.");
 			String str = new String(r.getData(), StandardCharsets.UTF_8);
 			System.out.println("data is: " + str);
-			return str;
+			return r.getBytes();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -604,7 +606,7 @@ public class MiddlewareMain extends Application {
 				}
             }
             System.out.println("pin valid");
-            String data = getDataFromCard(query);
+            byte[] data = getDataFromCard(query);
             sendToServiceProvider(data);
 		}
 	}

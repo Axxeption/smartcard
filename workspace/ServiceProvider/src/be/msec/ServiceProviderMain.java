@@ -25,6 +25,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -53,6 +54,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.rmi.CORBA.Util;
 
 public class ServiceProviderMain extends Application {
 
@@ -225,55 +227,57 @@ public class ServiceProviderMain extends Application {
     public void authenticateCard(MessageToAuthCard cardMessage) {
     	// STEP 5, after second response from MW
     	System.out.println("AUTH CARD WITH MESSAGE");
-    	System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
-    	Cipher aesCipher;
-		try {
-			//decrypte message
-			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
-			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
-			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
-			System.out.println(bytesToDec(message));
-			
-			//check signature
-			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
-			byte[] signature = Arrays.copyOfRange(message, 72, 136);
-			Signature signer = Signature.getInstance("SHA1WithRSA");
-			signer.initVerify(CAService.loadPublicKey("RSA"));
-			signer.update(signedBytes);
-			if(signer.verify(signature)) {
-				System.out.println("Card has a valid common certificate.");
-			} else {
-				System.out.println("Card doesn't have a valid common certificate.");
-				return;
-			}
-			
-			//check if sign with CommonCert key is ok
-			//first regenerate public key from commoncertificate
-			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 0, 3));
-			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 4, 68));
-			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
-			signer.initVerify(KeyFactory.getInstance("RSA").generatePublic(spec));
-			//generate byte array
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			outputStream.write(challengeToAuthCard);
-			outputStream.write("AUTH".getBytes());
-		    byte[] bytesToSign = outputStream.toByteArray();
-		    System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
-		    System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
-			//check sign
-		    
-			
-		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
-				System.out.println("Card is valid, challenge is ok.");
-			} else {
-				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
-				return;
-			}
-			
-		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException | InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
+////    	System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
+////    	Cipher aesCipher;
+////		try {
+////			//decrypte message
+////			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+////			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
+////			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
+////			System.out.println(bytesToDec(message));
+////			
+////			//check signature
+////			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
+////			byte[] signature = Arrays.copyOfRange(message, 72, 136);
+////			Signature signer = Signature.getInstance("SHA1WithRSA");
+////			signer.initVerify(CAService.loadPublicKey("RSA"));
+////			signer.update(signedBytes);
+////			if(signer.verify(signature)) {
+////				System.out.println("Card has a valid common certificate.");
+////			} else {
+////				System.out.println("Card doesn't have a valid common certificate.");
+////				return;
+////			}
+////			
+////			//check if sign with CommonCert key is ok
+////			//first regenerate public key from commoncertificate
+////			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 0, 3));
+////			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 4, 68));
+////			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+////			signer.initVerify(KeyFactory.getInstance("RSA").generatePublic(spec));
+////			//generate byte array
+////			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+////			outputStream.write(challengeToAuthCard);
+////			outputStream.write("AUTH".getBytes());
+////		    byte[] bytesToSign = outputStream.toByteArray();
+////		    System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
+////		    System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
+////			//check sign
+////		    
+////			
+////		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
+////				System.out.println("Card is valid, challenge is ok.");
+////			} else {
+////				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
+////				return;
+////			}
+////		    
+//		    
+//			
+//		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException | InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} 
 		
     }
     
@@ -284,6 +288,7 @@ public class ServiceProviderMain extends Application {
 
     	//STEP 7
     	// Get data
+    	System.out.println("start with sending request in serviceprovider");
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
@@ -381,6 +386,9 @@ public class ServiceProviderMain extends Application {
 					else if(obj instanceof MessageToAuthCard) {
 						System.out.println("MESSTOAUTHCARD RECEIVED");
 						authenticateCard((MessageToAuthCard) obj);
+					} else if(obj instanceof byte[]) {
+						System.out.println("received encrypted byte array at serviceprovider");
+						decryptAndShowData( (byte[]) obj );
 					}
 					else {
 						System.out.println("unknown obj received");
@@ -393,6 +401,39 @@ public class ServiceProviderMain extends Application {
 				}
 
 			}
+		}
+
+		private void decryptAndShowData(byte[] encryptedData) {
+			//decrypt and show in log
+			try {
+				Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+				aesCipher.init(Cipher.ENCRYPT_MODE, symKey, ivSpec);
+				byte [] cropped = new byte[encryptedData.length - 2];
+				cropped = Arrays.copyOfRange(encryptedData, 2, cropped.length);
+//				Util.arrayCopy(encryptedData, (short) 2 , cropped, (short) 0 , (short) cropped.length) ;
+
+				byte[] data = aesCipher.doFinal(cropped);
+				String str = new String(data, StandardCharsets.UTF_8);
+				System.out.println("data is: " + str);
+				System.out.println("Succesfully decrypted");
+			} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchPaddingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalBlockSizeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (BadPaddingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 		}
 
 	}

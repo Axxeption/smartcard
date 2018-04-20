@@ -279,10 +279,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 */
 	private void releaseAttribute(APDU apdu) {
 		//TODO change this ! 
-		if (pin.isValidated())
-			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-		else {
-//			byte [] askedData = receiveBigData(apdu);
+//		if (pin.isValidated())
+//			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+//		else {
+////			byte [] askedData = receiveBigData(apdu);
 
 			short query = (byte) 1;
 			if(query <= maxRights) {
@@ -305,24 +305,25 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				Util.arrayCopy(synomymHashed, (short) 0 , sendBack, (short) 0 , (short) synomymHashed.length);
 				Util.arrayCopy(queryResults, (short) 0 , sendBack, (short) synomymHashed.length , (short) queryResults.length);
 				
-				//TODO works only with 16byte array! encrypt the data tosend with the Ks
-				
-//				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-//				symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
-//				byte[] encryptedData = new byte[(short) 16];
+				//TODO works only with 16byte array! encrypt the data tosend with the Ks				
+				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+				symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
 //				sendBack = new byte[16];
-//				try {
-//					symCipher.doFinal(sendBack, (short)0, (short)sendBack.length, encryptedData, (short)0);
-//				} catch (Exception e) {
-//					ISOException.throwIt(ERROR_UNKNOW);
-//				}
-//				System.out.println("The data is succesfully encrypted");
+				sendBack = padding(sendBack);
+				byte[] encryptedData = new byte[(short) sendBack.length];
+
+				try {
+					symCipher.doFinal(sendBack, (short)0, (short)sendBack.length, encryptedData, (short)0);
+				} catch (Exception e) {
+					ISOException.throwIt(ERROR_UNKNOW);
+				}
+				System.out.println("The data is succesfully encrypted");
 				//send everything back can be big!
 				if(sendBigFile(apdu, sendBack)) {
 					System.out.println("The data is succesfully transferred!");
 				}
 			}
-		}
+//		}
 		
 	}
 	
@@ -349,51 +350,51 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				}
 				
 				//decrypt 
-				byte [] data = receiveBigData(apdu);
-				byte [] responseChallengeBytes = new byte[16];
-				Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-				aesCipher.init(symKey, Cipher.MODE_DECRYPT);
-				aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
-				
-				
-		 
-				byte[] auth = "AUTH".getBytes();
-		       	byte[] bytesToSign = new byte[responseChallengeBytes.length + auth.length];
-		       	Util.arrayCopy(responseChallengeBytes, (short) 0, bytesToSign, (short) 0,(short) responseChallengeBytes.length);
-		       	Util.arrayCopy(auth, (short) 0, bytesToSign, (short) 15,(short) auth.length);
-					
-			    //prepare signature
-			    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-			    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
-				privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-				privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
-				signature.init(privk, Signature.MODE_SIGN);
-					
-					//sign
-				byte[] outputBuffer = new byte[100];
-				short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
-				System.out.println("Common cer length: " + commonCertificate.length);
-				byte[] sig = new byte[sigLength];
-				Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
-				
-				   
-				byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4];
-				Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
-				Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length, (short) bytesToSign.length);
-				Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length), (short) sig.length);
-			    byte[] encryptedMessage = new byte[message.length];
-				    
-				    //init symmetric encryption
-				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-				try {
-					symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
-					
-				}catch(Exception e) {
-					e.printStackTrace();
-				}
-					
-				sendBigFile(apdu, encryptedMessage);
+//				byte [] data = receiveBigData(apdu);
+//				byte [] responseChallengeBytes = new byte[16];
+//				Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+//				aesCipher.init(symKey, Cipher.MODE_DECRYPT);
+//				aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
+//				
+//				
+//		 
+//				byte[] auth = "AUTH".getBytes();
+//		       	byte[] bytesToSign = new byte[responseChallengeBytes.length + auth.length];
+//		       	Util.arrayCopy(responseChallengeBytes, (short) 0, bytesToSign, (short) 0,(short) responseChallengeBytes.length);
+//		       	Util.arrayCopy(auth, (short) 0, bytesToSign, (short) 15,(short) auth.length);
+//					
+//			    //prepare signature
+//			    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+//			    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
+//				privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+//				privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+//				signature.init(privk, Signature.MODE_SIGN);
+//					
+//					//sign
+//				byte[] outputBuffer = new byte[100];
+//				short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
+//				System.out.println("Common cer length: " + commonCertificate.length);
+//				byte[] sig = new byte[sigLength];
+//				Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
+//				
+//				   
+//				byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4];
+//				Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
+//				Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length, (short) bytesToSign.length);
+//				Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length), (short) sig.length);
+//			    byte[] encryptedMessage = new byte[message.length];
+//				    
+//				    //init symmetric encryption
+//				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+//				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+//				try {
+//					symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
+//					
+//				}catch(Exception e) {
+//					e.printStackTrace();
+//				}
+//					
+//				sendBigFile(apdu, encryptedMessage);
 	}
 
 	/**
