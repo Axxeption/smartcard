@@ -106,13 +106,14 @@ public class ServiceProviderMain extends Application {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
 		try {
-			System.out.println("Send something to the middleware");
+			System.out.println("Send action to the middleware: " + action.getAction().getName());
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
 			objectoutputstream.writeObject(action);
 			
 			//wait for response)
 			if(waitForResponse){
-				System.out.println("Commando needs response from MW! ...");	
+				//System.out.println("Commando needs response from MW! ...");	
+				ListenForMiddelware();
 			}
 			
 		}catch (Exception e) {
@@ -125,6 +126,7 @@ public class ServiceProviderMain extends Application {
     public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
     	// STEP 2
     	// 2. authenticate SP
+    	System.out.println("2. auth service provider, SP");
     	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
     	action.setServiceProvider(selectedServiceProvider.getName());
     	sendCommandToMiddleware(action,true);
@@ -133,12 +135,13 @@ public class ServiceProviderMain extends Application {
     
     public void recreateSessionKey(Challenge challenge) {
     	// STEP 3, after challenge response from MW.
+    	System.out.println("3. recreateSessionKey, SP");
     	byte[] nameBytes = challenge.getNameBytes();
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
     	
-    	System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
-		System.out.println("encr name bytes   "+bytesToDec(nameBytes));
+    	//System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
+		//System.out.println("encr name bytes   "+bytesToDec(nameBytes));
     	
     	byte[] decryptedNameBytes;
     	byte[] decryptedChallengeBytes;
@@ -152,7 +155,7 @@ public class ServiceProviderMain extends Application {
 					System.out.println();
 					byte [] rnd = rsaCipher.doFinal(rndBytes);
 					//byte[] rnd = new String(decrypted);
-					System.out.println("decrypted rndbytes "+bytesToDec(rnd));
+					//System.out.println("decrypted rndbytes "+bytesToDec(rnd));
 					
 					
 					//create session key
@@ -166,23 +169,20 @@ public class ServiceProviderMain extends Application {
 					decryptedChallengeBytes = aesCipher.doFinal(challengeBytes);
 					decryptedNameBytes = aesCipher.doFinal(nameBytes);
 					
-					System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
-					System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
+					//System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
+					//System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
 					String name = new String(decryptedNameBytes);
 					
-					BigInteger reqChallenge = new BigInteger(decryptedChallengeBytes);
-					System.out.println(name + "  " + reqChallenge.toString());
-					BigInteger respChallenge =reqChallenge.add(BigInteger.ONE);
-					byte [] respChallengeBytes = respChallenge.toByteArray();
+					byte [] respChallengeBytes = addOne_Bad(decryptedChallengeBytes);
 					
 					//TODO beno encrypt challenge response
 					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
 					
 					//send challenge response back to MW
-					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
+					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge, session key", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
 					action.setChallengeBytes(encryptedRespChallenge);
-					sendCommandToMiddleware(action,false);
+					sendCommandToMiddleware(action,false); // verwacht niks terug
 					
 				} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
 					// TODO Auto-generated catch block
@@ -192,13 +192,11 @@ public class ServiceProviderMain extends Application {
     		}
     	}
     	
-    	//start the authentication of the card (step 3)
-    	authenticateCard();
-    	
     }
     
     public void authenticateCard() {
     	// STEP 4
+    	System.out.println("4. auth card, SP");
     	mainController.addToDataLog("Start authentication of card" );
     	//generate random bytes for challenge
     	byte[] b = new byte[16];
@@ -213,8 +211,10 @@ public class ServiceProviderMain extends Application {
 			
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
 			// TODO Auto-generated catch block
+			System.out.println("ERROR IN auth card, SP :");
+			System.out.println(symKey.getEncoded() +"  "+ ivSpec.getIV());
 			e.printStackTrace();
-		}
+		}	
     	
     	
     	//generate an action to send to the card
@@ -226,69 +226,72 @@ public class ServiceProviderMain extends Application {
     
     public void authenticateCard(MessageToAuthCard cardMessage) {
     	// STEP 5, after second response from MW
-    	System.out.println("AUTH CARD WITH MESSAGE");
-////    	System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
-////    	Cipher aesCipher;
-////		try {
-////			//decrypte message
-////			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
-////			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
-////			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
-////			System.out.println(bytesToDec(message));
-////			
-////			//check signature
-////			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
-////			byte[] signature = Arrays.copyOfRange(message, 72, 136);
-////			Signature signer = Signature.getInstance("SHA1WithRSA");
-////			signer.initVerify(CAService.loadPublicKey("RSA"));
-////			signer.update(signedBytes);
-////			if(signer.verify(signature)) {
-////				System.out.println("Card has a valid common certificate.");
-////			} else {
-////				System.out.println("Card doesn't have a valid common certificate.");
-////				return;
-////			}
-////			
-////			//check if sign with CommonCert key is ok
-////			//first regenerate public key from commoncertificate
-////			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 0, 3));
-////			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 4, 68));
-////			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
-////			signer.initVerify(KeyFactory.getInstance("RSA").generatePublic(spec));
-////			//generate byte array
-////			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-////			outputStream.write(challengeToAuthCard);
-////			outputStream.write("AUTH".getBytes());
-////		    byte[] bytesToSign = outputStream.toByteArray();
-////		    System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
-////		    System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
-////			//check sign
-////		    
-////			
-////		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
-////				System.out.println("Card is valid, challenge is ok.");
-////			} else {
-////				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
-////				return;
-////			}
-////		    
-//		    
-//			
-//		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException | InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} 
+    	System.out.println("5. AUTH CARD WITH MESSAGE");
+    	//System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
+    	Cipher aesCipher;
+		try {
+			//decrypte message
+			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
+			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
+			//System.out.println(bytesToDec(message));
+			
+			//check signature
+			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
+			byte[] signature = Arrays.copyOfRange(message, 72, 136);
+			Signature signer = Signature.getInstance("SHA1WithRSA");
+			signer.initVerify(CAService.loadPublicKey("RSA"));
+			signer.update(signedBytes);
+			if(signer.verify(signature)) {
+				System.out.println("Card has a valid common certificate. (authenticate card)");
+			} else {
+				//System.out.println("Card doesn't have a valid common certificate.");
+				return;
+			}
+			
+			//check if sign with CommonCert key is ok
+			//first regenerate public key from commoncertificate
+			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 0, 3));
+			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 4, 68));
+			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+			signer.initVerify(KeyFactory.getInstance("RSA").generatePublic(spec));
+			//generate byte array
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			outputStream.write(challengeToAuthCard);
+			outputStream.write("AUTH".getBytes());
+		    byte[] bytesToSign = outputStream.toByteArray();
+		    //System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
+		    //System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
+			//check sign
+		    
+			
+		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
+				System.out.println("Card is valid, challenge is ok. (authenticate card)");
+			} else {
+				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
+				return;
+			}
+			
+		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException | InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		
     }
     
     public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	System.out.println("1, Start query, SP");
     	// STEP 1
     	// Do Authentication
     	authenticateServiceProvider(selectedServiceProvider);
-
+    
+    	// STEP 4
+    	//start the authentication of the card (step 3)
+    	authenticateCard();
     	//STEP 7
     	// Get data
-    	System.out.println("start with sending request in serviceprovider");
+
+    	System.out.println("7. Get Data, SP");
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
@@ -300,13 +303,9 @@ public class ServiceProviderMain extends Application {
     	try {
 			serviceProviderSocket = new Socket("localhost", portSP);
 		} catch (IOException ex) {
-			System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
+			//System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
-		System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
-		
-		// start listener thread
-		ListenForMiddelwareCommandThread listenerThread = new ListenForMiddelwareCommandThread();
-		listenerThread.start();
+		//System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
 
     }
     
@@ -358,50 +357,42 @@ public class ServiceProviderMain extends Application {
         }
     }
 
-    
-    class ListenForMiddelwareCommandThread extends Thread {
-		public void run() {
-			ObjectInputStream objectinputstream = null;
-			while (true) {
-				System.out.println("Listening for MW...");
-		    	Object obj = null;
-		    	try {
-					objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-					
-					obj = objectinputstream.readObject();
-					System.out.println("OBJECT RECEIVED");
-					if(obj instanceof Challenge) {
-						Challenge challengeFromSC = (Challenge)obj;
-						mainController.addToDataLog("Succesfully received challenge" );
-						System.out.println("CHALLENGE RECEIVED");
-						//recreate session key, respond to challenge
-						recreateSessionKey(challengeFromSC);
-					}
-					else if( obj instanceof String) {
-						// STEP 8
-						String answer = (String)obj;
-						System.out.println("STRING RECEIVEC, "+answer);
-						mainController.addToDataLog("Succesfully received: " +answer);
-					}
-					else if(obj instanceof MessageToAuthCard) {
-						System.out.println("MESSTOAUTHCARD RECEIVED");
-						authenticateCard((MessageToAuthCard) obj);
-					} else if(obj instanceof byte[]) {
-						System.out.println("received encrypted byte array at serviceprovider");
-						decryptAndShowData( (byte[]) obj );
-					}
-					else {
-						System.out.println("unknown obj received");
-					}
-					
-					System.out.println("succesfully received an answer!");
-					
-		    	}catch (Exception e) {
-					System.out.println(e);
-				}
-
+    private void ListenForMiddelware() {
+    	System.out.println("Listening for MW...");
+    	Object obj = null;
+    	try {
+			ObjectInputStream objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
+			
+			obj = objectinputstream.readObject();
+			System.out.println("OBJECT RECEIVED");
+			if(obj instanceof Challenge) {
+				Challenge challengeFromSC = (Challenge)obj;
+				mainController.addToDataLog("Succesfully received challenge" );
+				System.out.println("CHALLENGE RECEIVED");
+				//recreate session key, respond to challenge
+				recreateSessionKey(challengeFromSC);
+				notify();
 			}
+			else if( obj instanceof String) {
+				// STEP 8
+				String answer = (String)obj;
+				System.out.println("STRING RECEIVEC, "+answer);
+				mainController.addToDataLog("Succesfully received: " +answer);
+			}
+			else if(obj instanceof MessageToAuthCard) {
+				System.out.println("MESSTOAUTHCARD RECEIVED");
+				authenticateCard((MessageToAuthCard) obj);
+			}
+			else {
+				System.out.println("UNKNOW OBJECT received "+ obj);
+			}
+			
+			System.out.println("succesfully received an answer!");
+			
+    	}catch (Exception e) {
+			System.out.println(e);
 		}
+    }
 
 		private void decryptAndShowData(byte[] encryptedData) {
 			//decrypt and show in log
@@ -436,7 +427,7 @@ public class ServiceProviderMain extends Application {
 			
 		}
 
-	}
+	
     
     
 
@@ -465,6 +456,14 @@ public class ServiceProviderMain extends Application {
 		for (byte b : barray)
 			str += (int) b + ", ";
 		return str;
+	}
+	
+	public static byte[] addOne_Bad(byte[] A) {
+	    short lastPosition = (short)(A.length - 1); 
+	    // Looping from right to left
+	    A[lastPosition] += 1;
+	    
+	    return A;         
 	}
 
 }
