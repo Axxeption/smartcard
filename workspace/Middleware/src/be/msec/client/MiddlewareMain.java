@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -566,8 +567,12 @@ public class MiddlewareMain extends Application {
 	private byte[] getDataFromCard(ServiceProviderAction receivedQuery) {
 		System.out.println("Getting data from card");
 
-		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
-//		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00,receivedQuery.getDataQuery());
+//		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
+		System.out.println("Ask with query: " + receivedQuery.getDataQuery());
+		ByteBuffer buffer = ByteBuffer.allocate(2);
+		buffer.putShort(receivedQuery.getDataQuery());
+		byte [] toSend = buffer.array();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00, receivedQuery.getDataQuery());
 		try {
 			r = c.transmit(a);
 			if (r.getSW() == SW_VERIFICATION_FAILED)
@@ -575,9 +580,7 @@ public class MiddlewareMain extends Application {
 			else if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
 //			
-			System.out.println("received encrypted data from the card.");
-			String str = new String(r.getData(), StandardCharsets.UTF_8);
-			System.out.println("data is: " + str);
+			System.out.println("Received encrypted data from the card.");
 			return r.getBytes();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

@@ -102,7 +102,7 @@ public class ServiceProviderMain extends Application {
         System.out.println("Stage is Normaly closed");
     }
 
-	public void sendCommandToMiddleware(ServiceProviderAction action,boolean waitForResponse) {
+	public void sendCommandToMiddleware(ServiceProviderAction action, boolean waitForResponse) {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
 		try {
@@ -290,7 +290,6 @@ public class ServiceProviderMain extends Application {
     	authenticateCard();
     	//STEP 7
     	// Get data
-
     	System.out.println("7. Get Data, SP");
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
@@ -383,6 +382,9 @@ public class ServiceProviderMain extends Application {
 				System.out.println("MESSTOAUTHCARD RECEIVED");
 				authenticateCard((MessageToAuthCard) obj);
 			}
+			else if(obj instanceof byte[]) {
+				decryptAndShowData((byte[]) obj); 
+			}
 			else {
 				System.out.println("UNKNOW OBJECT received "+ obj);
 			}
@@ -398,13 +400,15 @@ public class ServiceProviderMain extends Application {
 			//decrypt and show in log
 			try {
 				Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
-				aesCipher.init(Cipher.ENCRYPT_MODE, symKey, ivSpec);
+				aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 				byte [] cropped = new byte[encryptedData.length - 2];
 				cropped = Arrays.copyOfRange(encryptedData, 2, cropped.length);
-//				Util.arrayCopy(encryptedData, (short) 2 , cropped, (short) 0 , (short) cropped.length) ;
+				cropped = padding(cropped);
+				System.out.println("the length is: "+ cropped.length);
 
 				byte[] data = aesCipher.doFinal(cropped);
 				String str = new String(data, StandardCharsets.UTF_8);
+				mainController.addToDataLog("Received data from card: "+ str );
 				System.out.println("data is: " + str);
 				System.out.println("Succesfully decrypted");
 			} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
@@ -424,13 +428,8 @@ public class ServiceProviderMain extends Application {
 				e.printStackTrace();
 			}
 			
-			
 		}
-
-	
-    
-    
-
+		
 	// ------------------------------------
 	// ------- UTILITY FUNCTIONS ----------
 	// ------------------------------------
@@ -449,6 +448,16 @@ public class ServiceProviderMain extends Application {
 			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
 		}
 		return str;
+	}
+	
+	private byte [] padding(byte[] data) {
+		if(data.length %16 != 0) {
+			short length = (short) (data.length + 16 - data.length %16);
+			byte [] paddedData = new byte[length];
+			paddedData = Arrays.copyOfRange(data, 0, data.length-1);
+			return paddedData;
+		}
+		return data;
 	}
 
 	public String bytesToDec(byte[] barray) {

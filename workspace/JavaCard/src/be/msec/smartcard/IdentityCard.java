@@ -55,9 +55,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private final static short ERROR_WRONG_TIME = (short) 0x8002;
 	private final static short ERROR_WRONG_RIGHTS = (short) 0x8003;
 	private final static short ENCRYPT_ERROR = (short) 0x8004;
-	byte [] nameBytesCopy16;
+	byte[] nameBytesCopy16;
 
-	
 	private byte[] privModulus = new byte[] { (byte) -73, (byte) -43, (byte) 96, (byte) -107, (byte) 82, (byte) 25,
 			(byte) -66, (byte) 34, (byte) 5, (byte) -58, (byte) 75, (byte) -39, (byte) -54, (byte) 43, (byte) 25,
 			(byte) -117, (byte) 80, (byte) -62, (byte) 51, (byte) 19, (byte) 59, (byte) -70, (byte) -100, (byte) 85,
@@ -74,7 +73,14 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 34, (byte) 114, (byte) -99, (byte) -102, (byte) 43, (byte) -43, (byte) -102, (byte) 71, (byte) 115,
 			(byte) 116, (byte) -105, (byte) -48, (byte) -80, (byte) 109, (byte) 117, (byte) 106, (byte) 88, (byte) 6,
 			(byte) -69, (byte) -42, (byte) -83, (byte) 25 };
-	private byte[] pubMod_CA = new byte[] {(byte) -40, (byte) -96, (byte) 115, (byte) 21, (byte) -10, (byte) -66, (byte) 80, (byte) 28, (byte) -124, (byte) 29, (byte) 98, (byte) -23, (byte) -72, (byte) 60, (byte) 89, (byte) 21, (byte) -37, (byte) -122, (byte) -14, (byte) 94, (byte) -92, (byte) 48, (byte) 98, (byte) -35, (byte) 5, (byte) -37, (byte) -50, (byte) -46, (byte) 21, (byte) -117, (byte) -48, (byte) -20, (byte) 50, (byte) -80, (byte) -41, (byte) -126, (byte) -102, (byte) 63, (byte) -2, (byte) -10, (byte) 3, (byte) -86, (byte) -54, (byte) 105, (byte) -64, (byte) 47, (byte) -23, (byte) -104, (byte) -39, (byte) 35, (byte) 107, (byte) -46, (byte) -73, (byte) 2, (byte) 120, (byte) 112, (byte) -127, (byte) -37, (byte) 117, (byte) -79, (byte) 15, (byte) 9, (byte) 48, (byte) -45}; 
+	private byte[] pubMod_CA = new byte[] { (byte) -40, (byte) -96, (byte) 115, (byte) 21, (byte) -10, (byte) -66,
+			(byte) 80, (byte) 28, (byte) -124, (byte) 29, (byte) 98, (byte) -23, (byte) -72, (byte) 60, (byte) 89,
+			(byte) 21, (byte) -37, (byte) -122, (byte) -14, (byte) 94, (byte) -92, (byte) 48, (byte) 98, (byte) -35,
+			(byte) 5, (byte) -37, (byte) -50, (byte) -46, (byte) 21, (byte) -117, (byte) -48, (byte) -20, (byte) 50,
+			(byte) -80, (byte) -41, (byte) -126, (byte) -102, (byte) 63, (byte) -2, (byte) -10, (byte) 3, (byte) -86,
+			(byte) -54, (byte) 105, (byte) -64, (byte) 47, (byte) -23, (byte) -104, (byte) -39, (byte) 35, (byte) 107,
+			(byte) -46, (byte) -73, (byte) 2, (byte) 120, (byte) 112, (byte) -127, (byte) -37, (byte) 117, (byte) -79,
+			(byte) 15, (byte) 9, (byte) 48, (byte) -45 };
 	private byte[] pubExp_CA = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
 	private byte[] pubExp_G = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
 	// this length is 65 --> seems impossible? --> cropped first byte (was 0) so now
@@ -138,66 +144,75 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 68, (byte) 124, (byte) -1, (byte) -128, (byte) -49, (byte) 124, (byte) 103, (byte) 28, (byte) 56,
 			(byte) -114, (byte) -10, (byte) 97, (byte) -78, (byte) 54 };
 
-	
-	private byte[] commonCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13, 
-			(byte) -113, (byte) 13, (byte) 45, (byte) -34, (byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, 
-			(byte) -55, (byte) 72, (byte) 80, (byte) 45, (byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, 
-			(byte) 119, (byte) -116, (byte) -109, (byte) 30, (byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, 
-			(byte) 103, (byte) -125, (byte) -70, (byte) -46, (byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, 
-			(byte) -94, (byte) 59, (byte) -5, (byte) 32, (byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, 
-			(byte) -106, (byte) -23, (byte) -40, (byte) -23, (byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, 
-			(byte) 31, (byte) 59, (byte) -50, (byte) 89, (byte) 127, (byte) -46, (byte) -109, (byte) -91, (byte) 101, 
-			(byte) 16, (byte) -13, (byte) 41, (byte) 82, (byte) 35, (byte) -59, (byte) 101, (byte) -89, (byte) 66, 
-			(byte) 3, (byte) -59, (byte) -45, (byte) 32, (byte) -118, (byte) -76, (byte) -103, (byte) 21, (byte) 69, 
-			(byte) -97, (byte) -102, (byte) -58, (byte) -82, (byte) 112, (byte) -113, (byte) 120, (byte) 69, (byte) -101, 
-			(byte) -119, (byte) 98, (byte) -41, (byte) -126, (byte) -103, (byte) 25, (byte) -109, (byte) -63, (byte) -108, 
-			(byte) 34, (byte) 61, (byte) 39, (byte) 56, (byte) 76, (byte) 127, (byte) -90, (byte) 29, (byte) -95, (byte) -40, 
-			(byte) 7, (byte) 96, (byte) -20, (byte) -35, (byte) 65, (byte) 119, (byte) 49, (byte) 91, (byte) 99, (byte) 98, 
-			(byte) 66, (byte) -25, (byte) -15, (byte) 41, (byte) -14, (byte) -62, (byte) 5, (byte) 108, (byte) -110, (byte) 37, (byte) -95 }; 
-	private byte[] privExp_ComCer = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51, 
-			(byte) 20, (byte) -55, (byte) 63, (byte) 126, (byte) -34, (byte) 120, (byte) -90, (byte) -16, (byte) 30, 
-			(byte) -66, (byte) 115, (byte) 50, (byte) 108, (byte) 15, (byte) 89, (byte) -78, (byte) -107, (byte) -98, 
-			(byte) 4, (byte) -4, (byte) -117, (byte) -110, (byte) 13, (byte) -93, (byte) -124, (byte) -77, (byte) 34, 
-			(byte) -59, (byte) 37, (byte) 45, (byte) 62, (byte) -81, (byte) 31, (byte) 98, (byte) -118, (byte) -7, 
-			(byte) -114, (byte) -20, (byte) -66, (byte) 93, (byte) -32, (byte) 101, (byte) -27, (byte) -4, (byte) 86, 
-			(byte) -29, (byte) -79, (byte) 24, (byte) 38, (byte) -21, (byte) -104, (byte) -10, (byte) -18, (byte) -5, 
-			(byte) 84, (byte) 77, (byte) -2, (byte) 125};
-	private byte[] privMod_ComCer =  new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34, 
-			(byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, (byte) -55, (byte) 72, (byte) 80, (byte) 45, 
-			(byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, (byte) 119, (byte) -116, (byte) -109, (byte) 30, 
-			(byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, (byte) 103, (byte) -125, (byte) -70, (byte) -46, 
-			(byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, (byte) -94, (byte) 59, (byte) -5, (byte) 32, 
-			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23, 
-			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89, 
-			(byte) 127, (byte) -46, (byte) -109, (byte) -91}; 
-	
-	private byte[] att_name = new byte[] {(byte) 0x4b,(byte) 0x6f,(byte) 0x62,(byte) 0x65,(byte) 0x20,(byte) 0x56,(byte) 0x61,(byte) 0x6e,(byte) 0x20,(byte) 0x52,(byte) 0x65,(byte) 0x75,(byte) 0x73,(byte) 0x65,(byte) 0x6c};
-	private byte[] att_address = new byte[] {(byte) 0x4c,(byte) 0x61,(byte) 0x6e,(byte) 0x67,(byte) 0x65,(byte) 0x20,(byte) 0x45,(byte) 0x6c,(byte) 0x7a,(byte) 0x65,(byte) 0x6e,(byte) 0x73,(byte) 0x74,(byte) 0x72,(byte) 0x61,(byte) 0x61,(byte) 0x74,(byte) 0x20,(byte) 0x32,(byte) 0x30,(byte) 0x39,(byte) 0x2c,(byte) 0x20,(byte) 0x38,(byte) 0x32,(byte) 0x30,(byte) 0x30,(byte) 0x20,(byte) 0x42,(byte) 0x72,(byte) 0x75,(byte) 0x67,(byte) 0x67,(byte) 0x65};
-	private byte[] att_country = new byte[] {(byte) 0x42,(byte) 0x65,(byte) 0x6c,(byte) 0x67,(byte) 0x69,(byte) 0x75,(byte) 0x6d};
-	private byte[] att_birthDate = new byte[] {(byte) 0x31,(byte) 0x31,(byte) 0x2f,(byte) 0x30,(byte) 0x35,(byte) 0x2f,(byte) 0x31,(byte) 0x39,(byte) 0x39,(byte) 0x36};
-	private byte[] att_age = new byte[] {(byte) 0x32,(byte) 0x32};
-	private byte[] att_gender = new byte[] {(byte) 0x6d,(byte) 0x61,(byte) 0x6c,(byte) 0x65};
+	private byte[] commonCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13,
+			(byte) -113, (byte) 13, (byte) 45, (byte) -34, (byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111,
+			(byte) -55, (byte) 72, (byte) 80, (byte) 45, (byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87,
+			(byte) 119, (byte) -116, (byte) -109, (byte) 30, (byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82,
+			(byte) 103, (byte) -125, (byte) -70, (byte) -46, (byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36,
+			(byte) -94, (byte) 59, (byte) -5, (byte) 32, (byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41,
+			(byte) -106, (byte) -23, (byte) -40, (byte) -23, (byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53,
+			(byte) 31, (byte) 59, (byte) -50, (byte) 89, (byte) 127, (byte) -46, (byte) -109, (byte) -91, (byte) 101,
+			(byte) 16, (byte) -13, (byte) 41, (byte) 82, (byte) 35, (byte) -59, (byte) 101, (byte) -89, (byte) 66,
+			(byte) 3, (byte) -59, (byte) -45, (byte) 32, (byte) -118, (byte) -76, (byte) -103, (byte) 21, (byte) 69,
+			(byte) -97, (byte) -102, (byte) -58, (byte) -82, (byte) 112, (byte) -113, (byte) 120, (byte) 69,
+			(byte) -101, (byte) -119, (byte) 98, (byte) -41, (byte) -126, (byte) -103, (byte) 25, (byte) -109,
+			(byte) -63, (byte) -108, (byte) 34, (byte) 61, (byte) 39, (byte) 56, (byte) 76, (byte) 127, (byte) -90,
+			(byte) 29, (byte) -95, (byte) -40, (byte) 7, (byte) 96, (byte) -20, (byte) -35, (byte) 65, (byte) 119,
+			(byte) 49, (byte) 91, (byte) 99, (byte) 98, (byte) 66, (byte) -25, (byte) -15, (byte) 41, (byte) -14,
+			(byte) -62, (byte) 5, (byte) 108, (byte) -110, (byte) 37, (byte) -95 };
+	private byte[] privExp_ComCer = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51,
+			(byte) 20, (byte) -55, (byte) 63, (byte) 126, (byte) -34, (byte) 120, (byte) -90, (byte) -16, (byte) 30,
+			(byte) -66, (byte) 115, (byte) 50, (byte) 108, (byte) 15, (byte) 89, (byte) -78, (byte) -107, (byte) -98,
+			(byte) 4, (byte) -4, (byte) -117, (byte) -110, (byte) 13, (byte) -93, (byte) -124, (byte) -77, (byte) 34,
+			(byte) -59, (byte) 37, (byte) 45, (byte) 62, (byte) -81, (byte) 31, (byte) 98, (byte) -118, (byte) -7,
+			(byte) -114, (byte) -20, (byte) -66, (byte) 93, (byte) -32, (byte) 101, (byte) -27, (byte) -4, (byte) 86,
+			(byte) -29, (byte) -79, (byte) 24, (byte) 38, (byte) -21, (byte) -104, (byte) -10, (byte) -18, (byte) -5,
+			(byte) 84, (byte) 77, (byte) -2, (byte) 125 };
+	private byte[] privMod_ComCer = new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34,
+			(byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, (byte) -55, (byte) 72, (byte) 80, (byte) 45,
+			(byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, (byte) 119, (byte) -116, (byte) -109, (byte) 30,
+			(byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, (byte) 103, (byte) -125, (byte) -70, (byte) -46,
+			(byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, (byte) -94, (byte) 59, (byte) -5, (byte) 32,
+			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23,
+			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89,
+			(byte) 127, (byte) -46, (byte) -109, (byte) -91 };
+
+	private byte[] att_name = new byte[] { (byte) 0x4b, (byte) 0x6f, (byte) 0x62, (byte) 0x65, (byte) 0x20, (byte) 0x56,
+			(byte) 0x61, (byte) 0x6e, (byte) 0x20, (byte) 0x52, (byte) 0x65, (byte) 0x75, (byte) 0x73, (byte) 0x65,
+			(byte) 0x6c };
+	private byte[] att_address = new byte[] { (byte) 0x4c, (byte) 0x61, (byte) 0x6e, (byte) 0x67, (byte) 0x65,
+			(byte) 0x20, (byte) 0x45, (byte) 0x6c, (byte) 0x7a, (byte) 0x65, (byte) 0x6e, (byte) 0x73, (byte) 0x74,
+			(byte) 0x72, (byte) 0x61, (byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x32, (byte) 0x30, (byte) 0x39,
+			(byte) 0x2c, (byte) 0x20, (byte) 0x38, (byte) 0x32, (byte) 0x30, (byte) 0x30, (byte) 0x20, (byte) 0x42,
+			(byte) 0x72, (byte) 0x75, (byte) 0x67, (byte) 0x67, (byte) 0x65 };
+	private byte[] att_country = new byte[] { (byte) 0x42, (byte) 0x65, (byte) 0x6c, (byte) 0x67, (byte) 0x69,
+			(byte) 0x75, (byte) 0x6d };
+	private byte[] att_birthDate = new byte[] { (byte) 0x31, (byte) 0x31, (byte) 0x2f, (byte) 0x30, (byte) 0x35,
+			(byte) 0x2f, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36 };
+	private byte[] att_age = new byte[] { (byte) 0x32, (byte) 0x32 };
+	private byte[] att_gender = new byte[] { (byte) 0x6d, (byte) 0x61, (byte) 0x6c, (byte) 0x65 };
 	private byte[] att_picture = new byte[] {};
-	
-	byte [] K_u = new byte[] {(byte) 1, (byte) 2, (byte) 3 }; //id of the card
-	private InitializedMessageDigest sha1;		
+
+	byte[] K_u = new byte[] { (byte) 1, (byte) 2, (byte) 3 }; // id of the card
+	private InitializedMessageDigest sha1;
 	private byte[] serial = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6e };
-	private byte[] name = new byte[] { (byte) 0x4A, (byte)0x61,(byte) 0x6E, (byte)0x20, (byte)0x56, (byte)0x6F, (byte)0x73, (byte)0x73,(byte) 0x61, (byte)0x65,(byte) 0x72,(byte) 0x74 };
+	private byte[] name = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6E, (byte) 0x20, (byte) 0x56, (byte) 0x6F,
+			(byte) 0x73, (byte) 0x73, (byte) 0x61, (byte) 0x65, (byte) 0x72, (byte) 0x74 };
 	private OwnerPIN pin;
 	private short offset = (short) 0;
-	private short keySizeInBytes =  64;
+	private short keySizeInBytes = 64;
 	private short keySizeInBits = (short) 512;
 	private RSAPrivateKey privKey = null;
 	private AESKey symKey;
 	private boolean auth = false;
-	private byte [] synomym;
-	private final static short MAX_APDU = (short)240;
+	private byte[] synomym;
+	private final static short MAX_APDU = (short) 240;
 	private short BUF_IN_OFFSET[];
 	private byte date[];
-	private byte [] rnd; //used to create session key while authenticating SP
-	private byte [] challenge; //used to verify SP
-	private short maxRights; 
-	
+	private byte[] rnd; // used to create session key while authenticating SP
+	private byte[] challenge; // used to verify SP
+	private short maxRights;
+
 	private IdentityCard() {
 		// max try 3 times
 		pin = new OwnerPIN(PIN_TRY_LIMIT, PIN_SIZE);
@@ -209,7 +224,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		privKey.setExponent(privExponent, offset, keySizeInBytes);
 		privKey.setModulus(privModulus, offset, keySizeInBytes);
 
-		date = new byte[(short)8];
+		date = new byte[(short) 8];
 		register();
 		BUF_IN_OFFSET = JCSystem.makeTransientShortArray((short) 1, JCSystem.CLEAR_ON_DESELECT);
 		sha1 = MessageDigest.getInitializedMessageDigestInstance(MessageDigest.ALG_SHA, false);
@@ -246,7 +261,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		if (this.selectingApplet())
 			return;
 
-		// Check whether the indicated class of instructions is compatible with this applet.
+		// Check whether the indicated class of instructions is compatible with this
+		// applet.
 		if (buffer[ISO7816.OFFSET_CLA] != IDENTITY_CARD_CLA)
 			ISOException.throwIt(ISO7816.SW_CLA_NOT_SUPPORTED);
 		// A switch statement is used to select a method depending on the instruction
@@ -273,7 +289,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
 	}
-	
+
 	/**
 	 * Method releases the asked attributes if the SP has the rights
 	 * 
@@ -281,65 +297,70 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 * @return byte[]
 	 */
 	private void releaseAttribute(APDU apdu) {
-		//TODO change this ! 
-//		if (pin.isValidated())
-//			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-//		else {
-////			byte [] askedData = receiveBigData(apdu);
-
-			short query = (byte) 1;
-			if(query <= maxRights) {
-				//get the synomym for the SP
+		// TODO validate pin!
+		if (!pin.isValidated())
+			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else {
+			byte [] buffer = apdu.getBuffer();
+			short query = (short) buffer[4];
+			maxRights = (byte) 4;
+			if (query <= maxRights) {
+				// get the synomym for the SP
 				// 19 = 16 + 3
 				synomym = new byte[19];
-				byte [] synomymHashed = new byte[20]; //sha1 gives ouput of 20 btyes
-				Util.arrayCopy(K_u, (short) 0 , synomym, (short) 0 , (short) K_u.length);
-				Util.arrayCopy(nameBytesCopy16, (short) (0), synomym , (short) K_u.length, (short) 16);
+				byte[] synomymHashed = new byte[20]; // sha1 gives ouput of 20 btyes
+				Util.arrayCopy(K_u, (short) 0, synomym, (short) 0, (short) K_u.length);
+				Util.arrayCopy(nameBytesCopy16, (short) (0), synomym, (short) K_u.length, (short) 16);
 				InitializedMessageDigest hash = sha1;
 				hash.reset();
-	//			hash.update(synomym, (short) 0, (short) (K_u.length + nameBytesCopy16.length));
-				hash.doFinal(synomym, (short) 0 , (short) (K_u.length + nameBytesCopy16.length), synomymHashed, (short) 0);
-				
-				//get the asked data
-				byte [] queryResults = solveQuery(query);
-				
-				//set everything togheter in one big byte array and send it back
-				byte [] sendBack = new byte[ (short) (queryResults.length + synomymHashed.length)];
-				Util.arrayCopy(synomymHashed, (short) 0 , sendBack, (short) 0 , (short) synomymHashed.length);
-				Util.arrayCopy(queryResults, (short) 0 , sendBack, (short) synomymHashed.length , (short) queryResults.length);
-				
-				//TODO works only with 16byte array! encrypt the data tosend with the Ks				
+				// hash.update(synomym, (short) 0, (short) (K_u.length +
+				// nameBytesCopy16.length));
+				hash.doFinal(synomym, (short) 0, (short) synomym.length, synomymHashed, (short) 0);
+
+				// get the asked data
+				byte[] queryResults = solveQuery(query);
+
+				// set everything togheter in one big byte array and send it back
+				byte[] enter = new byte[] { (byte) 0xa };
+				byte[] sendBack = new byte[(short) (queryResults.length + synomymHashed.length + 1)];
+				Util.arrayCopy(synomymHashed, (short) 0, sendBack, (short) 0, (short) synomymHashed.length);
+				Util.arrayCopy(enter, (short) 0, sendBack, (short) synomymHashed.length, (short) 1);
+				Util.arrayCopy(queryResults, (short) 0, sendBack, (short) (synomymHashed.length + 1),
+						(short) queryResults.length);
+
+				// encrypt data with symmetric key
 				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 				symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
-//				sendBack = new byte[16];
+				// sendBack = new byte[16];
 				sendBack = padding(sendBack);
 				byte[] encryptedData = new byte[(short) sendBack.length];
 
 				try {
-					symCipher.doFinal(sendBack, (short)0, (short)sendBack.length, encryptedData, (short)0);
+					symCipher.doFinal(sendBack, (short) 0, (short) sendBack.length, encryptedData, (short) 0);
 				} catch (Exception e) {
 					ISOException.throwIt(ERROR_UNKNOW);
 				}
-				System.out.println("The data is succesfully encrypted");
-				//send everything back can be big!
-				if(sendBigFile(apdu, sendBack)) {
+				// System.out.println("The data is succesfully encrypted");
+				// send everything back can be big!
+				if (sendBigFile(apdu, encryptedData)) {
 					System.out.println("The data is succesfully transferred!");
 				}
 			}
-//		}
-		
+		}
+		// }
+
 	}
-	
-	private byte [] padding(byte[] data) {
-		if(data.length %16 != 0) {
-			short length = (short) (data.length + 16 - data.length %16);
-			byte [] paddedData = new byte[length];
-			Util.arrayCopy(data, (short) 0 , paddedData, (short) 0 , (short) data.length) ;
+
+	private byte[] padding(byte[] data) {
+		if (data.length % 16 != 0) {
+			short length = (short) (data.length + 16 - data.length % 16);
+			byte[] paddedData = new byte[length];
+			Util.arrayCopy(data, (short) 0, paddedData, (short) 0, (short) data.length);
 			return paddedData;
 		}
 		return data;
 	}
-	
+
 	/**
 	 * This method authenticates the card for the service provider.
 	 * 
@@ -347,65 +368,65 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 * @return void
 	 */
 	private void authenticateCard(APDU apdu) {
-		//check if SP is already authenticated
-				if(!auth) {
-					System.out.println("Serviceprovider not yet authenticated");
-					return;
-				}
-				try {
-					
-				
-				//decrypt 
-				byte [] data = receiveBigData(apdu);
-				byte [] responseChallengeBytes = new byte[16];
-				Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-				aesCipher.init(symKey, Cipher.MODE_DECRYPT);
-				aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
-				
-				
-		 
-				byte[] authBytes = "AUTH".getBytes();
-		       	byte[] bytesToSign = new byte[responseChallengeBytes.length + authBytes.length];
-		       	Util.arrayCopy(responseChallengeBytes, (short) 0, bytesToSign, (short) 0,(short) responseChallengeBytes.length);
-		       	Util.arrayCopy(authBytes, (short) 0, bytesToSign, (short) 15,(short) authBytes.length);
-					
-			    //prepare signature
-			    Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
-			    RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short)512 , false);
-				privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-				privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
-				signature.init(privk, Signature.MODE_SIGN);
-					
-					//sign
-				byte[] outputBuffer = new byte[100];
-				short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer, (short) 0);
-				//System.out.println("Common cer length: " + commonCertificate.length);
-				byte[] sig = new byte[sigLength];
-				Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
-				
-				   
-				byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4];
-				Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
-				Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length, (short) bytesToSign.length);
-				Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length), (short) sig.length);
-			    byte[] encryptedMessage = new byte[message.length];
-				    
-				    //init symmetric encryption
-				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-				
-				try {
-					symCipher.doFinal(message, (short)0, (short)message.length, encryptedMessage, (short)0);
-					
-				}catch(Exception e) {
-					ISOException.throwIt(ENCRYPT_ERROR);
-				}
-				
-				sendBigFile(apdu, encryptedMessage);
-				}catch(Exception e) {
-					ISOException.throwIt(ENCRYPT_ERROR);
-				}
-					
+		// check if SP is already authenticated
+		if (!auth) {
+			System.out.println("Serviceprovider not yet authenticated");
+			return;
+		}
+		try {
+
+			// decrypt
+			byte[] data = receiveBigData(apdu);
+			byte[] responseChallengeBytes = new byte[16];
+			Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+			aesCipher.init(symKey, Cipher.MODE_DECRYPT);
+			aesCipher.doFinal(data, (short) 0, (short) data.length, responseChallengeBytes, (short) 0);
+
+			byte[] authBytes = "AUTH".getBytes();
+			byte[] bytesToSign = new byte[responseChallengeBytes.length + authBytes.length];
+			Util.arrayCopy(responseChallengeBytes, (short) 0, bytesToSign, (short) 0,
+					(short) responseChallengeBytes.length);
+			Util.arrayCopy(authBytes, (short) 0, bytesToSign, (short) 15, (short) authBytes.length);
+
+			// prepare signature
+			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+			RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short) 512, false);
+			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			signature.init(privk, Signature.MODE_SIGN);
+
+			// sign
+			byte[] outputBuffer = new byte[100];
+			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer,
+					(short) 0);
+			// System.out.println("Common cer length: " + commonCertificate.length);
+			byte[] sig = new byte[sigLength];
+			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
+
+			byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4];
+			Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
+			Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length,
+					(short) bytesToSign.length);
+			Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length),
+					(short) sig.length);
+			byte[] encryptedMessage = new byte[message.length];
+
+			// init symmetric encryption
+			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
+
+			try {
+				symCipher.doFinal(message, (short) 0, (short) message.length, encryptedMessage, (short) 0);
+
+			} catch (Exception e) {
+				ISOException.throwIt(ENCRYPT_ERROR);
+			}
+
+			sendBigFile(apdu, encryptedMessage);
+		} catch (Exception e) {
+			ISOException.throwIt(ENCRYPT_ERROR);
+		}
+
 	}
 
 	/**
@@ -415,22 +436,22 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 * @return void
 	 */
 	private void verifyChallenge(APDU apdu) {
-		byte [] data = receiveBigData(apdu);
-		byte [] responseChallengeBytes = new byte[16];
+		byte[] data = receiveBigData(apdu);
+		byte[] responseChallengeBytes = new byte[16];
 		Cipher aesCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 		aesCipher.init(symKey, Cipher.MODE_DECRYPT);
-		aesCipher.doFinal(data, (short) 0, (short)data.length, responseChallengeBytes, (short)0);
-		
-		//Add one
+		aesCipher.doFinal(data, (short) 0, (short) data.length, responseChallengeBytes, (short) 0);
+
+		// Add one
 		this.challenge = addOne_Bad(this.challenge);
-		//verify
-		if(equals(responseChallengeBytes,this.challenge)) {
+		// verify
+		if (equals(responseChallengeBytes, this.challenge)) {
 			auth = true;
 		}
 		auth = true;
-		
+
 	}
-	
+
 	/**
 	 * This method authenticates the serviceprovider to the card.
 	 * 
@@ -440,106 +461,113 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private void authenticateServiceProvider(APDU apdu) {
 		byte[] data = receiveBigData(apdu);
 		byte[] signedCertificate = new byte[64];
-		
-		byte [] certificateBytes = new byte[ (short) ( data.length - signedCertificate.length) ];
-		byte[] validEndTimeCertificate = new byte[(short)8];
-		byte[] pkExpBytesSP = new byte[(short)3];
-		byte[] pkModBytesSP = new byte[(short)64];
-		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length - validEndTimeCertificate.length -3)];
-		nameBytesCopy16 = new byte[(short)16];
-		byte [] maxRightByteArray = new byte [2];
-		//		System.out.println("namebytes length: "+nameBytes.length);
-		
-		Util.arrayCopy(data, (short) (0), signedCertificate , (short) 0, (short) 64);
-		Util.arrayCopy(data, (short) (64), certificateBytes, (short) 0, (short) (data.length-64));
-		Util.arrayCopy(certificateBytes, (short) (0), pkExpBytesSP, (short)(0), (short)(3));
-		Util.arrayCopy(certificateBytes, (short)4, pkModBytesSP, (short)(0), (short)64);
-		Util.arrayCopy(certificateBytes, (short)68, validEndTimeCertificate, (short)0, (short)8);
-		Util.arrayCopy(certificateBytes, (short) 76 , maxRightByteArray, (short) 0 , (short) 2) ;
-		Util.arrayCopy(certificateBytes, (short) 78, nameBytes, (short)0, (short)nameBytes.length);
-		Util.arrayCopy(nameBytes, (short)0, nameBytesCopy16, (short)0, (short)nameBytes.length);
-		
+
+		byte[] certificateBytes = new byte[(short) (data.length - signedCertificate.length)];
+		byte[] validEndTimeCertificate = new byte[(short) 8];
+		byte[] pkExpBytesSP = new byte[(short) 3];
+		byte[] pkModBytesSP = new byte[(short) 64];
+		byte[] nameBytes = new byte[(short) (certificateBytes.length - pkExpBytesSP.length - pkModBytesSP.length
+				- validEndTimeCertificate.length - 3)];
+		nameBytesCopy16 = new byte[(short) 16];
+		byte[] maxRightByteArray = new byte[2];
+		// System.out.println("namebytes length: "+nameBytes.length);
+
+		Util.arrayCopy(data, (short) (0), signedCertificate, (short) 0, (short) 64);
+		Util.arrayCopy(data, (short) (64), certificateBytes, (short) 0, (short) (data.length - 64));
+		Util.arrayCopy(certificateBytes, (short) (0), pkExpBytesSP, (short) (0), (short) (3));
+		Util.arrayCopy(certificateBytes, (short) 4, pkModBytesSP, (short) (0), (short) 64);
+		Util.arrayCopy(certificateBytes, (short) 68, validEndTimeCertificate, (short) 0, (short) 8);
+		Util.arrayCopy(certificateBytes, (short) 76, maxRightByteArray, (short) 0, (short) 2);
+		Util.arrayCopy(certificateBytes, (short) 78, nameBytes, (short) 0, (short) nameBytes.length);
+		Util.arrayCopy(nameBytes, (short) 0, nameBytesCopy16, (short) 0, (short) nameBytes.length);
+
 		maxRights = maxRightByteArray[0];
-		//end jonas code
-		
+		// end jonas code
+
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 		// this keysize must be the same size as the one given in in setModulus! but
 		// another keylenght is not working!! 512 is max
 		try {
-			RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short)512 , false);
+			RSAPublicKey pubk = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short) 512, false);
 			pubk.setExponent(pubExp_CA, offset, (short) 3);
 			pubk.setModulus(pubMod_CA, offset, (short) pubMod_CA.length);
 			signature.init(pubk, Signature.MODE_VERIFY);
-			
-			boolean result = signature.verify(certificateBytes, (short) 0, (short) certificateBytes.length, signedCertificate , (short) 0, (short) signedCertificate .length);
-			//result is true if everything went fine 
-			//but now just commented for not losing time
-			if(!result) {
-				//misschien iets opgooien dat zegt dat cert niet geldig is?
+
+			boolean result = signature.verify(certificateBytes, (short) 0, (short) certificateBytes.length,
+					signedCertificate, (short) 0, (short) signedCertificate.length);
+			// result is true if everything went fine
+			// but now just commented for not losing time
+			if (!result) {
+				// misschien iets opgooien dat zegt dat cert niet geldig is?
 				ISOException.throwIt(ERROR_UNKNOW);
 			}
-			if(isSmaller(validEndTimeCertificate, lastValidationTime)) {
-				//throw other exception?
-			ISOException.throwIt(ERROR_UNKNOW);
+			if (isSmaller(validEndTimeCertificate, lastValidationTime)) {
+				// throw other exception?
+				ISOException.throwIt(ERROR_UNKNOW);
 			}
-			//if everything okay --> create new symmetric key
+			// if everything okay --> create new symmetric key
 			this.symKey = getSymKey();
-			
-			//rebuild SP PK
-			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short) (512) , false);
+
+			// rebuild SP PK
+			RSAPublicKey publicKeySP = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, (short) (512),
+					false);
 			publicKeySP.setExponent(pkExpBytesSP, offset, (short) 3);
 			publicKeySP.setModulus(pkModBytesSP, offset, (short) (pkModBytesSP.length));
-//			//encrypt rnd to send to SP
-//			//met rnd kan SP de symmetrische key heropbouwen
-//			
+			// //encrypt rnd to send to SP
+			// //met rnd kan SP de symmetrische key heropbouwen
+			//
 			Cipher asymCipher = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
 			byte[] encryptedRnd = JCSystem.makeTransientByteArray((short) 64, JCSystem.CLEAR_ON_DESELECT);
-			asymCipher.init((RSAPublicKey)publicKeySP, Cipher.MODE_ENCRYPT);
-			
-			try {
-				asymCipher.doFinal(this.rnd, (short)0, (short)this.rnd.length, encryptedRnd, (short)0);
+			asymCipher.init((RSAPublicKey) publicKeySP, Cipher.MODE_ENCRYPT);
 
-			}catch(Exception e) {
+			try {
+				asymCipher.doFinal(this.rnd, (short) 0, (short) this.rnd.length, encryptedRnd, (short) 0);
+
+			} catch (Exception e) {
 				ISOException.throwIt(ERROR_UNKNOW);
 			}
-			
-			
-			//generate challenge
-			byte[] challengeBytes = generateRandomBytes();		
-//			BigInteger challenge = new BigInteger(1, challengeBytes);	//for testing
+
+			// generate challenge
+			byte[] challengeBytes = generateRandomBytes();
+			// BigInteger challenge = new BigInteger(1, challengeBytes); //for testing
 			this.challenge = challengeBytes;
-			//challengebytes symmetrisch encrypteren
+			// challengebytes symmetrisch encrypteren
 			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
 			symCipher.init(symKey, Cipher.MODE_ENCRYPT);
 			byte[] encryptedChallengeBytes = new byte[(short) 16];
-			byte[] encryptedNameBytes = new byte[(short)16];
+			byte[] encryptedNameBytes = new byte[(short) 16];
 			try {
-				symCipher.doFinal(challengeBytes, (short)0, (short)challengeBytes.length, encryptedChallengeBytes, (short)0);
+				symCipher.doFinal(challengeBytes, (short) 0, (short) challengeBytes.length, encryptedChallengeBytes,
+						(short) 0);
 				symCipher.init(symKey, Cipher.MODE_ENCRYPT);
-				symCipher.doFinal(nameBytesCopy16, (short)0,(short) nameBytesCopy16.length, encryptedNameBytes, (short)0);
+				symCipher.doFinal(nameBytesCopy16, (short) 0, (short) nameBytesCopy16.length, encryptedNameBytes,
+						(short) 0);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				ISOException.throwIt(ERROR_UNKNOW);
 			}
-			
-			//msg opbouwen om terug te zenden
-			byte [] toSend = new byte[(short) (encryptedRnd.length + encryptedChallengeBytes.length + encryptedNameBytes.length)];
-			Util.arrayCopy(encryptedRnd, (short)0, toSend, (short)0, (short) encryptedRnd.length);
-			Util.arrayCopy(encryptedChallengeBytes, (short)0, toSend, (short)encryptedRnd.length, (short)encryptedChallengeBytes.length);
-			Util.arrayCopy(encryptedNameBytes, (short)0, toSend, (short)(encryptedRnd.length + challengeBytes.length),(short)encryptedNameBytes.length);
-			
-			//send msg to SP 
-			if(sendBigFile(apdu, toSend)) {
-//				System.out.println("success send challenge");
+
+			// msg opbouwen om terug te zenden
+			byte[] toSend = new byte[(short) (encryptedRnd.length + encryptedChallengeBytes.length
+					+ encryptedNameBytes.length)];
+			Util.arrayCopy(encryptedRnd, (short) 0, toSend, (short) 0, (short) encryptedRnd.length);
+			Util.arrayCopy(encryptedChallengeBytes, (short) 0, toSend, (short) encryptedRnd.length,
+					(short) encryptedChallengeBytes.length);
+			Util.arrayCopy(encryptedNameBytes, (short) 0, toSend, (short) (encryptedRnd.length + challengeBytes.length),
+					(short) encryptedNameBytes.length);
+
+			// send msg to SP
+			if (sendBigFile(apdu, toSend)) {
+				// System.out.println("success send challenge");
 			}
 
-		}catch(Exception e) {
+		} catch (Exception e) {
 			ISOException.throwIt(ERROR_UNKNOW);
 		}
 	}
-	
+
 	private boolean sendBigFile(APDU apdu, byte[] toSend) {
-		short length = (short)toSend.length;
+		short length = (short) toSend.length;
 		try {
 			apdu.setOutgoing();
 			apdu.setOutgoingLength(length);
@@ -550,12 +578,12 @@ public class IdentityCard extends Applet implements ExtendedLength {
 					lenToSend = length;
 				}
 				apdu.sendBytesLong(toSend, (short) (64 * counter), lenToSend); // send part of certificate each
-																					// time.
+																				// time.
 				length = (short) (length - 64);
 				counter = (byte) (counter + 1);
 			}
-			
-		}catch(Exception e ) {
+
+		} catch (Exception e) {
 			if (e instanceof APDUException) {
 				APDUException ae = (APDUException) e;
 				short reason = ae.getReason();
@@ -597,16 +625,16 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			boolean result = signature.verify(date, (short) 0, (short) date.length, signedData, (short) 0,
 					(short) signedData.length);
-			if(result && isSmaller(lastValidationTime, date)) {
+			if (result && isSmaller(lastValidationTime, date)) {
 				lastValidationTime = date;
-			}else {
+			} else {
 				ISOException.throwIt(ERROR_UNKNOW);
 			}
 		} catch (Exception e) {
 			ISOException.throwIt(ERROR_WRONG_TIME);
 		}
 	}
-	
+
 	/**
 	 * Validate the given pin.
 	 * 
@@ -623,13 +651,14 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		} else
 			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 
-}
-	
+	}
+
 	/**
-	 * Method that calculates with byte array (represents an number) is
-	 * smaller  if array1 < array2 --> true;
+	 * Method that calculates with byte array (represents an number) is smaller if
+	 * array1 < array2 --> true;
 	 * 
-	 * @param byte[], byte[]
+	 * @param byte[],
+	 *            byte[]
 	 * @return boolean
 	 */
 	private boolean isSmaller(byte[] array1, byte[] array2) {
@@ -662,7 +691,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 */
 	private byte[] receiveBigData(APDU apdu) {
 		// Receiving big APDU COMMANDS
-		//System.out.println("lengte apdu: " + apdu.getIncomingLength());
+		// System.out.println("lengte apdu: " + apdu.getIncomingLength());
 		byte[] buffer = new byte[apdu.getIncomingLength()];
 		try {
 
@@ -685,7 +714,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 		return buffer;
 	}
-	
+
 	/**
 	 * This method gives for the given query the asked results back when asked.
 	 * atribuut, enter, attribuut, enter (ends with enter)
@@ -694,65 +723,76 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 * @return byte []
 	 */
 	private byte[] solveQuery(short query) {
-		byte [] result = null;
-		byte [] enter = new byte[] {(byte) 0xa};
+		byte[] result = null;
+		byte[] enter = new byte[] { (byte) 0xa };
 		short numberOfAttributes = 1;
-		switch(query) {
-		case((short) 1):
-			//gives default back = synomym + age
-			numberOfAttributes = 2;
-			result = new byte[synomym.length + att_age.length + numberOfAttributes];
-			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
-			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
+		switch (query) {
+		case ((short) 1):
+			// gives default back = age
+			numberOfAttributes = 1;
+			result = new byte[att_age.length + numberOfAttributes];
+			Util.arrayCopy(att_age, (short) 0, result, (short) 0, (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
 			break;
-		case((short) 2):
-			//gives the betting type: synonym + age + country + name
+		case ((short) 2):
+			// gives the betting type: synonym + age + country + name
+			numberOfAttributes = 3;
+			result = new byte[att_age.length + att_country.length + att_name.length + numberOfAttributes];
+			Util.arrayCopy(att_age, (short) 0, result, (short) (0), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (att_age.length + 1), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + 1), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (att_age.length + att_country.length + 2),
+					(short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 2), (short) 1);
+			break;
+		case ((short) 3):
+			// gives the social networking type: synonym + name + country + age + gender
 			numberOfAttributes = 4;
-			result = new byte[synomym.length + att_age.length + att_country.length + att_name.length + numberOfAttributes];
-			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
-			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
-			Util.arrayCopy(att_country, (short) 0, result, (short) (synomym.length + att_age.length + 2), (short) att_country.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 2), (short) 1);
-			Util.arrayCopy(att_name, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length+ 3), (short) att_name.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 3), (short) 1);
+			result = new byte[att_age.length + att_country.length + att_name.length + att_gender.length
+					+ numberOfAttributes];
+			Util.arrayCopy(att_age, (short) 0, result, (short) (0), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (att_age.length + 1), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + 1), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (att_age.length + att_country.length + 2),
+					(short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 2), (short) 1);
+			Util.arrayCopy(att_gender, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 3), (short) att_gender.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 3), (short) 1);
 			break;
-		case((short) 3):
-			//gives the social networking type: synonym + name + country + age + gender
-			numberOfAttributes = 5;
-			result = new byte[synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + numberOfAttributes];
-			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
-			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
-			Util.arrayCopy(att_country, (short) 0, result, (short) (synomym.length + att_age.length + 2), (short) att_country.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 2), (short) 1);
-			Util.arrayCopy(att_name, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 3), (short) att_name.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 3), (short) 1);
-			Util.arrayCopy(att_gender, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 4), (short) att_gender.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + 4), (short) 1);
-			break;
-		case((short) 4):
-			//gives the social networking type: synonym + name + country + age + gender + birth date + address 
-			numberOfAttributes = 7;
-			result = new byte[synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_address.length + numberOfAttributes];
-			Util.arrayCopy(synomym, (short) 0 , result, (short) 0, (short) synomym.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length), (short) 1);
-			Util.arrayCopy(att_age, (short) 0, result, (short) (synomym.length + 1), (short) att_age.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + 1), (short) 1);
-			Util.arrayCopy(att_country, (short) 0, result, (short) (synomym.length + att_age.length + 2), (short) att_country.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 2), (short) 1);
-			Util.arrayCopy(att_name, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + 3), (short) att_name.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 3), (short) 1);
-			Util.arrayCopy(att_gender, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + 4), (short) att_gender.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + 4), (short) 1);			
-			Util.arrayCopy(att_birthDate, (short) 0, result, (short) (synomym.length + att_age.length + att_name.length + att_country.length + att_name.length + 5), (short) att_birthDate.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + 5), (short) 1);			
-			Util.arrayCopy(att_address, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_name.length + 6), (short) att_address.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (synomym.length + att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_address.length + 5), (short) 1);
+		case ((short) 4):
+			// gives the social networking type: synonym + name + country + age + gender +
+			// birth date + address
+			numberOfAttributes = 6;
+			result = new byte[att_age.length + att_country.length + att_name.length + att_gender.length
+					+ att_birthDate.length + att_address.length + numberOfAttributes];
+			Util.arrayCopy(att_age, (short) 0, result, (short) (0), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (att_age.length + 1), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + 1), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (att_age.length + att_country.length + 2),
+					(short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 2), (short) 1);
+			Util.arrayCopy(att_gender, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 3), (short) att_gender.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_country.length + att_name.length + att_gender.length + 3), (short) 1);
+			Util.arrayCopy(att_birthDate, (short) 0, result,
+					(short) (att_age.length + att_name.length + att_country.length + att_name.length + 4),
+					(short) att_birthDate.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length
+					+ att_gender.length + att_birthDate.length + 4), (short) 1);
+			Util.arrayCopy(att_address, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + att_name.length + 5),
+					(short) att_address.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length
+					+ att_gender.length + att_birthDate.length + att_address.length + 5), (short) 1);
 			break;
 		default:
 			return null;
@@ -760,51 +800,51 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * This method gives a new random symmetrickey back.
 	 * 
-	 * @param 
+	 * @param
 	 * @return AESKey
 	 */
 	private AESKey getSymKey() {
 		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
-		this.rnd = JCSystem.makeTransientByteArray((short)16, JCSystem.CLEAR_ON_RESET);
+		this.rnd = JCSystem.makeTransientByteArray((short) 16, JCSystem.CLEAR_ON_RESET);
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
 		AESKey symKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
 		symKey.setKey(rnd, (short) 0);
 		return symKey;
 	}
-	
+
 	private byte[] generateRandomBytes() {
 		RandomData randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
-		this.rnd = JCSystem.makeTransientByteArray((short)16, JCSystem.CLEAR_ON_RESET);
+		this.rnd = JCSystem.makeTransientByteArray((short) 16, JCSystem.CLEAR_ON_RESET);
 		randomData.generateData(rnd, (short) 0, (short) rnd.length);
 		return rnd;
 	}
-	
+
 	public static byte[] addOne_Bad(byte[] A) {
-	    short lastPosition = (short)(A.length - 1); 
-	    // Looping from right to left
-	    A[lastPosition] += 1;
-	    
-	    // mogelijk da als alle bytes 0xFF zijn dat er dan niets wordt bij opgeteld
-	    return A;         
+		short lastPosition = (short) (A.length - 1);
+		// Looping from right to left
+		A[lastPosition] += 1;
+
+		// mogelijk da als alle bytes 0xFF zijn dat er dan niets wordt bij opgeteld
+		return A;
 	}
-	
+
 	public static boolean equals(byte[] array1, byte[] array2) {
-    	short length = (short) array1.length;
-    	short length2 = (short) array2.length;
-    	if(length != length2) {
-    		return false;
-    	}
-    	
-    	for (short i = (short)(length-1); i >= 0; i = (short)(i-1)) {
-	        if(array1[i] != array2[i]) {
-	        	return false;
-	        }
-	    }
-    	return true;
-    }
-	
+		short length = (short) array1.length;
+		short length2 = (short) array2.length;
+		if (length != length2) {
+			return false;
+		}
+
+		for (short i = (short) (length - 1); i >= 0; i = (short) (i - 1)) {
+			if (array1[i] != array2[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 }
