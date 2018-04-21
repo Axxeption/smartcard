@@ -82,16 +82,20 @@ public class MainServiceController extends Controller {
     }
     private void generateSPs() {
     	ArrayList<ServiceProvider> SPs = new ArrayList<>();
-    	ServiceProvider napoleonGames = new ServiceProvider("napoleonGames", ServiceProviderType.SOCNET);
-    	ServiceProvider studentAtWork = new ServiceProvider("studentAtWork", ServiceProviderType.GOVERNMENT);
-    	ServiceProvider kompasKlub = new ServiceProvider("KompasKlub", ServiceProviderType.DEFAULT);
+    	//the bigger the maxRights the more they can ask
+    	ServiceProvider napoleonGames = new ServiceProvider("napoleonGames", ServiceProviderType.OWN, 2);
+    	ServiceProvider defaultSP = new ServiceProvider("default", ServiceProviderType.DEFAULT, 1);
+    	ServiceProvider facebook = new ServiceProvider("Facebook", ServiceProviderType.SOCNET,3);
+    	ServiceProvider governmentSP = new ServiceProvider("Belgium", ServiceProviderType.GOVERNMENT,4);
     	
     	services.add(napoleonGames);
-    	services.add(studentAtWork);
-    	services.add(kompasKlub);
+    	services.add(defaultSP);
+    	services.add(governmentSP);
+    	services.add(facebook);
     	SPs.add(napoleonGames);
-    	SPs.add(studentAtWork);
-    	SPs.add(kompasKlub);
+    	SPs.add(defaultSP);
+    	SPs.add(governmentSP);
+    	SPs.add(facebook);
     	
     	spMain.setServiceProviders(SPs);
     }
@@ -104,20 +108,24 @@ public class MainServiceController extends Controller {
     }
 
     public void getData_egov(){
-    	getData(7);
+    	getData(4);
     }
     public void getData_socnet(){
-    	getData(2);
+    	getData(3);
     }
     
     public void getData_default() {
-    	getData(0);
+    	getData(1);
+    }
+    
+    public void getData_own() {
+    	getData(2);
     }
     	
     private void getData(int query){
         if(selectedServiceProvider != null){	
             addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
-            addToDataLog("Sending request...");
+            addToDataLog("Sending request for data: " + query);
             spMain.submitDataQuery(selectedServiceProvider, query);
 
         }else {	

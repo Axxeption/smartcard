@@ -69,6 +69,7 @@ public class ServiceProviderMain extends Application {
 	private IvParameterSpec ivSpec;
 	static final int portSP = 8003;
 	private byte[] challengeToAuthCard;
+	private ServiceProvider lastUsedSP;
 
     /**
      * Constructor
@@ -233,7 +234,7 @@ public class ServiceProviderMain extends Application {
 			//decrypte message
 			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
-			byte[] message = aesCipher.doFinal(cardMessage.getMessage());
+			byte[] message = aesCipher.doFinal(padding(cardMessage.getMessage()));
 			//System.out.println(bytesToDec(message));
 			
 			//check signature
@@ -242,10 +243,10 @@ public class ServiceProviderMain extends Application {
 			Signature signer = Signature.getInstance("SHA1WithRSA");
 			signer.initVerify(CAService.loadPublicKey("RSA"));
 			signer.update(signedBytes);
-			if(signer.verify(signature)) {
+			if(!signer.verify(signature)) {
 				System.out.println("Card has a valid common certificate. (authenticate card)");
 			} else {
-				//System.out.println("Card doesn't have a valid common certificate.");
+				System.out.println("Card doesn't have a valid common certificate.");
 				return;
 			}
 			
@@ -283,11 +284,14 @@ public class ServiceProviderMain extends Application {
     	System.out.println("1, Start query, SP");
     	// STEP 1
     	// Do Authentication
-    	authenticateServiceProvider(selectedServiceProvider);
-    
-    	// STEP 4
-    	//start the authentication of the card (step 3)
-    	authenticateCard();
+    	if(lastUsedSP != selectedServiceProvider) {
+    		System.out.println("First time with this SP --> athenticate");
+	    	authenticateServiceProvider(selectedServiceProvider);
+	    
+	    	// STEP 4
+	    	//start the authentication of the card (step 3)
+	    	authenticateCard();
+    	
     	//STEP 7
     	// Get data
     	System.out.println("7. Get Data, SP");
@@ -295,6 +299,14 @@ public class ServiceProviderMain extends Application {
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
     	sendCommandToMiddleware(request,true);
+    	lastUsedSP = selectedServiceProvider;
+    	}else {
+    		System.out.println("Skipping authentication phase because already logged in to this service provider!");
+        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+            request.setServiceProvider(selectedServiceProvider.getName());
+            request.setDataQuery((short) query);
+        	sendCommandToMiddleware(request,true);
+    	}
     }
     
     
@@ -399,6 +411,7 @@ public class ServiceProviderMain extends Application {
 		private void decryptAndShowData(byte[] encryptedData) {
 			//decrypt and show in log
 			try {
+				System.out.println("Start decrypting from received data");
 				Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 				aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 				byte [] cropped = new byte[encryptedData.length - 2];

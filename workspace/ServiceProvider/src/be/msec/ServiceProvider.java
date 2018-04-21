@@ -19,12 +19,12 @@ public class ServiceProvider {
 	String name;
 
 
-    public ServiceProvider(String name, ServiceProviderType type) {
+    public ServiceProvider(String name, ServiceProviderType type, int maxRight) {
     		this.name = name;
     		KeyPair keyPair = generateKey();
 	        privateKey = (RSAPrivateKey) keyPair.getPrivate();
 	        //TODO choose maxRight for each serviceprovider 4 is hoogste (=gov), 1 laagste (=default)
-	        serviceProviderInfo = new CertificateServiceProvider(keyPair.getPublic(), name, (short) 4);
+	        serviceProviderInfo = new CertificateServiceProvider(keyPair.getPublic(), name, (short) maxRight);
 	        letCASignCertificate();
     }
 

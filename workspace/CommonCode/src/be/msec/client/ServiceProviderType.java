@@ -1,5 +1,5 @@
 package be.msec.client;
 
 public enum ServiceProviderType {
-	GOVERNMENT,SOCNET,DEFAULT
+	GOVERNMENT,SOCNET,DEFAULT,OWN
 }

@@ -192,6 +192,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private byte[] att_age = new byte[] { (byte) 0x32, (byte) 0x32 };
 	private byte[] att_gender = new byte[] { (byte) 0x6d, (byte) 0x61, (byte) 0x6c, (byte) 0x65 };
 	private byte[] att_picture = new byte[] {};
+	private byte[] sorryMessage = new byte[] {(byte) 0x53, (byte) 0x6F, (byte) 0x72, (byte) 0x72, (byte) 0x79, (byte) 0x20, (byte) 0x79, (byte) 0x6F, (byte) 0x75, (byte) 0x20, (byte) 0x64, (byte) 0x6F, (byte) 0x20, (byte) 0x6E, (byte) 0x6F, (byte) 0x74, (byte) 0x20, (byte) 0x68, (byte) 0x61, (byte) 0x76, (byte) 0x65, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x20, (byte) 0x6E, (byte) 0x65, (byte) 0x65, (byte) 0x64, (byte) 0x65, (byte) 0x64, (byte) 0x20, (byte) 0x72, (byte) 0x69, (byte) 0x67, (byte) 0x68, (byte) 0x74, (byte) 0x73, (byte) 0x20, (byte) 0x66, (byte) 0x6F, (byte) 0x72, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x69, (byte) 0x73, (byte) 0x20, (byte) 0x64, (byte) 0x61, (byte) 0x74, (byte) 0x61, (byte) 0x21};
 
 	byte[] K_u = new byte[] { (byte) 1, (byte) 2, (byte) 3 }; // id of the card
 	private InitializedMessageDigest sha1;
@@ -297,13 +298,12 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	 * @return byte[]
 	 */
 	private void releaseAttribute(APDU apdu) {
-		// TODO validate pin!
 		if (!pin.isValidated())
 			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else {
 			byte [] buffer = apdu.getBuffer();
 			short query = (short) buffer[4];
-			maxRights = (byte) 4;
+			System.out.println("SP with rights: " + maxRights + " asks for data type: " + query);
 			if (query <= maxRights) {
 				// get the synomym for the SP
 				// 19 = 16 + 3
@@ -344,6 +344,22 @@ public class IdentityCard extends Applet implements ExtendedLength {
 				// send everything back can be big!
 				if (sendBigFile(apdu, encryptedData)) {
 					System.out.println("The data is succesfully transferred!");
+				}
+			}else {
+				Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+				symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
+				sorryMessage = padding(sorryMessage);
+				byte[] encryptedData = new byte[(short) sorryMessage.length];
+
+				try {
+					symCipher.doFinal(sorryMessage, (short) 0, (short) sorryMessage.length, encryptedData, (short) 0);
+				} catch (Exception e) {
+					ISOException.throwIt(ERROR_UNKNOW);
+				}
+				// System.out.println("The data is succesfully encrypted");
+				// send everything back can be big!
+				if (sendBigFile(apdu, encryptedData)) {
+					System.out.println("The sorry message is send to the SP");
 				}
 			}
 		}
@@ -480,8 +496,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		Util.arrayCopy(certificateBytes, (short) 76, maxRightByteArray, (short) 0, (short) 2);
 		Util.arrayCopy(certificateBytes, (short) 78, nameBytes, (short) 0, (short) nameBytes.length);
 		Util.arrayCopy(nameBytes, (short) 0, nameBytesCopy16, (short) 0, (short) nameBytes.length);
-
+		
 		maxRights = maxRightByteArray[0];
+		System.out.println("The maxrights of this SP: " + maxRights);
 		// end jonas code
 
 		Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
@@ -766,7 +783,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 3), (short) 1);
 			break;
 		case ((short) 4):
-			// gives the social networking type: synonym + name + country + age + gender +
+			// givesall : name + country + age + gender +
 			// birth date + address
 			numberOfAttributes = 6;
 			result = new byte[att_age.length + att_country.length + att_name.length + att_gender.length
@@ -782,17 +799,15 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(att_gender, (short) 0, result,
 					(short) (att_age.length + att_country.length + att_name.length + 3), (short) att_gender.length);
 			Util.arrayCopy(enter, (short) 0, result,
-					(short) (att_country.length + att_name.length + att_gender.length + 3), (short) 1);
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 3), (short) 1);
 			Util.arrayCopy(att_birthDate, (short) 0, result,
-					(short) (att_age.length + att_name.length + att_country.length + att_name.length + 4),
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 4),
 					(short) att_birthDate.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length
-					+ att_gender.length + att_birthDate.length + 4), (short) 1);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + 4), (short) 1);
 			Util.arrayCopy(att_address, (short) 0, result,
-					(short) (att_age.length + att_country.length + att_name.length + att_name.length + 5),
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + 5),
 					(short) att_address.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length
-					+ att_gender.length + att_birthDate.length + att_address.length + 5), (short) 1);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_address.length + 5), (short) 1);
 			break;
 		default:
 			return null;
