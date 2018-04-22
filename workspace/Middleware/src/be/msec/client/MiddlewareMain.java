@@ -219,7 +219,6 @@ public class MiddlewareMain extends Application {
 			else if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
 			str = new String(r.getData(), StandardCharsets.UTF_8);
-			System.out.println("Name is: " + str);
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -258,7 +257,6 @@ public class MiddlewareMain extends Application {
 	private void initPinLoginView() throws IOException {
 		FXMLLoader loader = new FXMLLoader();
 		loader.setLocation(MiddlewareMain.class.getResource("pinLoginView.fxml"));
-		System.out.println("Loading Main login Page");
 		AnchorPane loginView = (AnchorPane) loader.load();
 
 		// controller initialiseren + koppelen aan mainClient
@@ -337,9 +335,9 @@ public class MiddlewareMain extends Application {
 	public boolean connectTimestampServer() {
 		// setup ssl properties
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
-		System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
+		System.setProperty("javax.net.ssl.keyStorePassword", "eenpaswoord");
 		System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
-		System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+		System.setProperty("javax.net.ssl.trustStorePassword", "eenpaswoord");
 
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
@@ -362,7 +360,6 @@ public class MiddlewareMain extends Application {
 		ObjectOutputStream objectoutputstream = null;
 		ObjectInputStream objectinputstream = null;
 		try {
-			System.out.println("Try to send to the timestampserver");
 
 			try {
 				objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
@@ -372,7 +369,6 @@ public class MiddlewareMain extends Application {
 				// Cast serialized object into new object
 				timeInfoStruct = (TimeStruct) objectinputstream.readObject();
 
-				System.out.println("Received date and signedData (both in byte array)");
 				// System.out.println("Date from server: " + timeInfoStruct.getDate());
 				// System.out.println(bytesToDec(timeInfoStruct.getSignedData()));
 				objectinputstream.close();
@@ -392,9 +388,8 @@ public class MiddlewareMain extends Application {
 	public void connectServiceProvider() {
 		try {
 			socket = new ServerSocket(portSP);
-			System.out.println("Serversocket is listening");
 			middlewareSocket = socket.accept();
-			System.out.println("Socket connection accepted");
+			System.out.println("Socket connection");
 
 			// start thread to listen for commands from ServiceProvider client
 			Thread listenerThread = new ListenForServiceProviderCommandThread();
@@ -409,7 +404,6 @@ public class MiddlewareMain extends Application {
 	private void sendToServiceProvider(Object message) {
 		ObjectOutputStream out;
 		try {
-			System.out.println("SENDING TO SP");
 			out =  new ObjectOutputStream(middlewareSocket.getOutputStream());
 			out.writeObject(message);
 			
@@ -461,7 +455,6 @@ public class MiddlewareMain extends Application {
 		//System.out.println(bytesToHex(pin));
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, pin);
 		r = c.transmit(a);
-		System.out.print("Pin ok? " + r.getSW());
 		if (r.getSW() == SW_VERIFICATION_FAILED) {
 			pinVerified = false;
 			return false;}
@@ -529,7 +522,7 @@ public class MiddlewareMain extends Application {
 			if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
 			else {
-				System.out.println("succesfully verified challenge");
+				System.out.println("SP verified");
 			}
 
 		} catch (Exception e) {
@@ -551,7 +544,6 @@ public class MiddlewareMain extends Application {
 				throw new Exception("Exception on the card: " + r.getSW());
 			else {
 				byte[] response = r.getData();
-				System.out.println(bytesToHex(response));
 				// TODO: ER ZIT HIER NOG EEN FOUT ERGENS. Ik weet niet of het door de kaart komt. heb offset veranderd naar 0 . Stond op 1. 
 				// response zou een veelvoud van 16 bytes moeten zijn zodat de sp kan decrypteren. 
 				sendToServiceProvider(new CardChallenge(Arrays.copyOfRange(response, 0, response.length)));
@@ -565,10 +557,8 @@ public class MiddlewareMain extends Application {
 	}
 	
 	private byte[] getDataFromCard(ServiceProviderAction receivedQuery) {
-		System.out.println("Getting data from card");
 
 //		a = new CommandAPDU(IDENTITY_CARD_CLA, RELEASE_ATTRIBUTE, 0x00, 0x00);
-		System.out.println("Ask with query: " + receivedQuery.getDataQuery());
 		ByteBuffer buffer = ByteBuffer.allocate(2);
 		buffer.putShort(receivedQuery.getDataQuery());
 		byte [] toSend = buffer.array();
@@ -580,7 +570,6 @@ public class MiddlewareMain extends Application {
 			else if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
 //			
-			System.out.println("Received encrypted data from the card.");
 			return r.getBytes();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -606,13 +595,12 @@ public class MiddlewareMain extends Application {
             while(!pinVerified) {
             	try {
 					Thread.sleep(1000);
-					System.out.println("wait for pin ...");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
             }
-            System.out.println("pin valid");
+            System.out.println("Pin OK");
             byte[] data = getDataFromCard(query);
             sendToServiceProvider(data);
 		}
@@ -631,23 +619,22 @@ public class MiddlewareMain extends Application {
 
 					switch (receivedObject.getAction().getCommand()) {
 					case AUTH_SP:
-						System.out.println("AUTH SP COMMAND");
+						System.out.println("AUTH SP");
 						//sendToServiceProvider("AUTH command received");
 						authenticateCertificate(receivedObject);
 						
 						break;
 					case GET_DATA:
-						System.out.println("GET DATA COMMAND");
+						System.out.println("GET DATA");
 						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
 						pinWaitingThread.start();
 						
 						break;
 					case VERIFY_CHALLENGE:
-						System.out.println("VERIFY CHALLENGE COMMAND");
+						System.out.println("VERIFY CHALLENGE");
 						verifyChallenge(receivedObject);
 						break;
 					case AUTH_CARD:
-						System.out.println("AuthenticateCard COMMAND");
 						authenticateCardSendChallenge(receivedObject);
 						break;
 					default:

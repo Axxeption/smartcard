@@ -114,8 +114,8 @@ public class CAService {
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
-		URL d = CAService.class.getClassLoader().getResource("./key/private.key");
-		File filePrivateKey = new File(d.toURI());
+		//URL d = CAService.class.getClassLoader().getResource("/key/private.key");
+		File filePrivateKey = new File(System.getProperty("user.dir") + "/key/private.key");
 		FileInputStream fis = new FileInputStream(filePrivateKey);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
 		fis.read(encodedPrivateKey);
@@ -200,8 +200,8 @@ public class CAService {
 		// Read Public Key.
 		//smartcard/workspace/CertificateAuthority/bin/key
 
-		URL d = CAService.class.getClassLoader().getResource("./key/public.key");
-		File filePublicKey = new File(d.toURI());
+		//URL d = CAService.class.getClassLoader().getResource("/key/public.key");
+		File filePublicKey = new File(System.getProperty("user.dir") + "/key/public.key");
 		FileInputStream fis = new FileInputStream(filePublicKey);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
 		fis.read(encodedPublicKey);
