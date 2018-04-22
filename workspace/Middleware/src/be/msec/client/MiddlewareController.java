@@ -55,7 +55,4 @@ public class MiddlewareController  {
 		outputLabel.setText(msg);
 	}
 	
-	public void askName(ActionEvent event) {
-		main.askName();
-	}
 }

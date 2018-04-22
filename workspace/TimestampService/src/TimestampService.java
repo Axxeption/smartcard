@@ -38,6 +38,7 @@ public class TimestampService {
 	static final int port = 8001;
 
 	public static void main(String[] args) {
+		System.out.println("Startup TimestampService");
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
         System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
         System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
@@ -53,8 +54,7 @@ public class TimestampService {
 
 			Socket socket = sslServerSocket.accept();
 			System.out.println("ServerSocket accepted");
-			// set up input and outputstream objects, so that (serialized) objects can be
-			// send
+			// set up input and outputstream objects, so that (serialized) objects can be send
 			ObjectInputStream objectinputstream = null;
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 			System.out.println("Listening");
@@ -66,11 +66,11 @@ public class TimestampService {
 				System.out.println("Ask for the timestamp!");
 				
 				// government.jks: privatekey van government
-
 				PrivateKey privateKeyGovernment = loadPrivateKeyGovernment();
 	
 				// Get publickey and cerificate form Government certificate file
-				FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"\\government512.cer"); // \\TimestampService\\government512.cer
+				String fileName = new java.io.File("").getAbsolutePath() + "\\government512.cer";
+				FileInputStream fin = new FileInputStream(fileName); // \\TimestampService\\government512.cer
 				CertificateFactory f = CertificateFactory.getInstance("X.509");
 				X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
 				RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
@@ -79,8 +79,8 @@ public class TimestampService {
 //				System.out.println("publickey modulus: "+ publicKeyGovernment.getModulus());
 //				System.out.println("publickey exponent: " + publicKeyGovernment.getPublicExponent());
 				// Print public key specs, Need to be the same as on the javacard
-				System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
-				System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
+//				System.out.println("exp: " + bytesToDec(publicKeyGovernment.getPublicExponent().toByteArray()));
+//				System.out.println("mod: " + bytesToDec(publicKeyGovernment.getModulus().toByteArray()));
 				
 				// Get time 
 				byte[] timeInBytes = getTimeInBytes();
@@ -89,7 +89,7 @@ public class TimestampService {
 				byte[] signedDate = signData(privateKeyGovernment,timeInBytes);
 
 				// just to check if it works
-				System.out.println("Validated: " + validateSignature(publicKeyGovernment, signedDate));
+				System.out.println("Time send to the middleware!");
 				
 				// bundle time and signature in struct and send back.
 				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedDate, timeInBytes);
@@ -151,8 +151,10 @@ public class TimestampService {
 
 	private static PrivateKey loadPrivateKeyGovernment() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
 		// get the key from a jks file (once generated with portecle)
+		System.out.println("Get the privateKeyFromKeystore");
 		KeyStore keyStore = KeyStore.getInstance("JKS");
 		String fileName = new java.io.File("").getAbsolutePath() + "\\government.jks"; // \\TimestampService\\government.jks
+//		String fileName = "C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\TimestampService\\government.jks";
 		FileInputStream fis = new FileInputStream(fileName);
 		keyStore.load(fis, "jonasaxel".toCharArray());
 		fis.close();

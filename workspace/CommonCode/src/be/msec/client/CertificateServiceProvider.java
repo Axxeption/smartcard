@@ -40,15 +40,6 @@ public class CertificateServiceProvider extends CertificateBasic implements Seri
 		System.arraycopy(nameBytes, 0, certificateBytes, this.publicKeyExpBytes.length + this.publicKeyModBytes.length + validTimeBytes.length + 2, nameBytes.length);
 		
 		super.setBytes(certificateBytes);
-//		System.out.println(this.name);
-//		System.out.println("exp length " + publicKeyExpBytes.length + "  "+ bytesToDec(publicKeyExpBytes));
-//		System.out.println("mod length " + publicKeyModBytes.length + "   " + bytesToDec(publicKeyModBytes));
-//		System.out.println("validbyteslength  "+validTimeBytes.length);
-//		System.out.println("name length "+nameBytes.length + "  "+ nameBytes.toString());
-//		System.out.println(certificateBytes.length+ "cert bytes beforesend: "+bytesToDec(certificateBytes));
-		
-		
-		//System.out.println("the maxrigh byte array: " + maxRight + " has a length of: " + maxRight.length);
 	}
 	
 	public byte[] toBytes(short s) {
