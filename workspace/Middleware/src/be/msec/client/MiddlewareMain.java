@@ -30,21 +30,11 @@ import java.io.EOFException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
 import javafx.application.Application;
@@ -481,11 +471,6 @@ public class MiddlewareMain extends Application {
 		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
 		System.arraycopy(certificateBytes, 0, toSend, signedCertificateBytes.length, certificateBytes.length);
 		
-		//System.out.println("Length of signed certificate: " + signedCertificateBytes.length); 
-		//System.out.println("SignedCertificate: " + bytesToDec(signedCertificateBytes));
-		//System.out.println("Length of certificate: " + certificateBytes.length); 
-		//System.out.println("Total to send (concat): " + bytesToDec(toSend));
-		//System.out.println("Start sending command for authenticate SP with extended APDU");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
