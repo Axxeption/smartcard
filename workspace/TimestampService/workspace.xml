@@ -7,8 +7,8 @@
 	<!--<property name="dir.workspace" value="C:/Users/vulst/Documents/School 4elict/Veilige software/veilige_software_sc_windows/workspace"/>
     <property name="dir.jarfile" value="C:/Users/vulst/Documents/School_4elict/Veilige_software/smartcard/workspace"/> 
 	 -->
-	<property name="dir.workspace" value="C:\Users\kobe\Documents\projects\smartcards\workspace"/>
-	<property name="dir.jarfile" value="C:\Users\kobe\Documents\projects\smartcards\workspace"/>
+	<property name="dir.workspace" value="C:\Users\Benoit\AppData\Roaming\Local Libraries\Local Documents\SmartCards\workspace"/>
+	<property name="dir.jarfile" value="C:\Users\Benoit\AppData\Roaming\Local Libraries\Local Documents\SmartCards\workspace"/>
     <target name="create_run_jar">
         <jar destfile="${dir.jarfile}/TimestampServiceServer.jar">
             <manifest>
@@ -16,7 +16,7 @@
                 <attribute name="Class-Path" value="."/>
             </manifest>
             <fileset dir="${dir.buildfile}/bin"/>
-            <fileset dir="${dir.jarfile}/CommonCode/bin"/>
+            <fileset dir="${dir.jarfile}/Shared/bin"/>
         </jar>
         <delete dir="${dir.jarfile}/TimestampServiceServer_lib"/>
         <mkdir dir="${dir.jarfile}/TimestampServiceServer_lib"/>

@@ -94,7 +94,7 @@ public class MiddlewareMain extends Application {
 			connectServiceProvider();
 			// askName();
 
-			// UPDATE_TIME_ON_CARD_ROUTINE();
+			 UPDATE_TIME_ON_CARD_ROUTINE();
 
 			// checkChallenge();
 
@@ -325,9 +325,9 @@ public class MiddlewareMain extends Application {
 	public boolean connectTimestampServer() {
 		// setup ssl properties
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
-		System.setProperty("javax.net.ssl.keyStorePassword", "eenpaswoord");
+		System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
 		System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
-		System.setProperty("javax.net.ssl.trustStorePassword", "eenpaswoord");
+		System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
 
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
