@@ -3,10 +3,10 @@ package be.msec.client;
 import java.io.Serializable;
 import java.security.PublicKey;
 
-public class MessageToAuthCard implements Serializable {
+public class CardChallenge implements Serializable {
 	private byte[] encryptedMessage;
 	
-	public MessageToAuthCard(byte[] message) {
+	public CardChallenge(byte[] message) {
 		super();
 		this.encryptedMessage = message;
 	}

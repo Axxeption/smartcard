@@ -1,10 +1,10 @@
 package be.msec;
 import be.msec.client.CAService;
-import be.msec.client.CallableMiddelwareMethodes;
-import be.msec.client.Challenge;
-import be.msec.client.MessageToAuthCard;
+import be.msec.client.MiddleWareAPI;
+import be.msec.client.SPChallenge;
+import be.msec.client.CardChallenge;
 import be.msec.client.SignedCertificate;
-import be.msec.client.TimeInfoStruct;
+import be.msec.client.TimeStruct;
 import be.msec.controllers.MainServiceController;
 import be.msec.controllers.RootMenuController;
 import be.msec.helpers.Controller;
@@ -128,13 +128,13 @@ public class ServiceProviderMain extends Application {
     	// STEP 2
     	// 2. authenticate SP
     	System.out.println("2. auth service provider, SP");
-    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", MiddleWareAPI.AUTH_SP),selectedServiceProvider.getCertificate());
     	action.setServiceProvider(selectedServiceProvider.getName());
     	sendCommandToMiddleware(action,true);
 
     }
     
-    public void recreateSessionKey(Challenge challenge) {
+    public void recreateSessionKey(SPChallenge challenge) {
     	// STEP 3, after challenge response from MW.
     	System.out.println("3. recreateSessionKey, SP");
     	byte[] nameBytes = challenge.getNameBytes();
@@ -181,7 +181,7 @@ public class ServiceProviderMain extends Application {
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
 					
 					//send challenge response back to MW
-					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge, session key", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
+					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge, session key", MiddleWareAPI.VERIFY_CHALLENGE), null);
 					action.setChallengeBytes(encryptedRespChallenge);
 					sendCommandToMiddleware(action,false); // verwacht niks terug
 					
@@ -219,13 +219,13 @@ public class ServiceProviderMain extends Application {
     	
     	
     	//generate an action to send to the card
-    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_CARD));
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", MiddleWareAPI.AUTH_CARD));
     	action.setChallengeBytes(encryptedChallengeBytes);
     	sendCommandToMiddleware(action,true);
     	
     }
     
-    public void authenticateCard(MessageToAuthCard cardMessage) {
+    public void authenticateCard(CardChallenge cardMessage) {
     	// STEP 5, after second response from MW
     	System.out.println("5. AUTH CARD WITH MESSAGE");
     	//System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
@@ -295,14 +295,14 @@ public class ServiceProviderMain extends Application {
     	//STEP 7
     	// Get data
     	System.out.println("7. Get Data, SP");
-    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",MiddleWareAPI.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
     	sendCommandToMiddleware(request,true);
     	lastUsedSP = selectedServiceProvider;
     	}else {
     		System.out.println("Skipping authentication phase because already logged in to this service provider!");
-        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",MiddleWareAPI.GET_DATA), selectedServiceProvider.getCertificate());
             request.setServiceProvider(selectedServiceProvider.getName());
             request.setDataQuery((short) query);
         	sendCommandToMiddleware(request,true);
@@ -376,8 +376,8 @@ public class ServiceProviderMain extends Application {
 			
 			obj = objectinputstream.readObject();
 			System.out.println("OBJECT RECEIVED");
-			if(obj instanceof Challenge) {
-				Challenge challengeFromSC = (Challenge)obj;
+			if(obj instanceof SPChallenge) {
+				SPChallenge challengeFromSC = (SPChallenge)obj;
 				mainController.addToDataLog("Succesfully received challenge" );
 				System.out.println("CHALLENGE RECEIVED");
 				//recreate session key, respond to challenge
@@ -390,9 +390,9 @@ public class ServiceProviderMain extends Application {
 				System.out.println("STRING RECEIVEC, "+answer);
 				mainController.addToDataLog("Succesfully received: " +answer);
 			}
-			else if(obj instanceof MessageToAuthCard) {
+			else if(obj instanceof CardChallenge) {
 				System.out.println("MESSTOAUTHCARD RECEIVED");
-				authenticateCard((MessageToAuthCard) obj);
+				authenticateCard((CardChallenge) obj);
 			}
 			else if(obj instanceof byte[]) {
 				decryptAndShowData((byte[]) obj); 

@@ -10,7 +10,7 @@
 			<accessrule kind="accessible" pattern="javafx/**"/>
 		</accessrules>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/CertificateAuthority"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/CommonCode"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/CA"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Shared"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

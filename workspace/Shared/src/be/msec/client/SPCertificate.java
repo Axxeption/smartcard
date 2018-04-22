@@ -6,7 +6,7 @@ import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Calendar;
 
-public class CertificateServiceProvider extends CertificateBasic implements Serializable {
+public class SPCertificate extends CertificateBasic implements Serializable {
 	private PublicKey publicKey;
 	private String name;
 	private long validTime;
@@ -15,7 +15,7 @@ public class CertificateServiceProvider extends CertificateBasic implements Seri
 	private byte[] publicKeyModBytes;
 	private byte[] maxRight;
 	
-	public CertificateServiceProvider(PublicKey publicKey, String name, short max) {
+	public SPCertificate(PublicKey publicKey, String name, short max) {
 		super();
 		this.publicKey = publicKey;
 		this.maxRight = toBytes(max);

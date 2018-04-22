@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLServerSocketFactory;
 
-import be.msec.client.TimeInfoStruct;
+import be.msec.client.TimeStruct;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -92,7 +92,7 @@ public class TimestampService {
 				System.out.println("Validated: " + validateSignature(publicKeyGovernment, signedDate));
 				
 				// bundle time and signature in struct and send back.
-				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedDate, timeInBytes);
+				TimeStruct timeinfostruct = new TimeStruct(signedDate, timeInBytes);
 
 				out.writeObject(timeinfostruct);
 			}

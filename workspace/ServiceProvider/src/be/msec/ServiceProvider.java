@@ -9,11 +9,11 @@ import java.security.interfaces.RSAPrivateKey;
 import be.msec.client.CAService;
 import be.msec.client.CertificateBasic;
 import be.msec.client.SignedCertificate;
-import be.msec.client.CertificateServiceProvider;
+import be.msec.client.SPCertificate;
 import be.msec.client.ServiceProviderType;
 
 public class ServiceProvider {
-	CertificateServiceProvider serviceProviderInfo;
+	SPCertificate serviceProviderInfo;
 	RSAPrivateKey privateKey;
 	SignedCertificate certificate;
 	String name;
@@ -24,7 +24,7 @@ public class ServiceProvider {
     		KeyPair keyPair = generateKey();
 	        privateKey = (RSAPrivateKey) keyPair.getPrivate();
 	        //TODO choose maxRight for each serviceprovider 4 is hoogste (=gov), 1 laagste (=default)
-	        serviceProviderInfo = new CertificateServiceProvider(keyPair.getPublic(), name, (short) maxRight);
+	        serviceProviderInfo = new SPCertificate(keyPair.getPublic(), name, (short) maxRight);
 	        letCASignCertificate();
     }
 
@@ -49,7 +49,7 @@ public class ServiceProvider {
     }
 
 
-	public CertificateServiceProvider getInfo() {
+	public SPCertificate getInfo() {
 		return serviceProviderInfo;
 	}
 

@@ -2,20 +2,20 @@ package be.msec;
 
 import java.io.Serializable;
 
-import be.msec.client.CallableMiddelwareMethodes;
+import be.msec.client.MiddleWareAPI;
 
 public class ServiceAction implements Serializable {
 
     String name;
-    CallableMiddelwareMethodes command;
+    MiddleWareAPI command;
     
-    public ServiceAction(String name, CallableMiddelwareMethodes command) {
+    public ServiceAction(String name, MiddleWareAPI command) {
         this.name = name;
         this.command =command;
     }
     
     
-    public CallableMiddelwareMethodes getCommand() {
+    public MiddleWareAPI getCommand() {
 		return command;
 	}
 

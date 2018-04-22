@@ -115,7 +115,7 @@ public class MiddlewareMain extends Application {
 
 	private void UPDATE_TIME_ON_CARD_ROUTINE() throws Exception {
 		if (connectTimestampServer()) {
-			TimeInfoStruct signedTime = askTimeToTimestampServer();
+			TimeStruct signedTime = askTimeToTimestampServer();
 			if (signedTime != null) {
 				// make connection to the card (simulator) and send the bytes
 				connectToCard(false); // true => simulatedconnection
@@ -354,11 +354,11 @@ public class MiddlewareMain extends Application {
 
 	}
 
-	public TimeInfoStruct askTimeToTimestampServer() throws Exception {
+	public TimeStruct askTimeToTimestampServer() throws Exception {
 		// hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
 		// hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met
 		// SKg en eenmaal plain text
-		TimeInfoStruct timeInfoStruct = null;
+		TimeStruct timeInfoStruct = null;
 		ObjectOutputStream objectoutputstream = null;
 		ObjectInputStream objectinputstream = null;
 		try {
@@ -370,7 +370,7 @@ public class MiddlewareMain extends Application {
 				objectoutputstream.writeObject(1);
 				objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
 				// Cast serialized object into new object
-				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
+				timeInfoStruct = (TimeStruct) objectinputstream.readObject();
 
 				System.out.println("Received date and signedData (both in byte array)");
 				// System.out.println("Date from server: " + timeInfoStruct.getDate());
@@ -428,7 +428,7 @@ public class MiddlewareMain extends Application {
 	 * 
 	 * @param timeInfoStruct
 	 */
-	private boolean sendTimeToCard(TimeInfoStruct timeInfoStruct) {
+	private boolean sendTimeToCard(TimeStruct timeInfoStruct) {
 		// concatenate all bytes into one big data array, this toSend needs to be given
 		// to the card
 		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
@@ -480,7 +480,7 @@ public class MiddlewareMain extends Application {
 
 	private boolean authenticateCertificate(ServiceProviderAction received) {
 		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
-		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received.getSignedCertificate().getCertificateBasic();
+		SPCertificate certificateServiceProvider = (SPCertificate) received.getSignedCertificate().getCertificateBasic();
 
 		//prepare everything to send to the card
 		byte[] certificateBytes = certificateServiceProvider.getBytes();
@@ -503,7 +503,7 @@ public class MiddlewareMain extends Application {
 				//get response data and send to SP
 				byte[] response = r.getData();
 				System.out.println(response.length + "  response " + bytesToDec(response));	//first byte = length of response
-				Challenge challengeToSP = new Challenge(Arrays.copyOfRange(response, 1, 65), Arrays.copyOfRange(response, 65, 81), Arrays.copyOfRange(response, 81, response.length));
+				SPChallenge challengeToSP = new SPChallenge(Arrays.copyOfRange(response, 1, 65), Arrays.copyOfRange(response, 65, 81), Arrays.copyOfRange(response, 81, response.length));
 				//System.out.println(challengeToSP);
 				
 				sendToServiceProvider(challengeToSP);
@@ -554,7 +554,7 @@ public class MiddlewareMain extends Application {
 				System.out.println(bytesToHex(response));
 				// TODO: ER ZIT HIER NOG EEN FOUT ERGENS. Ik weet niet of het door de kaart komt. heb offset veranderd naar 0 . Stond op 1. 
 				// response zou een veelvoud van 16 bytes moeten zijn zodat de sp kan decrypteren. 
-				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
+				sendToServiceProvider(new CardChallenge(Arrays.copyOfRange(response, 0, response.length)));
 			}
 			
 		} catch (Exception e) {

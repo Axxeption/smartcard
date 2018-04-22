@@ -4,11 +4,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class TimestampServerThread extends Thread {
+public class TimestampThread extends Thread {
 	Socket socket;
 	String cmd;
 
-	public TimestampServerThread(Socket socket) {
+	public TimestampThread(Socket socket) {
 		super();
 		this.socket = socket;
 	}

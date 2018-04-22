@@ -3,7 +3,7 @@ package be.msec.client;
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class Challenge implements Serializable{
+public class SPChallenge implements Serializable{
 	/**
 	 * 
 	 */
@@ -13,7 +13,7 @@ public class Challenge implements Serializable{
 	private byte[] nameBytes;
 	
 
-	public Challenge( byte[] rndBytes,byte[] challengeBytes, byte[] nameBytes) {
+	public SPChallenge( byte[] rndBytes,byte[] challengeBytes, byte[] nameBytes) {
 		super();
 		this.challengeBytes = challengeBytes;	//32bytes
 		this.rndBytes = rndBytes;				//64bytes

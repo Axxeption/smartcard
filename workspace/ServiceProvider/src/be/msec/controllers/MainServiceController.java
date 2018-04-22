@@ -5,7 +5,7 @@ import be.msec.ServiceAction;
 import be.msec.ServiceProvider;
 import be.msec.ServiceProviderAction;
 import be.msec.ServiceProviderMain;
-import be.msec.client.CallableMiddelwareMethodes;
+import be.msec.client.MiddleWareAPI;
 import be.msec.client.ServiceProviderType;
 import be.msec.helpers.Controller;
 import javafx.beans.value.ChangeListener;
