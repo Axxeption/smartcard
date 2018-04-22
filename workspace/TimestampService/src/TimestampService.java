@@ -39,38 +39,33 @@ public class TimestampService {
 
 	public static void main(String[] args) {
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
-        System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
+        System.setProperty("javax.net.ssl.keyStorePassword", "eenpaswoord");
         System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
-        System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+        System.setProperty("javax.net.ssl.trustStorePassword", "eenpaswoord");
         
 		SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		try {
 			// start serverSocket connection
 			ServerSocket sslServerSocket = sslServerSocketFactory.createServerSocket(port);
-			System.out.println("SSL ServerSocket started");
-			System.out.println(sslServerSocket.toString());
 
 			Socket socket = sslServerSocket.accept();
-			System.out.println("ServerSocket accepted");
 			// set up input and outputstream objects, so that (serialized) objects can be
 			// send
 			ObjectInputStream objectinputstream = null;
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-			System.out.println("Listening");
 			objectinputstream = new ObjectInputStream(socket.getInputStream());
 			Integer received = (Integer) objectinputstream.readObject();
-			System.out.println("received: " + received);
 			// this if is just in case you want to ask other things to the timestampserver
 			if (received == 1) {
-				System.out.println("Ask for the timestamp!");
+				System.out.println("TIMESTAMP");
 				
 				// government.jks: privatekey van government
 
 				PrivateKey privateKeyGovernment = loadPrivateKeyGovernment();
 	
 				// Get publickey and cerificate form Government certificate file
-				FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"\\government512.cer"); // \\TimestampService\\government512.cer
+				FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"/key/government512.cer"); // \\TimestampService\\government512.cer
 				CertificateFactory f = CertificateFactory.getInstance("X.509");
 				X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
 				RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
@@ -152,13 +147,13 @@ public class TimestampService {
 	private static PrivateKey loadPrivateKeyGovernment() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
 		// get the key from a jks file (once generated with portecle)
 		KeyStore keyStore = KeyStore.getInstance("JKS");
-		String fileName = new java.io.File("").getAbsolutePath() + "\\government.jks"; // \\TimestampService\\government.jks
+		String fileName = new java.io.File("").getAbsolutePath() + "/key/government.jks"; // \\TimestampService\\government.jks
 		FileInputStream fis = new FileInputStream(fileName);
 		keyStore.load(fis, "jonasaxel".toCharArray());
 		fis.close();
 
 		// government.jks: privatekey van government
-		PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government512", "jonasaxel".toCharArray());
+		PrivateKey privateKeyGovernment = (PrivateKey) keyStore.getKey("government512", "eenpaswoord".toCharArray());
 		System.out.println("The found private key is: " + privateKeyGovernment);
 		return privateKeyGovernment;
 	}
