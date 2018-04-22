@@ -45,7 +45,7 @@ public class ServiceProvider {
     private void letCASignCertificate() {
     	CertificateBasic infoStruct = serviceProviderInfo;
 		certificate = CAService.getSignedCertificate(infoStruct);
-		System.out.println(certificate.verifySignature(CAService.getPublicKey()));
+//		System.out.println(certificate.verifySignature(CAService.getPublicKey()));
     }
 
 

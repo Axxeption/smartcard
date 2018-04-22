@@ -114,9 +114,9 @@ public class CAService {
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
-		URL d = CAService.class.getClassLoader().getResource("./key/private.key");
-		System.out.println("The url is: " + CAService.class.getClassLoader().toString());
-		System.out.println(d);
+		URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\private.key");
+//		URL d = CAService.class.getClassLoader().getResource("./key/private.key");
+//		System.out.println(d);
 		File filePrivateKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePrivateKey);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
@@ -128,7 +128,6 @@ public class CAService {
 		PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(
 				encodedPrivateKey);
 		PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
-		
 		
 		return privateKey;
 	}
@@ -200,7 +199,9 @@ public class CAService {
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Public Key.
-		URL d = CAService.class.getClassLoader().getResource("./key/public.key");
+		URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\public.key");
+
+//		URL d = CAService.class.getClassLoader().getResource("./key/public.key");
 		File filePublicKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePublicKey);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
