@@ -145,8 +145,8 @@ public class CAService {
             //generating the common keys
             RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
             RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) privateKey;
-//            System.out.println("Commoncertificate privatekey exponent: " + bytesToDec(rsaPrivateKey.getPrivateExponent().toByteArray()));
-//            System.out.println("Commoncertificate privatekey modulus: " + bytesToDec(rsaPrivateKey.getModulus().toByteArray()));
+            System.out.println("Commoncertificate privatekey exponent: " + bytesToDec(rsaPrivateKey.getPrivateExponent().toByteArray()));
+            System.out.println("Commoncertificate privatekey modulus: " + bytesToDec(rsaPrivateKey.getModulus().toByteArray()));
 //            System.out.println("Commoncertificate publickey exponent: " + bytesToDec(rsaPublicKey.getPublicExponent().toByteArray()));
 //            System.out.println("Commoncertificate publickey modulus: " + bytesToDec(rsaPublicKey.getModulus().toByteArray()));
             
