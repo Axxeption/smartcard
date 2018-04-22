@@ -191,6 +191,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 0x2f, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36 };
 	private byte[] att_age = new byte[] { (byte) 0x32, (byte) 0x32 };
 	private byte[] att_gender = new byte[] { (byte) 0x6d, (byte) 0x61, (byte) 0x6c, (byte) 0x65 };
+	private byte[] att_blood = new byte[] { (byte) 0x42,(byte) 0x6c,(byte) 0x6f,(byte) 0x65,(byte) 0x64,(byte) 0x67,(byte) 0x72,(byte) 0x6f,(byte) 0x65,(byte) 0x70,(byte) 0x3a,(byte) 0x20,(byte) 0x4f,(byte) 0x2d};
+	private byte[] att_subscriptions = new byte[] {(byte) 0x56,(byte) 0x6f,(byte) 0x6f,(byte) 0x72,(byte) 0x73,(byte) 0x63,(byte) 0x68,(byte) 0x72,(byte) 0x69,(byte) 0x66,(byte) 0x74,(byte) 0x65,(byte) 0x6e,(byte) 0x3a,(byte) 0x20,(byte) 0x41,(byte) 0x76,(byte) 0x61,(byte) 0x6d,(byte) 0x69,(byte) 0x73,(byte) 0x2c,(byte) 0x20,(byte) 0x56,(byte) 0x69,(byte) 0x61,(byte) 0x67,(byte) 0x72,(byte) 0x61,(byte) 0x2c,(byte) 0x20,(byte) 0x52,(byte) 0x6f,(byte) 0x68,(byte) 0x79,(byte) 0x70,(byte) 0x6e,(byte) 0x6f,(byte) 0x6c };
 	private byte[] att_picture = new byte[] {};
 	private byte[] sorryMessage = new byte[] {(byte) 0x53, (byte) 0x6F, (byte) 0x72, (byte) 0x72, (byte) 0x79, (byte) 0x20, (byte) 0x79, (byte) 0x6F, (byte) 0x75, (byte) 0x20, (byte) 0x64, (byte) 0x6F, (byte) 0x20, (byte) 0x6E, (byte) 0x6F, (byte) 0x74, (byte) 0x20, (byte) 0x68, (byte) 0x61, (byte) 0x76, (byte) 0x65, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x20, (byte) 0x6E, (byte) 0x65, (byte) 0x65, (byte) 0x64, (byte) 0x65, (byte) 0x64, (byte) 0x20, (byte) 0x72, (byte) 0x69, (byte) 0x67, (byte) 0x68, (byte) 0x74, (byte) 0x73, (byte) 0x20, (byte) 0x66, (byte) 0x6F, (byte) 0x72, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x69, (byte) 0x73, (byte) 0x20, (byte) 0x64, (byte) 0x61, (byte) 0x74, (byte) 0x61, (byte) 0x21};
 
@@ -752,19 +754,6 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
 			break;
 		case ((short) 2):
-			// gives the betting type: synonym + age + country + name
-			numberOfAttributes = 3;
-			result = new byte[att_age.length + att_country.length + att_name.length + numberOfAttributes];
-			Util.arrayCopy(att_age, (short) 0, result, (short) (0), (short) att_age.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
-			Util.arrayCopy(att_country, (short) 0, result, (short) (att_age.length + 1), (short) att_country.length);
-			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + 1), (short) 1);
-			Util.arrayCopy(att_name, (short) 0, result, (short) (att_age.length + att_country.length + 2),
-					(short) att_name.length);
-			Util.arrayCopy(enter, (short) 0, result,
-					(short) (att_age.length + att_country.length + att_name.length + 2), (short) 1);
-			break;
-		case ((short) 3):
 			// gives the social networking type: synonym + name + country + age + gender
 			numberOfAttributes = 4;
 			result = new byte[att_age.length + att_country.length + att_name.length + att_gender.length
@@ -782,8 +771,40 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(enter, (short) 0, result,
 					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 3), (short) 1);
 			break;
+		case ((short) 3):
+			// healthCare
+			
+			numberOfAttributes = 7;
+			result = new byte[att_age.length + att_country.length + att_name.length + att_gender.length
+								+ att_birthDate.length + att_blood.length + att_subscriptions.length + numberOfAttributes];
+			Util.arrayCopy(att_age, (short) 0, result, (short) (0), (short) att_age.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length), (short) 1);
+			Util.arrayCopy(att_country, (short) 0, result, (short) (att_age.length + 1), (short) att_country.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + 1), (short) 1);
+			Util.arrayCopy(att_name, (short) 0, result, (short) (att_age.length + att_country.length + 2),
+					(short) att_name.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 2), (short) 1);
+			Util.arrayCopy(att_gender, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + 3), (short) att_gender.length);
+			Util.arrayCopy(enter, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 3), (short) 1);
+			Util.arrayCopy(att_birthDate, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + 4),
+					(short) att_birthDate.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + 4), (short) 1);
+			Util.arrayCopy(att_blood, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + 5),
+					(short) att_blood.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_blood.length + 5), (short) 1);
+			Util.arrayCopy(att_subscriptions, (short) 0, result,
+					(short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_blood.length + 6),
+					(short) att_subscriptions.length);
+			Util.arrayCopy(enter, (short) 0, result, (short) (att_age.length + att_country.length + att_name.length + att_gender.length + att_birthDate.length + att_blood.length + att_subscriptions.length + 6), (short) 1);
+		
+			break;
 		case ((short) 4):
-			// givesall : name + country + age + gender +
+			// GOVERNMENT : name + country + age + gender +
 			// birth date + address
 			numberOfAttributes = 6;
 			result = new byte[att_age.length + att_country.length + att_name.length + att_gender.length

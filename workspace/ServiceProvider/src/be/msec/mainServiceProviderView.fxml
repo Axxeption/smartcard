@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="457.0" prefWidth="502.0" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="be.msec.controllers.MainServiceController">
+<AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="457.0" prefWidth="502.0" xmlns="http://javafx.com/javafx/8.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="be.msec.controllers.MainServiceController">
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
    </padding>
@@ -27,7 +27,7 @@
                               <Font name="Myanmar Text" size="24.0" />
                            </font>
                         </Label>
-                        <ComboBox fx:id="serviceProviderCombo" prefHeight="25.0" prefWidth="245.0">
+                        <ComboBox fx:id="ServiceProviderCombo" prefWidth="150.0">
                            <VBox.margin>
                               <Insets bottom="30.0" />
                            </VBox.margin>
@@ -44,7 +44,7 @@
                            <children>
                               <Button mnemonicParsing="false" onAction="#getDataGoverment" text="Goverment data" />
                               <Button mnemonicParsing="false" onAction="#getDataSocial" text="Social data" />
-                              <Button mnemonicParsing="false" onAction="#getDataHealth" text="Health data" />
+                              <Button mnemonicParsing="false" onAction="#getDataOwn" text="Own data" />
                               <Button mnemonicParsing="false" onAction="#getDataBasic" text="basic data" />
                            </children>
                         </HBox>

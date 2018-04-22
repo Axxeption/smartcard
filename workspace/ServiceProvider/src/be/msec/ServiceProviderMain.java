@@ -298,13 +298,16 @@ public class ServiceProviderMain extends Application {
     	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",MiddleWareAPI.GET_DATA), selectedServiceProvider.getCertificate());
         request.setServiceProvider(selectedServiceProvider.getName());
         request.setDataQuery((short) query);
+        System.out.println("data request query: "+ query);
+
     	sendCommandToMiddleware(request,true);
     	lastUsedSP = selectedServiceProvider;
     	}else {
     		System.out.println("Skipping authentication phase because already logged in to this service provider!");
         	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",MiddleWareAPI.GET_DATA), selectedServiceProvider.getCertificate());
             request.setServiceProvider(selectedServiceProvider.getName());
-            request.setDataQuery((short) query);
+            System.out.println("data request query: "+ query);
+            request.setDataQuery((short) query);	
         	sendCommandToMiddleware(request,true);
     	}
     }
@@ -331,7 +334,6 @@ public class ServiceProviderMain extends Application {
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
             //scene.getStylesheets().add("be.msec.stylesheet.css");
-
 
             // Give the controller access to the main app.
             RootMenuController controller = loader.getController();

@@ -17,8 +17,6 @@ public class MiddlewareController  {
 	@FXML
 	private TextField pin_textfield;
 	@FXML
-	private TextArea logTextArea;
-	@FXML
 	private Label outputLabel;
 	
 	public MiddlewareController() {
@@ -30,13 +28,14 @@ public class MiddlewareController  {
 	
 	public void validatePin(){
 		byte[] pinInBytes = pin_textfield.getText().getBytes();
-		log("pin in hex:" + main.bytesToHex(pinInBytes));
 		String message;
 		try {
 			if(main.loginWithPin(pinInBytes)) {
 				message = "Correct Pin!";	
+				pin_textfield.setStyle("-fx-control-inner-background: #7CFC00");
 			}else {
 				message ="Wrong Pin!";
+				pin_textfield.setStyle("-fx-control-inner-background: #FF0000");
 			}
 		} catch (Exception e) {
 			message = e.getMessage();
@@ -44,12 +43,8 @@ public class MiddlewareController  {
 			
 		}
 		outputLabel.setText(message);
-		log(message);
 	}
 	
-	public void log(String msg) {
-		logTextArea.setText(logTextArea.getText()+"\n"+msg);
-	}
 	
 	public void setMainMessage(String msg) {
 		outputLabel.setText(msg);
