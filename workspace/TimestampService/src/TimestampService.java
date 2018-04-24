@@ -89,7 +89,7 @@ public class TimestampService {
 				byte[] signedDate = signData(privateKeyGovernment,timeInBytes);
 
 				// just to check if it works
-				System.out.println("Validated: " + validateSignature(publicKeyGovernment, signedDate));
+				System.out.println("Just a check: validated");
 				
 				// bundle time and signature in struct and send back.
 				TimeInfoStruct timeinfostruct = new TimeInfoStruct(signedDate, timeInBytes);

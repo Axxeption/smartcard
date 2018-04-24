@@ -121,11 +121,11 @@ public class MiddlewareMain extends Application {
 	}
 
 	private void UPDATE_TIME_ON_CARD_ROUTINE() throws Exception {
+		connectToCard(true); //true = simulated connection
 		if (connectTimestampServer()) {
 			TimeInfoStruct signedTime = askTimeToTimestampServer();
 			if (signedTime != null) {
-				// make connection to the card (simulator) and send the bytes
-				connectToCard(true); // true => simulatedconnection
+				//send the bytes
 				sendTimeToCard(signedTime);
 			}
 		}
@@ -288,7 +288,7 @@ public class MiddlewareMain extends Application {
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			if (simulatedConnection) {
-				// System.out.println("Simulated connection");
+				 System.out.println("Make a simulated connection.");
 				c = new SimulatedConnection();
 
 				c.connect();
@@ -328,7 +328,8 @@ public class MiddlewareMain extends Application {
 			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,
 					new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00 }, 0x7f);
 			r = c.transmit(a);
-			System.out.println(r);
+//			System.out.println(r);
+			System.out.println("Succesfully connected to the virtual javacard.");
 			if (r.getSW() != 0x9000)
 				throw new Exception("Applet selection failed");
 
@@ -341,12 +342,15 @@ public class MiddlewareMain extends Application {
 	// ------- TIMESTAMP SERVER COMMUNICATION ----------
 	// -------------------------------------------------
 	public boolean connectTimestampServer() {
+		System.out.println("---- 1. updateTime() ----");
 		// setup ssl properties
 		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
 		System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
 		System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
 		System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
-
+		
+		System.out.println("Ask the time from the SC");
+		System.out.println("There is need to update the time! --> connect to the timestampserver.");
 		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		try {
 			timestampSocket = sslSocketFactory.createSocket("localhost", portG);
@@ -368,7 +372,7 @@ public class MiddlewareMain extends Application {
 		ObjectOutputStream objectoutputstream = null;
 		ObjectInputStream objectinputstream = null;
 		try {
-			System.out.println("Try to send to the timestampserver");
+			System.out.println("Send message to timestampserver to ask the time!");
 
 			try {
 				objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
@@ -378,7 +382,7 @@ public class MiddlewareMain extends Application {
 				// Cast serialized object into new object
 				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
 
-				System.out.println("Received date and signedData (both in byte array)");
+				System.out.println("Received date and signedData from the timestampserver!");
 				// System.out.println("Date from server: " + timeInfoStruct.getDate());
 				// System.out.println(bytesToDec(timeInfoStruct.getSignedData()));
 				objectinputstream.close();
@@ -442,13 +446,13 @@ public class MiddlewareMain extends Application {
 				timeInfoStruct.getDate().length);
 
 		//
-		System.out.println("Send time to card (need to)");
+		System.out.println("Send time to card!");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("DATE UPDATED ");
+			System.out.println("Date is succesfully updated on the card!");
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -558,10 +562,6 @@ public class MiddlewareMain extends Application {
 			else {
 				byte[] response = r.getData();
 				System.out.println(bytesToHex(response));
-				// TODO: ER ZIT HIER NOG EEN FOUT ERGENS. Ik weet niet of het door de kaart
-				// komt. heb offset veranderd naar 0 . Stond op 1.
-				// response zou een veelvoud van 16 bytes moeten zijn zodat de sp kan
-				// decrypteren.
 				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
 			}
 
@@ -612,16 +612,16 @@ public class MiddlewareMain extends Application {
 					middlewareController.setMainMessage("Enter pin to get data...");
 				}
 			});
+			System.out.println("User must give in correct PIN...");
 			while (!pinVerified) {
 				try {
 					Thread.sleep(1000);
-					System.out.println("wait for pin ...");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			System.out.println("pin valid");
+			System.out.println("PIN is correct!");
 			byte[] data = getDataFromCard(query);
 			sendToServiceProvider(data);
 		}
