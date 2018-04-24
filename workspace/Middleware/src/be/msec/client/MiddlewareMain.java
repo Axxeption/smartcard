@@ -118,7 +118,7 @@ public class MiddlewareMain extends Application {
 			TimeInfoStruct signedTime = askTimeToTimestampServer();
 			if (signedTime != null) {
 				// make connection to the card (simulator) and send the bytes
-				connectToCard(false); // true => simulatedconnection
+				connectToCard(true); // true => simulatedconnection
 				sendTimeToCard(signedTime);
 			}
 		}
@@ -437,8 +437,7 @@ public class MiddlewareMain extends Application {
 				timeInfoStruct.getDate().length);
 
 		//
-		//System.out.println("Send signed time bytes with extended APDU with length: " + toSend.length);
-//		toSend = new byte[10];
+		System.out.println("Send time to card (need to)");
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);

@@ -198,7 +198,7 @@ public class CAService {
 	public static PublicKey loadPublicKey(String algorithm)
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
-		// Read Public Key.
+		// Read Public Key.		
 		URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\public.key");
 
 //		URL d = CAService.class.getClassLoader().getResource("./key/public.key");

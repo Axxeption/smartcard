@@ -215,6 +215,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private short maxRights;
 
 	private IdentityCard() {
+		System.out.println("setup");
 		// max try 3 times
 		pin = new OwnerPIN(PIN_TRY_LIMIT, PIN_SIZE);
 		// pin is 1234
@@ -642,7 +643,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			signature.init(pubk, Signature.MODE_VERIFY);
 			boolean result = signature.verify(date, (short) 0, (short) date.length, signedData, (short) 0,
 					(short) signedData.length);
-			if (result && isSmaller(lastValidationTime, date)) {
+			if (result) {
 				lastValidationTime = date;
 			} else {
 				ISOException.throwIt(ERROR_UNKNOW);
