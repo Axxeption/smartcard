@@ -52,6 +52,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 
 	private final static short ERROR_OUT_OF_BOUNDS = (short) 0x8001;
 	private final static short ERROR_UNKNOW = (short) 0x8888;
+	private final static short ERROR_AUTHENTICATESP = (short) 0x8889;
+
 	private final static short ERROR_WRONG_TIME = (short) 0x8002;
 	private final static short ERROR_WRONG_RIGHTS = (short) 0x8003;
 	private final static short ENCRYPT_ERROR = (short) 0x8004;
@@ -177,22 +179,28 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89,
 			(byte) 127, (byte) -46, (byte) -109, (byte) -91 };
 
-	private byte[] att_name = new byte[] { (byte) 0x4b, (byte) 0x6f, (byte) 0x62, (byte) 0x65, (byte) 0x20, (byte) 0x56,
-			(byte) 0x61, (byte) 0x6e, (byte) 0x20, (byte) 0x52, (byte) 0x65, (byte) 0x75, (byte) 0x73, (byte) 0x65,
-			(byte) 0x6c };
-	private byte[] att_address = new byte[] { (byte) 0x4c, (byte) 0x61, (byte) 0x6e, (byte) 0x67, (byte) 0x65,
-			(byte) 0x20, (byte) 0x45, (byte) 0x6c, (byte) 0x7a, (byte) 0x65, (byte) 0x6e, (byte) 0x73, (byte) 0x74,
-			(byte) 0x72, (byte) 0x61, (byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x32, (byte) 0x30, (byte) 0x39,
-			(byte) 0x2c, (byte) 0x20, (byte) 0x38, (byte) 0x32, (byte) 0x30, (byte) 0x30, (byte) 0x20, (byte) 0x42,
-			(byte) 0x72, (byte) 0x75, (byte) 0x67, (byte) 0x67, (byte) 0x65 };
+	private byte[] att_name = new byte[] { (byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x56,
+			(byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65 };
+	private byte[] att_address = new byte[] { (byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69,
+			(byte) 0x74, (byte) 0x61, (byte) 0x61, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x72, (byte) 0x61,
+			(byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x31, (byte) 0x33, (byte) 0x20, (byte) 0x38, (byte) 0x36,
+			(byte) 0x31, (byte) 0x30, (byte) 0x20, (byte) 0x4B, (byte) 0x6F, (byte) 0x72, (byte) 0x74, (byte) 0x65,
+			(byte) 0x6D, (byte) 0x61, (byte) 0x72, (byte) 0x6B };
 	private byte[] att_country = new byte[] { (byte) 0x42, (byte) 0x65, (byte) 0x6c, (byte) 0x67, (byte) 0x69,
 			(byte) 0x75, (byte) 0x6d };
-	private byte[] att_birthDate = new byte[] { (byte) 0x31, (byte) 0x31, (byte) 0x2f, (byte) 0x30, (byte) 0x35,
-			(byte) 0x2f, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36 };
+	private byte[] att_birthDate = new byte[] { (byte) 0x32, (byte) 0x31, (byte) 0x2F, (byte) 0x30, (byte) 0x32,
+			(byte) 0x2F, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36 };
 	private byte[] att_age = new byte[] { (byte) 0x32, (byte) 0x32 };
 	private byte[] att_gender = new byte[] { (byte) 0x6d, (byte) 0x61, (byte) 0x6c, (byte) 0x65 };
-	private byte[] att_picture = new byte[] {};
-	private byte[] sorryMessage = new byte[] {(byte) 0x53, (byte) 0x6F, (byte) 0x72, (byte) 0x72, (byte) 0x79, (byte) 0x20, (byte) 0x79, (byte) 0x6F, (byte) 0x75, (byte) 0x20, (byte) 0x64, (byte) 0x6F, (byte) 0x20, (byte) 0x6E, (byte) 0x6F, (byte) 0x74, (byte) 0x20, (byte) 0x68, (byte) 0x61, (byte) 0x76, (byte) 0x65, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x20, (byte) 0x6E, (byte) 0x65, (byte) 0x65, (byte) 0x64, (byte) 0x65, (byte) 0x64, (byte) 0x20, (byte) 0x72, (byte) 0x69, (byte) 0x67, (byte) 0x68, (byte) 0x74, (byte) 0x73, (byte) 0x20, (byte) 0x66, (byte) 0x6F, (byte) 0x72, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x69, (byte) 0x73, (byte) 0x20, (byte) 0x64, (byte) 0x61, (byte) 0x74, (byte) 0x61, (byte) 0x21};
+	private byte[] sorryMessage = new byte[] { (byte) 0x53, (byte) 0x6F, (byte) 0x72, (byte) 0x72, (byte) 0x79,
+			(byte) 0x20, (byte) 0x79, (byte) 0x6F, (byte) 0x75, (byte) 0x20, (byte) 0x64, (byte) 0x6F, (byte) 0x20,
+			(byte) 0x6E, (byte) 0x6F, (byte) 0x74, (byte) 0x20, (byte) 0x68, (byte) 0x61, (byte) 0x76, (byte) 0x65,
+			(byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x20, (byte) 0x6E, (byte) 0x65, (byte) 0x65,
+			(byte) 0x64, (byte) 0x65, (byte) 0x64, (byte) 0x20, (byte) 0x72, (byte) 0x69, (byte) 0x67, (byte) 0x68,
+			(byte) 0x74, (byte) 0x73, (byte) 0x20, (byte) 0x66, (byte) 0x6F, (byte) 0x72, (byte) 0x20, (byte) 0x74,
+			(byte) 0x68, (byte) 0x69, (byte) 0x73, (byte) 0x20, (byte) 0x64, (byte) 0x61, (byte) 0x74, (byte) 0x61,
+			(byte) 0x21 };
+	private byte[] notAuthenticate = new byte[] { (byte) 0x53, (byte) 0x6F, (byte) 0x72, (byte) 0x72, (byte) 0x79, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x20, (byte) 0x73, (byte) 0x65, (byte) 0x72, (byte) 0x76, (byte) 0x69, (byte) 0x63, (byte) 0x65, (byte) 0x20, (byte) 0x70, (byte) 0x72, (byte) 0x6F, (byte) 0x76, (byte) 0x69, (byte) 0x64, (byte) 0x65, (byte) 0x72, (byte) 0x20, (byte) 0x77, (byte) 0x61, (byte) 0x73, (byte) 0x20, (byte) 0x6E, (byte) 0x6F, (byte) 0x74, (byte) 0x20, (byte) 0x61, (byte) 0x75, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x6E, (byte) 0x74, (byte) 0x69, (byte) 0x63, (byte) 0x61, (byte) 0x74, (byte) 0x65, (byte) 0x64, (byte) 0x21};
 
 	byte[] K_u = new byte[] { (byte) 1, (byte) 2, (byte) 3 }; // id of the card
 	private InitializedMessageDigest sha1;
@@ -301,6 +309,23 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private void releaseAttribute(APDU apdu) {
 		if (!pin.isValidated())
 			ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		if(!auth) {
+			Cipher symCipher = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
+			symCipher.init(this.symKey, Cipher.MODE_ENCRYPT);
+			sorryMessage = padding(notAuthenticate);
+			byte[] encryptedData = new byte[(short) sorryMessage.length];
+
+			try {
+				symCipher.doFinal(sorryMessage, (short) 0, (short) sorryMessage.length, encryptedData, (short) 0);
+			} catch (Exception e) {
+				ISOException.throwIt(ERROR_UNKNOW);
+			}
+			// System.out.println("The data is succesfully encrypted");
+			// send everything back can be big!
+			if (sendBigFile(apdu, encryptedData)) {
+				System.out.println("The sorry message is send to the SP");
+			}
+		}
 		else {
 			byte [] buffer = apdu.getBuffer();
 			short query = (short) buffer[4];
@@ -517,7 +542,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			// but now just commented for not losing time
 			if (!result) {
 				// misschien iets opgooien dat zegt dat cert niet geldig is?
-				ISOException.throwIt(ERROR_UNKNOW);
+				System.out.println("Whoa! the serviceproveder certificate is not correct!");
+				ISOException.throwIt(ERROR_AUTHENTICATESP);
 			}
 			if (isSmaller(validEndTimeCertificate, lastValidationTime)) {
 				// throw other exception?

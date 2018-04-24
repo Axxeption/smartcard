@@ -102,12 +102,44 @@ public class ServiceProviderMain extends Application {
     public void stop() {
         System.out.println("Stage is Normaly closed");
     }
+    
+    public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	mainController.addToDataLog("---- 2. SP was chosen --> start authenticateSP -----");
+    	// STEP 1
+    	// Do Authentication
+    	if(lastUsedSP != selectedServiceProvider) {
+    		mainController.addToDataLog("First time with this SP --> need for authenticate");
+	    	authenticateServiceProvider(selectedServiceProvider);
+	    
+	    	// STEP 4
+	    	//start the authentication of the card (step 3)
+	    	mainController.addToDataLog("---- 3. Authenticate the card to the SP -----");
+	    	authenticateCard();
+    	
+    	//STEP 7
+    	// Get data
+    	mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
+    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+        request.setServiceProvider(selectedServiceProvider.getName());
+        request.setDataQuery((short) query);
+    	sendCommandToMiddleware(request,true);
+    	lastUsedSP = selectedServiceProvider;
+    	}else {
+    		mainController.addToDataLog("Skipping authentication phase because already logged in to this service provider!");
+    		mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
+        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+            request.setServiceProvider(selectedServiceProvider.getName());
+            request.setDataQuery((short) query);
+        	sendCommandToMiddleware(request,true);
+    	}
+    }
+    
 
 	public void sendCommandToMiddleware(ServiceProviderAction action, boolean waitForResponse) {
 		ObjectOutputStream objectoutputstream = null;
 		this.lastActionSPName = action.getServiceProvider();
 		try {
-			System.out.println("Send action to the middleware: " + action.getAction().getName());
+	    	mainController.addToDataLog("Send something to the middleware, want something back: " + waitForResponse );
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
 			objectoutputstream.writeObject(action);
 			
@@ -127,7 +159,7 @@ public class ServiceProviderMain extends Application {
     public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
     	// STEP 2
     	// 2. authenticate SP
-    	System.out.println("2. auth service provider, SP");
+    	mainController.addToDataLog("Start authentication of ServiceProvider to card.");
     	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
     	action.setServiceProvider(selectedServiceProvider.getName());
     	sendCommandToMiddleware(action,true);
@@ -136,24 +168,18 @@ public class ServiceProviderMain extends Application {
     
     public void recreateSessionKey(Challenge challenge) {
     	// STEP 3, after challenge response from MW.
-    	System.out.println("3. recreateSessionKey, SP");
+    	mainController.addToDataLog("Create the received symmetric key from the smartcard in the serviceProvider");
     	byte[] nameBytes = challenge.getNameBytes();
     	byte[] rndBytes = challenge.getRndBytes();
     	byte [] challengeBytes = challenge.getChallengeBytes();
-    	
-    	//System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
-		//System.out.println("encr name bytes   "+bytesToDec(nameBytes));
-    	
     	byte[] decryptedNameBytes;
     	byte[] decryptedChallengeBytes;
     	
     	for(ServiceProvider sp : serviceProviders) {
     		if(sp.name.equals(lastActionSPName)) {
-    			System.out.println("recreate session key "+sp.getName());
     			try {
 					Cipher rsaCipher = Cipher.getInstance("RSA");
 					rsaCipher.init(Cipher.DECRYPT_MODE, (RSAPrivateKey)sp.getPrivateKey());
-					System.out.println();
 					byte [] rnd = rsaCipher.doFinal(rndBytes);
 					//byte[] rnd = new String(decrypted);
 					//System.out.println("decrypted rndbytes "+bytesToDec(rnd));
@@ -162,9 +188,7 @@ public class ServiceProviderMain extends Application {
 					//create session key
 					byte[] ivdata = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 					this.ivSpec = new IvParameterSpec(ivdata);
-					this.symKey = new SecretKeySpec(rnd, "AES");
-					System.out.println("SETTING SESSION KEY!!!! " + symKey);
-					
+					this.symKey = new SecretKeySpec(rnd, "AES");					
 					Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 					aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 					decryptedChallengeBytes = aesCipher.doFinal(challengeBytes);
@@ -174,9 +198,9 @@ public class ServiceProviderMain extends Application {
 					//System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
 					String name = new String(decryptedNameBytes);
 					
+					mainController.addToDataLog("Did +1 on the challenge and send it back now!");
 					byte [] respChallengeBytes = addOne_Bad(decryptedChallengeBytes);
 					
-					//TODO beno encrypt challenge response
 					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
 					
@@ -197,7 +221,6 @@ public class ServiceProviderMain extends Application {
     
     public void authenticateCard() {
     	// STEP 4
-    	System.out.println("4. auth card, SP");
     	mainController.addToDataLog("Start authentication of card" );
     	//generate random bytes for challenge
     	byte[] b = new byte[16];
@@ -227,8 +250,7 @@ public class ServiceProviderMain extends Application {
     
     public void authenticateCard(MessageToAuthCard cardMessage) {
     	// STEP 5, after second response from MW
-    	System.out.println("5. AUTH CARD WITH MESSAGE");
-    	//System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
+    	mainController.addToDataLog("Received the message from the SC to authenticate the card.");
     	Cipher aesCipher;
 		try {
 			//decrypte message
@@ -244,9 +266,9 @@ public class ServiceProviderMain extends Application {
 			signer.initVerify(CAService.loadPublicKey("RSA"));
 			signer.update(signedBytes);
 			if(!signer.verify(signature)) {
-				System.out.println("Card has a valid common certificate. (authenticate card)");
+				mainController.addToDataLog("The card has a valid common certificate!");
 			} else {
-				System.out.println("Card doesn't have a valid common certificate.");
+				mainController.addToDataLog("The card dos not have a valid common certificate!");
 				return;
 			}
 			
@@ -266,10 +288,10 @@ public class ServiceProviderMain extends Application {
 			//check sign
 		    
 			
-		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
-				System.out.println("Card is valid, challenge is ok. (authenticate card)");
+		    if(!signer.verify(Arrays.copyOfRange(message, 156, 220))) {
+				mainController.addToDataLog("There is a valid challenge send by the card.");
 			} else {
-				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
+				mainController.addToDataLog("There is no valid challenge send by the card.");
 				return;
 			}
 			
@@ -280,34 +302,6 @@ public class ServiceProviderMain extends Application {
 		
     }
     
-    public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
-    	System.out.println("1, Start query, SP");
-    	// STEP 1
-    	// Do Authentication
-    	if(lastUsedSP != selectedServiceProvider) {
-    		System.out.println("First time with this SP --> athenticate");
-	    	authenticateServiceProvider(selectedServiceProvider);
-	    
-	    	// STEP 4
-	    	//start the authentication of the card (step 3)
-	    	authenticateCard();
-    	
-    	//STEP 7
-    	// Get data
-    	System.out.println("7. Get Data, SP");
-    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
-        request.setServiceProvider(selectedServiceProvider.getName());
-        request.setDataQuery((short) query);
-    	sendCommandToMiddleware(request,true);
-    	lastUsedSP = selectedServiceProvider;
-    	}else {
-    		System.out.println("Skipping authentication phase because already logged in to this service provider!");
-        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
-            request.setServiceProvider(selectedServiceProvider.getName());
-            request.setDataQuery((short) query);
-        	sendCommandToMiddleware(request,true);
-    	}
-    }
     
     
     public void connectToMiddleWare() {
@@ -369,29 +363,27 @@ public class ServiceProviderMain extends Application {
     }
 
     private void ListenForMiddelware() {
-    	System.out.println("Listening for MW...");
+    	mainController.addToDataLog("Waiting for an answer from the middleware.");
     	Object obj = null;
     	try {
 			ObjectInputStream objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-			
 			obj = objectinputstream.readObject();
-			System.out.println("OBJECT RECEIVED");
-			if(obj instanceof Challenge) {
+			if(obj == null) {
+				mainController.addToDataLog("Something went wrong with the authentication of the SP... ");
+			}
+			else if(obj instanceof Challenge) {
 				Challenge challengeFromSC = (Challenge)obj;
-				mainController.addToDataLog("Succesfully received challenge" );
-				System.out.println("CHALLENGE RECEIVED");
+				mainController.addToDataLog("Succesfully received challenge and symKey from smartcard" );
 				//recreate session key, respond to challenge
 				recreateSessionKey(challengeFromSC);
 				notify();
 			}
 			else if( obj instanceof String) {
 				// STEP 8
-				String answer = (String)obj;
-				System.out.println("STRING RECEIVEC, "+answer);
-				mainController.addToDataLog("Succesfully received: " +answer);
+				String answer = (String) obj;
+				mainController.addToDataLog("Succesfully received the data from the smartcard: " + answer);
 			}
 			else if(obj instanceof MessageToAuthCard) {
-				System.out.println("MESSTOAUTHCARD RECEIVED");
 				authenticateCard((MessageToAuthCard) obj);
 			}
 			else if(obj instanceof byte[]) {
