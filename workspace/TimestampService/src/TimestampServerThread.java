@@ -19,6 +19,7 @@ public class TimestampServerThread extends Thread {
 		return test.getBytes();
 	}
 	
+	// WORD MOMENTEEL NIET GEBRUIKT! ZOU WEL BETER ZIJN
 	public void run() {
 		try {
 			PrintWriter printWriter = new PrintWriter(socket.getOutputStream(),true);

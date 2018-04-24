@@ -43,9 +43,9 @@
                                     <AnchorPane prefHeight="277.0" prefWidth="141.0">
                                        <children>
                                           <Button fx:id="getData" layoutX="9.0" layoutY="270.0" mnemonicParsing="false" onAction="#getData_default" prefHeight="31.0" prefWidth="142.0" text="Get default data" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="0.0" />
-                                          <Button fx:id="getData1" layoutX="9.0" layoutY="239.0" mnemonicParsing="false" onAction="#getData_own" prefHeight="31.0" prefWidth="142.0" text="Get betting data" />
-                                          <Button fx:id="getData2" layoutX="9.0" layoutY="206.0" mnemonicParsing="false" onAction="#getData_socnet" prefHeight="31.0" prefWidth="142.0" text="Get social data" />
-                                          <Button fx:id="getData3" layoutX="9.0" layoutY="175.0" mnemonicParsing="false" onAction="#getData_egov" prefHeight="31.0" prefWidth="142.0" text="Get all data" />
+                                          <Button fx:id="getData1" layoutX="9.0" layoutY="239.0" mnemonicParsing="false" onAction="#getData_own" prefHeight="31.0" prefWidth="142.0" text="Get ... data" />
+                                          <Button fx:id="getData2" layoutX="9.0" layoutY="206.0" mnemonicParsing="false" onAction="#getData_socnet" prefHeight="31.0" prefWidth="142.0" text="getSocialData" />
+                                          <Button fx:id="getData3" layoutX="9.0" layoutY="175.0" mnemonicParsing="false" onAction="#getData_egov" prefHeight="31.0" prefWidth="142.0" text="getAllData" />
                                        </children>
                                     </AnchorPane>
                                  </children>

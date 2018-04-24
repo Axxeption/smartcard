@@ -1,5 +1,4 @@
 package be.msec;
-
 import be.msec.client.CAService;
 import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
@@ -59,10 +58,10 @@ import javax.rmi.CORBA.Util;
 
 public class ServiceProviderMain extends Application {
 
-	private Stage primaryStage;
-	private BorderPane rootLayout;
-	private Controller currentViewController;
-	private MainServiceController mainController;
+    private Stage primaryStage;
+    private BorderPane rootLayout;
+    private Controller currentViewController;
+    private MainServiceController mainController;
 	private Socket serviceProviderSocket = null;
 	private String lastActionSPName = null;
 	private ArrayList<ServiceProvider> serviceProviders;
@@ -72,17 +71,17 @@ public class ServiceProviderMain extends Application {
 	private byte[] challengeToAuthCard;
 	private ServiceProvider lastUsedSP;
 
-	/**
-	 * Constructor
-	 */
-	public ServiceProviderMain() throws RemoteException {
-	}
+    /**
+     * Constructor
+     */
+    public ServiceProviderMain() throws RemoteException {
+    }
 
-	public static void main(String[] args) {
-		launch(args);
-	}
-
-	public ArrayList<ServiceProvider> getServiceProviders() {
+    public static void main(String[] args) {
+        launch(args);
+    }
+    
+    public ArrayList<ServiceProvider> getServiceProviders() {
 		return serviceProviders;
 	}
 
@@ -91,18 +90,18 @@ public class ServiceProviderMain extends Application {
 	}
 
 	@Override
-	public void start(Stage primaryStage) throws Exception {
-		this.primaryStage = primaryStage;
-		this.primaryStage.setTitle("Service Provider overview");
-		initRootLayout();
-		showMainView();
-		connectToMiddleWare();
-	}
+    public void start(Stage primaryStage) throws Exception {
+        this.primaryStage = primaryStage;
+        this.primaryStage.setTitle("Service Provider overview");
+        initRootLayout();
+        showMainView();
+        connectToMiddleWare();
+    }
 
-	@Override
-	public void stop() {
-		System.out.println("Stage closed");
-	}
+    @Override
+    public void stop() {
+        System.out.println("Stage is Normaly closed");
+    }
 
 	public void sendCommandToMiddleware(ServiceProviderAction action, boolean waitForResponse) {
 		ObjectOutputStream objectoutputstream = null;
@@ -111,340 +110,339 @@ public class ServiceProviderMain extends Application {
 			System.out.println("Send action to the middleware: " + action.getAction().getName());
 			objectoutputstream = new ObjectOutputStream(serviceProviderSocket.getOutputStream());
 			objectoutputstream.writeObject(action);
-
-			// wait for response)
-			if (waitForResponse) {
-				// System.out.println("Commando needs response from MW! ...");
+			
+			//wait for response)
+			if(waitForResponse){
+				//System.out.println("Commando needs response from MW! ...");	
 				ListenForMiddelware();
 			}
-
-		} catch (Exception e) {
+			
+		}catch (Exception e) {
 			System.out.println(e);
 		}
-	}
+    }
+    
+    
 
-	public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
-		// STEP 2
-		// 2. authenticate SP
-		System.out.println("2. auth service provider, SP");
-		ServiceProviderAction action = new ServiceProviderAction(
-				new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),
-				selectedServiceProvider.getCertificate());
-		action.setServiceProvider(selectedServiceProvider.getName());
-		sendCommandToMiddleware(action, true);
+    public void authenticateServiceProvider(ServiceProvider selectedServiceProvider) {
+    	// STEP 2
+    	// 2. authenticate SP
+    	System.out.println("2. auth service provider, SP");
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Authenticate SP", CallableMiddelwareMethodes.AUTH_SP),selectedServiceProvider.getCertificate());
+    	action.setServiceProvider(selectedServiceProvider.getName());
+    	sendCommandToMiddleware(action,true);
 
-	}
-
-	public void recreateSessionKey(Challenge challenge) {
-		// STEP 3, after challenge response from MW.
-		System.out.println("3. recreateSessionKey, SP");
-		byte[] nameBytes = challenge.getNameBytes();
-		byte[] rndBytes = challenge.getRndBytes();
-		byte[] challengeBytes = challenge.getChallengeBytes();
-
-		// System.out.println("encr chlng bytes "+bytesToDec(challengeBytes));
-		// System.out.println("encr name bytes "+bytesToDec(nameBytes));
-
-		byte[] decryptedNameBytes;
-		byte[] decryptedChallengeBytes;
-
-		for (ServiceProvider sp : serviceProviders) {
-			if (sp.name.equals(lastActionSPName)) {
-				System.out.println("recreate session key " + sp.getName());
-				try {
+    }
+    
+    public void recreateSessionKey(Challenge challenge) {
+    	// STEP 3, after challenge response from MW.
+    	System.out.println("3. recreateSessionKey, SP");
+    	byte[] nameBytes = challenge.getNameBytes();
+    	byte[] rndBytes = challenge.getRndBytes();
+    	byte [] challengeBytes = challenge.getChallengeBytes();
+    	
+    	//System.out.println("encr chlng bytes  "+bytesToDec(challengeBytes));
+		//System.out.println("encr name bytes   "+bytesToDec(nameBytes));
+    	
+    	byte[] decryptedNameBytes;
+    	byte[] decryptedChallengeBytes;
+    	
+    	for(ServiceProvider sp : serviceProviders) {
+    		if(sp.name.equals(lastActionSPName)) {
+    			System.out.println("recreate session key "+sp.getName());
+    			try {
 					Cipher rsaCipher = Cipher.getInstance("RSA");
-					rsaCipher.init(Cipher.DECRYPT_MODE, (RSAPrivateKey) sp.getPrivateKey());
+					rsaCipher.init(Cipher.DECRYPT_MODE, (RSAPrivateKey)sp.getPrivateKey());
 					System.out.println();
-					byte[] rnd = rsaCipher.doFinal(rndBytes);
-					// byte[] rnd = new String(decrypted);
-					// System.out.println("decrypted rndbytes "+bytesToDec(rnd));
-
-					// create session key
-					byte[] ivdata = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+					byte [] rnd = rsaCipher.doFinal(rndBytes);
+					//byte[] rnd = new String(decrypted);
+					//System.out.println("decrypted rndbytes "+bytesToDec(rnd));
+					
+					
+					//create session key
+					byte[] ivdata = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 					this.ivSpec = new IvParameterSpec(ivdata);
 					this.symKey = new SecretKeySpec(rnd, "AES");
 					System.out.println("SETTING SESSION KEY!!!! " + symKey);
-
+					
 					Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 					aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 					decryptedChallengeBytes = aesCipher.doFinal(challengeBytes);
 					decryptedNameBytes = aesCipher.doFinal(nameBytes);
-
-					// System.out.println("decrypted chlng bytes
-					// "+bytesToDec(decryptedChallengeBytes));
-					// System.out.println("decrypted name bytes "+bytesToDec(decryptedNameBytes));
+					
+					//System.out.println("decrypted chlng bytes  "+bytesToDec(decryptedChallengeBytes));
+					//System.out.println("decrypted name bytes   "+bytesToDec(decryptedNameBytes));
 					String name = new String(decryptedNameBytes);
-
-					byte[] respChallengeBytes = addOne_Bad(decryptedChallengeBytes);
-
-					// TODO beno encrypt challenge response
+					
+					byte [] respChallengeBytes = addOne_Bad(decryptedChallengeBytes);
+					
+					//TODO beno encrypt challenge response
 					aesCipher.init(Cipher.ENCRYPT_MODE, this.symKey, this.ivSpec);
 					byte[] encryptedRespChallenge = aesCipher.doFinal(respChallengeBytes);
-
-					// send challenge response back to MW
-					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction(
-							"verify challenge, session key", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
+					
+					//send challenge response back to MW
+					ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge, session key", CallableMiddelwareMethodes.VERIFY_CHALLENGE), null);
 					action.setChallengeBytes(encryptedRespChallenge);
-					sendCommandToMiddleware(action, false); // verwacht niks terug
-
-				} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException
-						| IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
+					sendCommandToMiddleware(action,false); // verwacht niks terug
+					
+				} catch (NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
-
-			}
-		}
-
-	}
-
-	public void authenticateCard() {
-		// STEP 4
-		System.out.println("4. auth card, SP");
-		mainController.addToDataLog("Start authentication of card");
-		// generate random bytes for challenge
-		byte[] b = new byte[16];
-		new Random().nextBytes(b);
-		challengeToAuthCard = b;
-		byte[] encryptedChallengeBytes = null;
-		// encrypt challengeBytes
-		try {
+				} 
+		    		
+    		}
+    	}
+    	
+    }
+    
+    public void authenticateCard() {
+    	// STEP 4
+    	System.out.println("4. auth card, SP");
+    	mainController.addToDataLog("Start authentication of card" );
+    	//generate random bytes for challenge
+    	byte[] b = new byte[16];
+    	new Random().nextBytes(b);
+    	challengeToAuthCard = b;
+    	byte[] encryptedChallengeBytes = null;
+    	//encrypt challengeBytes
+    	try {
 			Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 			aesCipher.init(Cipher.ENCRYPT_MODE, symKey, ivSpec);
 			encryptedChallengeBytes = aesCipher.doFinal(b);
-
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException
-				| BadPaddingException | InvalidAlgorithmParameterException e) {
+			
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
 			// TODO Auto-generated catch block
 			System.out.println("ERROR IN auth card, SP :");
-			System.out.println(symKey.getEncoded() + "  " + ivSpec.getIV());
+			System.out.println(symKey.getEncoded() +"  "+ ivSpec.getIV());
 			e.printStackTrace();
-		}
-
-		// generate an action to send to the card
-		ServiceProviderAction action = new ServiceProviderAction(
-				new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_CARD));
-		action.setChallengeBytes(encryptedChallengeBytes);
-		sendCommandToMiddleware(action, true);
-
-	}
-
-	public void authenticateCard(MessageToAuthCard cardMessage) {
-		// STEP 5, after second response from MW
-		System.out.println("5. AUTH CARD WITH MESSAGE");
-		// System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
-		Cipher aesCipher;
+		}	
+    	
+    	
+    	//generate an action to send to the card
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_CARD));
+    	action.setChallengeBytes(encryptedChallengeBytes);
+    	sendCommandToMiddleware(action,true);
+    	
+    }
+    
+    public void authenticateCard(MessageToAuthCard cardMessage) {
+    	// STEP 5, after second response from MW
+    	System.out.println("5. AUTH CARD WITH MESSAGE");
+    	//System.out.println("DONE " + bytesToHex(cardMessage.getMessage()));
+    	Cipher aesCipher;
 		try {
-			// decrypte message
+			//decrypte message
 			aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
 			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
 			byte[] message = aesCipher.doFinal(padding(cardMessage.getMessage()));
-			// System.out.println(bytesToDec(message));
-
-			// check signature
+			//System.out.println(bytesToDec(message));
+			
+			//check signature
 			byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
 			byte[] signature = Arrays.copyOfRange(message, 72, 136);
 			Signature signer = Signature.getInstance("SHA1WithRSA");
 			signer.initVerify(CAService.loadPublicKey("RSA"));
 			signer.update(signedBytes);
-			if (!signer.verify(signature)) {
+			if(!signer.verify(signature)) {
 				System.out.println("Card has a valid common certificate. (authenticate card)");
 			} else {
 				System.out.println("Card doesn't have a valid common certificate.");
 				return;
 			}
-
-			// check if sign with CommonCert key is ok
-			// first regenerate public key from commoncertificate
-			BigInteger exponent = new BigInteger(1, Arrays.copyOfRange(message, 0, 3));
-			BigInteger modulus = new BigInteger(1, Arrays.copyOfRange(message, 4, 68));
+			
+			//check if sign with CommonCert key is ok
+			//first regenerate public key from commoncertificate
+			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 0, 3));
+			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 4, 68));
 			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
 			signer.initVerify(KeyFactory.getInstance("RSA").generatePublic(spec));
-			// generate byte array
+			//generate byte array
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			outputStream.write(challengeToAuthCard);
 			outputStream.write("AUTH".getBytes());
-			byte[] bytesToSign = outputStream.toByteArray();
+		    byte[] bytesToSign = outputStream.toByteArray();
+		    //System.out.println("bytes to sign : " + bytesToDec(Arrays.copyOfRange(message, 156, 220)));
+		    //System.out.println("bytes to sign : " + KeyFactory.getInstance("RSA").generatePublic(spec));
+			//check sign
+		    
 			
-			// check sign
-			if (!signer.verify(Arrays.copyOfRange(message, 156, 220))) {
+		    if(signer.verify(Arrays.copyOfRange(message, 156, 220))) {
 				System.out.println("Card is valid, challenge is ok. (authenticate card)");
 			} else {
-				System.out.println(
-						"Card is not valid, challenge is nok.");
+				System.out.println("Card is not valid, challenge is nok. HIER ZIT ER NOG EEN FOUT, DIE public key wordt verkeerd opgebouwd door die BigIntegers, de bytes zijn sws juist.");
 				return;
 			}
-
-		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException
-				| InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException
-				| IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
-		System.out.println("1, Start query, SP");
-		// STEP 1
-		// Do Authentication
-		if (lastUsedSP != selectedServiceProvider) {
-			System.out.println("First time with this SP --> athenticate");
-			authenticateServiceProvider(selectedServiceProvider);
-
-			// STEP 4
-			// start the authentication of the card (step 3)
-			authenticateCard();
-
-			// STEP 7
-			// Get data
-			System.out.println("7. Get Data, SP");
-			ServiceProviderAction request = new ServiceProviderAction(
-					new ServiceAction("Get Data", CallableMiddelwareMethodes.GET_DATA),
-					selectedServiceProvider.getCertificate());
-			request.setServiceProvider(selectedServiceProvider.getName());
-			request.setDataQuery((short) query);
-			sendCommandToMiddleware(request, true);
-			lastUsedSP = selectedServiceProvider;
-		} else {
-			System.out.println("Skipping authentication phase because already logged in to this service provider!");
-			mainController
-					.addToDataLog("Skipping authentication phase because already logged in to this service provider!");
-
-			ServiceProviderAction request = new ServiceProviderAction(
-					new ServiceAction("Get Data", CallableMiddelwareMethodes.GET_DATA),
-					selectedServiceProvider.getCertificate());
-			request.setServiceProvider(selectedServiceProvider.getName());
-			request.setDataQuery((short) query);
-			sendCommandToMiddleware(request, true);
-		}
-	}
-
-	private void decryptAndShowData(byte[] encryptedData) {
-		// decrypt and show in log
-		try {
-			System.out.println("Start decrypting from received data");
-			Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
-			aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
-			byte[] cropped = new byte[encryptedData.length - 2];
-			cropped = Arrays.copyOfRange(encryptedData, 2, cropped.length);
-			cropped = padding(cropped);
-			byte[] data = aesCipher.doFinal(cropped);
-			String str = new String(data, StandardCharsets.UTF_8);
 			
-			mainController.addToDataLog("Received data from card: " + str);
-//			System.out.println("data is succesfully decrypted: " + str);
-		} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+		} catch (NoSuchAlgorithmException | SignatureException | IOException | InvalidKeySpecException | InvalidKeyException | URISyntaxException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-
-	public void connectToMiddleWare() {
-		try {
+		} 
+		
+    }
+    
+    public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	System.out.println("1, Start query, SP");
+    	// STEP 1
+    	// Do Authentication
+    	if(lastUsedSP != selectedServiceProvider) {
+    		System.out.println("First time with this SP --> athenticate");
+	    	authenticateServiceProvider(selectedServiceProvider);
+	    
+	    	// STEP 4
+	    	//start the authentication of the card (step 3)
+	    	authenticateCard();
+    	
+    	//STEP 7
+    	// Get data
+    	System.out.println("7. Get Data, SP");
+    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+        request.setServiceProvider(selectedServiceProvider.getName());
+        request.setDataQuery((short) query);
+    	sendCommandToMiddleware(request,true);
+    	lastUsedSP = selectedServiceProvider;
+    	}else {
+    		System.out.println("Skipping authentication phase because already logged in to this service provider!");
+        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+            request.setServiceProvider(selectedServiceProvider.getName());
+            request.setDataQuery((short) query);
+        	sendCommandToMiddleware(request,true);
+    	}
+    }
+    
+    
+    public void connectToMiddleWare() {
+    	try {
 			serviceProviderSocket = new Socket("localhost", portSP);
 		} catch (IOException ex) {
-			// System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
+			//System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
-		// System.out.println("Serviceprovider connected to middleware: " +
-		// serviceProviderSocket);
+		//System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
 
-	}
+    }
+    
+    public void initRootLayout() {
+        try {
+            // Load root layout from fxml file.
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(ServiceProviderMain.class.getResource("RootMenu.fxml"));
+            rootLayout = (BorderPane) loader.load();
 
-	public void initRootLayout() {
-		try {
-			// Load root layout from fxml file.
-			FXMLLoader loader = new FXMLLoader();
-			loader.setLocation(ServiceProviderMain.class.getResource("RootMenu.fxml"));
-			rootLayout = (BorderPane) loader.load();
+            // Show the scene containing the root layout.
+            Scene scene = new Scene(rootLayout);
+            primaryStage.setScene(scene);
+            //scene.getStylesheets().add("be.msec.stylesheet.css");
 
-			// Show the scene containing the root layout.
-			Scene scene = new Scene(rootLayout);
-			primaryStage.setScene(scene);
-			// scene.getStylesheets().add("be.msec.stylesheet.css");
 
-			// Give the controller access to the main app.
-			RootMenuController controller = loader.getController();
-			controller.setMain(this);
-			currentViewController = controller;
+            // Give the controller access to the main app.
+            RootMenuController controller = loader.getController();
+            controller.setMain(this);
+            currentViewController = controller;
 
-			primaryStage.show();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+            primaryStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	public Controller getCurrentViewController() {
-		return currentViewController;
-	}
+    public Controller getCurrentViewController() {
+        return currentViewController;
+    }
 
-	// --------------------- LOGIN VIEW ------------------------
+    // --------------------- LOGIN VIEW ------------------------
 
-	public void showMainView() {
-		try {
-			FXMLLoader loader = new FXMLLoader();
-			loader.setLocation(ServiceProviderMain.class.getResource("mainServiceView.fxml"));
-			System.out.println("Loading Main Page");
-			AnchorPane loginView = (AnchorPane) loader.load();
-			// controller initialiseren + koppelen aan mainClient
-			MainServiceController controller = loader.getController();
-			controller.setMainController(this);
-			currentViewController = controller;
-			mainController = controller;
-			rootLayout.setCenter(loginView);
+    public void showMainView() {
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(ServiceProviderMain.class.getResource("mainServiceView.fxml"));
+            System.out.println("Loading Main Page");
+            AnchorPane loginView = (AnchorPane) loader.load();
+            //controller initialiseren + koppelen aan mainClient
+            MainServiceController controller = loader.getController();
+            controller.setMainController(this);
+            currentViewController = controller;
+            mainController = controller;
+            rootLayout.setCenter(loginView);
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	private void ListenForMiddelware() {
-		System.out.println("Listening for MW...");
-		Object obj = null;
-		try {
+    private void ListenForMiddelware() {
+    	System.out.println("Listening for MW...");
+    	Object obj = null;
+    	try {
 			ObjectInputStream objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
-			System.out.println("succesfully received an answer!");
+			
 			obj = objectinputstream.readObject();
-			if (obj instanceof Challenge) {
-				Challenge challengeFromSC = (Challenge) obj;
-				mainController.addToDataLog("Succesfully received challenge");
-				// recreate session key, respond to challenge
+			System.out.println("OBJECT RECEIVED");
+			if(obj instanceof Challenge) {
+				Challenge challengeFromSC = (Challenge)obj;
+				mainController.addToDataLog("Succesfully received challenge" );
+				System.out.println("CHALLENGE RECEIVED");
+				//recreate session key, respond to challenge
 				recreateSessionKey(challengeFromSC);
 				notify();
-			} else if (obj instanceof String) {
+			}
+			else if( obj instanceof String) {
 				// STEP 8
-				String answer = (String) obj;
-				System.out.println("Got string" + answer);
-				mainController.addToDataLog("Succesfully received: " + answer);
-			} else if (obj instanceof MessageToAuthCard) {
+				String answer = (String)obj;
+				System.out.println("STRING RECEIVEC, "+answer);
+				mainController.addToDataLog("Succesfully received: " +answer);
+			}
+			else if(obj instanceof MessageToAuthCard) {
 				System.out.println("MESSTOAUTHCARD RECEIVED");
 				authenticateCard((MessageToAuthCard) obj);
-			} else if (obj instanceof byte[]) {
-				decryptAndShowData((byte[]) obj);
-			} else {
-				System.out.println("UNKNOW OBJECT received " + obj);
 			}
-
+			else if(obj instanceof byte[]) {
+				decryptAndShowData((byte[]) obj); 
+			}
+			else {
+				System.out.println("UNKNOW OBJECT received "+ obj);
+			}
 			
-
-		} catch (Exception e) {
+			System.out.println("succesfully received an answer!");
+			
+    	}catch (Exception e) {
 			System.out.println(e);
 		}
-	}
+    }
 
+		private void decryptAndShowData(byte[] encryptedData) {
+			//decrypt and show in log
+			try {
+				System.out.println("Start decrypting from received data");
+				Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
+				aesCipher.init(Cipher.DECRYPT_MODE, symKey, ivSpec);
+				byte [] cropped = new byte[encryptedData.length - 2];
+				cropped = Arrays.copyOfRange(encryptedData, 2, cropped.length);
+				cropped = padding(cropped);
+				System.out.println("the length is: "+ cropped.length);
+
+				byte[] data = aesCipher.doFinal(cropped);
+				String str = new String(data, StandardCharsets.UTF_8);
+				mainController.addToDataLog("Received data from card: "+ str );
+				System.out.println("data is: " + str);
+				System.out.println("Succesfully decrypted");
+			} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchPaddingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalBlockSizeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (BadPaddingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		
 	// ------------------------------------
 	// ------- UTILITY FUNCTIONS ----------
 	// ------------------------------------
@@ -464,12 +462,12 @@ public class ServiceProviderMain extends Application {
 		}
 		return str;
 	}
-
-	private byte[] padding(byte[] data) {
-		if (data.length % 16 != 0) {
-			short length = (short) (data.length + 16 - data.length % 16);
-			byte[] paddedData = new byte[length];
-			paddedData = Arrays.copyOfRange(data, 0, data.length - 1);
+	
+	private byte [] padding(byte[] data) {
+		if(data.length %16 != 0) {
+			short length = (short) (data.length + 16 - data.length %16);
+			byte [] paddedData = new byte[length];
+			paddedData = Arrays.copyOfRange(data, 0, data.length-1);
 			return paddedData;
 		}
 		return data;
@@ -481,13 +479,13 @@ public class ServiceProviderMain extends Application {
 			str += (int) b + ", ";
 		return str;
 	}
-
+	
 	public static byte[] addOne_Bad(byte[] A) {
-		short lastPosition = (short) (A.length - 1);
-		// Looping from right to left
-		A[lastPosition] += 1;
-
-		return A;
+	    short lastPosition = (short)(A.length - 1); 
+	    // Looping from right to left
+	    A[lastPosition] += 1;
+	    
+	    return A;         
 	}
 
 }

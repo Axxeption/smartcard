@@ -2,6 +2,7 @@ package be.msec.client;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import be.msec.client.MiddlewareMain;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -55,4 +56,7 @@ public class MiddlewareController  {
 		outputLabel.setText(msg);
 	}
 	
+	public void askName(ActionEvent event) {
+		main.askName();
+	}
 }

@@ -202,6 +202,7 @@ public class CAService {
 		URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\public.key");
 
 //		URL d = CAService.class.getClassLoader().getResource("./key/public.key");
+
 		File filePublicKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePublicKey);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];

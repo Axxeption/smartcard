@@ -83,31 +83,19 @@ public class MainServiceController extends Controller {
     private void generateSPs() {
     	ArrayList<ServiceProvider> SPs = new ArrayList<>();
     	//the bigger the maxRights the more they can ask
-    	ServiceProvider napoleonGames = new ServiceProvider("Napoleon Games", ServiceProviderType.OWN, 2);
-    	ServiceProvider unibet = new ServiceProvider("Unibet", ServiceProviderType.OWN, 2);
-    	ServiceProvider youtube = new ServiceProvider("YouTube", ServiceProviderType.DEFAULT, 1);
-    	ServiceProvider kinepolis = new ServiceProvider("Kinepolis", ServiceProviderType.DEFAULT, 1);
+    	ServiceProvider napoleonGames = new ServiceProvider("napoleonGames", ServiceProviderType.OWN, 2);
+    	ServiceProvider defaultSP = new ServiceProvider("default", ServiceProviderType.DEFAULT, 1);
     	ServiceProvider facebook = new ServiceProvider("Facebook", ServiceProviderType.SOCNET,3);
-    	ServiceProvider twitter = new ServiceProvider("Twitter", ServiceProviderType.SOCNET,3);
     	ServiceProvider governmentSP = new ServiceProvider("Belgium", ServiceProviderType.GOVERNMENT,4);
-    	ServiceProvider USA = new ServiceProvider("USA", ServiceProviderType.GOVERNMENT,4);
     	
     	services.add(napoleonGames);
-    	services.add(unibet);
-    	services.add(youtube);
-    	services.add(kinepolis);
-    	services.add(twitter);
+    	services.add(defaultSP);
     	services.add(governmentSP);
     	services.add(facebook);
-    	services.add(USA);
     	SPs.add(napoleonGames);
-    	SPs.add(unibet);
-    	SPs.add(youtube);
-    	SPs.add(kinepolis);
+    	SPs.add(defaultSP);
     	SPs.add(governmentSP);
-    	SPs.add(USA);
     	SPs.add(facebook);
-    	SPs.add(twitter);
     	
     	spMain.setServiceProviders(SPs);
     }
