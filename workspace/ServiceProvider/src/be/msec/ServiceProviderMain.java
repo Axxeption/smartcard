@@ -275,6 +275,7 @@ public class ServiceProviderMain extends Application {
     }
     
     public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
+    	long startime = (int) System.currentTimeMillis();
     	// STEP 1
     	// Do Authentication
     	if(lastUsedSP != selectedServiceProvider) {
@@ -283,6 +284,10 @@ public class ServiceProviderMain extends Application {
 	    	// STEP 4
 	    	//start the authentication of the card (step 3)
 	    	authenticateCard();
+	    	
+	    	long stoptim = (int) System.currentTimeMillis();
+	    	
+	    	System.out.println("time: " + (stoptim - startime));
     	
     	//STEP 7
     	// Get data

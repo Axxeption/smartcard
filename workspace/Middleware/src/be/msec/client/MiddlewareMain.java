@@ -108,7 +108,7 @@ public class MiddlewareMain extends Application {
 			TimeStruct signedTime = askTimeToTimestampServer();
 			if (signedTime != null) {
 				// make connection to the card (simulator) and send the bytes
-				connectToCard(false); // true => simulatedconnection
+				connectToCard(true); // true => simulatedconnection
 				sendTimeToCard(signedTime);
 			}
 		}

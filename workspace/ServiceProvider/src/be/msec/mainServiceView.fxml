@@ -48,7 +48,7 @@
                         </HBox>
                         <HBox alignment="TOP_CENTER" spacing="20.0">
                            <children>
-                              <Button mnemonicParsing="false" onAction="#getDataHealth" text="Health data" />
+                              <Button mnemonicParsing="false" onAction="#getDataSocial" text="Social data" />
                               <Button mnemonicParsing="false" onAction="#getDataBasic" text="basic data" />
                            </children>
                         </HBox>

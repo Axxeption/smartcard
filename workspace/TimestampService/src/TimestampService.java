@@ -70,7 +70,7 @@ public class TimestampService {
 				PrivateKey privateKeyGovernment = loadPrivateKeyGovernment();
 	
 				// Get publickey and cerificate form Government certificate file
-				FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"/key/government512.cer"); // \\TimestampService\\government512.cer
+				FileInputStream fin = new FileInputStream(System.getProperty("user.dir") +"\\government512.cer"); // \\TimestampService\\government512.cer
 				CertificateFactory f = CertificateFactory.getInstance("X.509");
 				X509Certificate certificate = (X509Certificate)f.generateCertificate(fin);
 				RSAPublicKey publicKeyGovernment = (RSAPublicKey) certificate.getPublicKey();
@@ -152,7 +152,7 @@ public class TimestampService {
 	private static PrivateKey loadPrivateKeyGovernment() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
 		// get the key from a jks file (once generated with portecle)
 		KeyStore keyStore = KeyStore.getInstance("JKS");
-		String fileName = System.getProperty("user.dir") + "/key/government.jks"; // \\TimestampService\\government.jks
+		String fileName = System.getProperty("user.dir") + "\\government.jks"; // \\TimestampService\\government.jks
 		FileInputStream fis = new FileInputStream(fileName);
 		keyStore.load(fis, "jonasaxel".toCharArray());
 		fis.close();
