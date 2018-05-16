@@ -89,7 +89,7 @@ public class TimestampService {
 				byte[] signedDate = signData(privateKeyGovernment,timeInBytes);
 
 				// just to check if it works
-				System.out.println("Validated: " + validateSignature(publicKeyGovernment, signedDate));
+				//System.out.println("Validated: " + validateSignature(publicKeyGovernment, signedDate));
 				
 				// bundle time and signature in struct and send back.
 				TimeStruct timeinfostruct = new TimeStruct(signedDate, timeInBytes);
@@ -98,7 +98,7 @@ public class TimestampService {
 			}
 
 			// everything is ready
-			System.out.println("Bye!");
+			//System.out.println("Bye!");
 
 		} catch (KeyStoreException e) {
 			// TODO Auto-generated catch block
