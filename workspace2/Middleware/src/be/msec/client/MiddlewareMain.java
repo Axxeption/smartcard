@@ -241,7 +241,7 @@ public class MiddlewareMain extends Application {
 		try {
 			// Load root layout from fxml file.
 			FXMLLoader loader = new FXMLLoader();
-			loader.setLocation(MiddlewareMain.class.getResource("RootMenu.fxml"));
+			loader.setLocation(MiddlewareMain.class.getResource("/RootMenu.fxml"));
 			rootLayout = (BorderPane) loader.load();
 
 			// Show the scene containing the root layout.
@@ -263,7 +263,7 @@ public class MiddlewareMain extends Application {
 
 	private void initPinLoginView() throws IOException {
 		FXMLLoader loader = new FXMLLoader();
-		loader.setLocation(MiddlewareMain.class.getResource("pinLoginView.fxml"));
+		loader.setLocation(MiddlewareMain.class.getResource("/pinLoginView.fxml"));
 		System.out.println("Loading Main login Page");
 		AnchorPane loginView = (AnchorPane) loader.load();
 

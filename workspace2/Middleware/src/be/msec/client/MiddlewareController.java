@@ -18,8 +18,6 @@ public class MiddlewareController  {
 	@FXML
 	private TextField pin_textfield;
 	@FXML
-	private TextArea logTextArea;
-	@FXML
 	private Label outputLabel;
 	
 	public MiddlewareController() {
@@ -31,7 +29,6 @@ public class MiddlewareController  {
 	
 	public void validatePin(){
 		byte[] pinInBytes = pin_textfield.getText().getBytes();
-		log("pin in hex:" + main.bytesToHex(pinInBytes));
 		String message;
 		try {
 			if(main.loginWithPin(pinInBytes)) {
@@ -45,12 +42,8 @@ public class MiddlewareController  {
 			
 		}
 		outputLabel.setText(message);
-		log(message);
 	}
 	
-	public void log(String msg) {
-		logTextArea.setText(logTextArea.getText()+"\n"+msg);
-	}
 	
 	public void setMainMessage(String msg) {
 		outputLabel.setText(msg);

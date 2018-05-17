@@ -223,11 +223,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private short maxRights;
 
 	private IdentityCard() {
-		System.out.println("setup");
+		System.out.println("setup"); 
 		// max try 3 times
 		pin = new OwnerPIN(PIN_TRY_LIMIT, PIN_SIZE);
 		// pin is 1234
-		byte[] pinBytes = new byte[] { 0x32, 0x32, 0x32, 0x32};
+		byte[] pinBytes = new byte[] { 0x31, 0x32, 0x33, 0x34};
 		pin.update(pinBytes, (short) 0, PIN_SIZE);
 		// needed for the signature of a random byte array
 		privKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, keySizeInBits, false);

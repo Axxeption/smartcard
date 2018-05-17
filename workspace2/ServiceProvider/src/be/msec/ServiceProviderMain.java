@@ -72,6 +72,7 @@ public class ServiceProviderMain extends Application {
 	private ServiceProvider lastUsedSP;
 	private boolean errorAuth = false;
 	private boolean errorAuthCard = false;
+	private FXMLLoader loader;
 	
 
     /**
@@ -96,6 +97,7 @@ public class ServiceProviderMain extends Application {
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
         this.primaryStage.setTitle("Service Provider overview");
+        loader = new FXMLLoader();
         initRootLayout();
         showMainView();
         connectToMiddleWare();
@@ -318,7 +320,7 @@ public class ServiceProviderMain extends Application {
     	try {
 			serviceProviderSocket = new Socket("localhost", portSP);
 		} catch (IOException ex) {
-			//System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
+			System.out.println("CANNOT CONNECT TO MIDDLEWARE " + ex);
 		}
 		//System.out.println("Serviceprovider connected to middleware: " + serviceProviderSocket);
 
@@ -327,8 +329,7 @@ public class ServiceProviderMain extends Application {
     public void initRootLayout() {
         try {
             // Load root layout from fxml file.
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(ServiceProviderMain.class.getResource("RootMenu.fxml"));
+            loader.setLocation(ServiceProviderMain.class.getResource("/RootMenu.fxml"));
             rootLayout = (BorderPane) loader.load();
 
             // Show the scene containing the root layout.
@@ -356,9 +357,9 @@ public class ServiceProviderMain extends Application {
 
     public void showMainView() {
         try {
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(ServiceProviderMain.class.getResource("mainServiceView.fxml"));
-            System.out.println("Loading Main Page");
+        	loader = new FXMLLoader();
+            loader.setLocation(ServiceProviderMain.class.getResource("/mainServiceView.fxml"));
+            System.out.println("Rendering UI");
             AnchorPane loginView = (AnchorPane) loader.load();
             //controller initialiseren + koppelen aan mainClient
             MainServiceController controller = loader.getController();
@@ -379,12 +380,13 @@ public class ServiceProviderMain extends Application {
 			ObjectInputStream objectinputstream = new ObjectInputStream(serviceProviderSocket.getInputStream());
 			obj = objectinputstream.readObject();
 			if(obj == null) {
-				mainController.addToDataLog("Something went wrong with the authentication of the SP... ");
+				mainController.addToDataLog("Authentication of the ServiceProvider: FAILED ");
 				errorAuth = true;
 			}
 			else if(obj instanceof Challenge) {
 				Challenge challengeFromSC = (Challenge)obj;
-				mainController.addToDataLog("Succesfully received challenge and symKey from smartcard" );
+				mainController.addToDataLog("Smartcard -> challenge and symKey -> Middelware: OK" );
+				mainController.addToDataLog("Middelware -> challenge and symKey -> ServiceProvider: OK" );
 				//recreate session key, respond to challenge
 				recreateSessionKey(challengeFromSC);
 				notify();
@@ -392,7 +394,7 @@ public class ServiceProviderMain extends Application {
 			else if( obj instanceof String) {
 				// STEP 8
 				String answer = (String) obj;
-				mainController.addToDataLog("Succesfully received the data from the smartcard: " + answer);
+				mainController.addToDataLog("Smartcard -> data -> ServiceProvider: OK \nData: " + answer);
 			}
 			else if(obj instanceof MessageToAuthCard) {
 				authenticateCard((MessageToAuthCard) obj);
@@ -402,6 +404,7 @@ public class ServiceProviderMain extends Application {
 			}
 			else {
 				System.out.println("UNKNOW OBJECT received "+ obj);
+				mainController.addToDataLog("Unknow object -> ServiceProvider: NOK" );
 			}
 			
 			System.out.println("succesfully received an answer!");
@@ -424,7 +427,7 @@ public class ServiceProviderMain extends Application {
 
 				byte[] data = aesCipher.doFinal(cropped);
 				String str = new String(data, StandardCharsets.UTF_8);
-				mainController.addToDataLog("Received data from card: "+ str );
+				mainController.addToDataLog("Succesfully decrypted data: "+ str );
 				System.out.println("data is: " + str);
 				System.out.println("Succesfully decrypted");
 			} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
