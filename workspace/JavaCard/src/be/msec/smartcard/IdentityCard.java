@@ -35,7 +35,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 
 	private static final byte VALIDATE_PIN_INS = 0x22;
 	private static final byte GET_NAME_INS = 0x24;
-	private static final byte GET_SERIAL_INS = 0x26;
+	private static final byte IDENTIFICATION = 0x26;
 	private static final byte SIGN_RANDOM_BYTE = 0x27;
 	private static final byte GET_CERTIFICATE = 0x28;
 	private static final byte GET_BIGDATA = 0x29;
@@ -201,7 +201,20 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 0x68, (byte) 0x69, (byte) 0x73, (byte) 0x20, (byte) 0x64, (byte) 0x61, (byte) 0x74, (byte) 0x61,
 			(byte) 0x21 };
 	private byte[] notAuthenticate = new byte[] { (byte) 0x53, (byte) 0x6F, (byte) 0x72, (byte) 0x72, (byte) 0x79, (byte) 0x20, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x20, (byte) 0x73, (byte) 0x65, (byte) 0x72, (byte) 0x76, (byte) 0x69, (byte) 0x63, (byte) 0x65, (byte) 0x20, (byte) 0x70, (byte) 0x72, (byte) 0x6F, (byte) 0x76, (byte) 0x69, (byte) 0x64, (byte) 0x65, (byte) 0x72, (byte) 0x20, (byte) 0x77, (byte) 0x61, (byte) 0x73, (byte) 0x20, (byte) 0x6E, (byte) 0x6F, (byte) 0x74, (byte) 0x20, (byte) 0x61, (byte) 0x75, (byte) 0x74, (byte) 0x68, (byte) 0x65, (byte) 0x6E, (byte) 0x74, (byte) 0x69, (byte) 0x63, (byte) 0x61, (byte) 0x74, (byte) 0x65, (byte) 0x64, (byte) 0x21};
+	
+	private byte[] dataIdentificationSignedRRN = new byte[] {(byte) 0x78, (byte) 0x1F, (byte) 0x5E, (byte) 0xF9, (byte) 0x90, (byte) 0xBC, (byte) 0x41, (byte) 0x69, (byte) 0x81, (byte) 0x28, (byte) 0x43, (byte) 0x8C, (byte) 0xDE, (byte) 0x34, (byte) 0x37, (byte) 0x21, (byte) 0x2F, (byte) 0x77, (byte) 0x3C, (byte) 0xBD, (byte) 0x86, (byte) 0x0E, (byte) 0x5D, (byte) 0x57, (byte) 0xF1, (byte) 0x86, (byte) 0xC3, (byte) 0xEA, (byte) 0x8D, (byte) 0x6E, (byte) 0x86, (byte) 0x8A, (byte) 0xB7, (byte) 0x65, (byte) 0x3D, (byte) 0x00, (byte) 0x49, (byte) 0xE2, (byte) 0xB6, (byte) 0x58, (byte) 0x95, (byte) 0x1C, (byte) 0xCC, (byte) 0x61, (byte) 0x6B, (byte) 0xF7, (byte) 0x77, (byte) 0x97, (byte) 0xC3, (byte) 0x6F, (byte) 0x46, (byte) 0xF9, (byte) 0x6C, (byte) 0x5D, (byte) 0x33, (byte) 0x53, (byte) 0xC4, (byte) 0xE3, (byte) 0x8E, (byte) 0xCD, (byte) 0xA6, (byte) 0xF5, (byte) 0x7B, (byte) 0xF5};
 
+	private byte[] dataIdentification = new byte[] { (byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x56,
+			(byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65, (byte) 0xa, 
+			(byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69, (byte) 0x74, (byte) 0x61, (byte) 0x61, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x72, (byte) 0x61,
+			(byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x31, (byte) 0x33, (byte) 0x20, (byte) 0x38, (byte) 0x36,
+			(byte) 0x31, (byte) 0x30, (byte) 0x20, (byte) 0x4B, (byte) 0x6F, (byte) 0x72, (byte) 0x74, (byte) 0x65,
+			(byte) 0x6D, (byte) 0x61, (byte) 0x72, (byte) 0x6B, (byte) 0xa,
+			(byte) 0x32, (byte) 0x31, (byte) 0x2F, (byte) 0x30, (byte) 0x32,
+			(byte) 0x2F, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36, (byte) 0xa,
+			(byte) 0x32, (byte) 0x32, (byte) 0xa,
+			(byte) 0x6d, (byte) 0x61, (byte) 0x6c, (byte) 0x65};
+	
 	byte[] K_u = new byte[] { (byte) 1, (byte) 2, (byte) 3 }; // id of the card
 	private InitializedMessageDigest sha1;
 	private byte[] serial = new byte[] { (byte) 0x4A, (byte) 0x61, (byte) 0x6e };
@@ -277,6 +290,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			ISOException.throwIt(ISO7816.SW_CLA_NOT_SUPPORTED);
 		// A switch statement is used to select a method depending on the instruction
 		switch (buffer[ISO7816.OFFSET_INS]) {
+		case IDENTIFICATION:
+			identification(apdu);
+			break;
 		case VALIDATE_PIN_INS:
 			validatePIN(apdu);
 			break;
@@ -298,6 +314,13 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
+	}
+	
+	private void identification(APDU apdu) {
+		byte[] toSend = new byte [dataIdentification.length + dataIdentificationSignedRRN.length];
+		Util.arrayCopy(dataIdentification, (short) 0, toSend, (short) 0, (short) dataIdentification.length);
+		Util.arrayCopy(dataIdentificationSignedRRN, (short) 0, toSend, (short) dataIdentification.length, (short) dataIdentificationSignedRRN.length);
+		sendBigFile(apdu, toSend);
 	}
 
 	/**
