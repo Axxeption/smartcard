@@ -340,6 +340,9 @@ public class MiddlewareMain extends Application {
 		//er wordt nog een vraagteken teveel geprint maar die is afkomstig van het apdu formaat de data op zich op de sc is oke
 		
 		System.out.println("de naam is: " + str);
+		System.out.println();
+		
+		//TODO checken of signature klopt die werd toegevoegd aan vrijgegeven info
 		
 	}
 	public Boolean loginWithPin(byte[] pin) throws Exception {

@@ -43,7 +43,7 @@ public class SignedCertificate implements Serializable{
 			sig.initSign(privateKey);
 			sig.update(data);
 			signatureBytes = sig.sign();
-			//System.out.println("signed bytes: "+bytesToDec(signatureBytes));
+			System.out.println("signed bytes: "+bytesToDec(signatureBytes));
 		} catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
