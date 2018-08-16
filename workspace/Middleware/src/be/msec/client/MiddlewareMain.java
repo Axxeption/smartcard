@@ -106,8 +106,10 @@ public class MiddlewareMain extends Application {
 		this.primaryStage.setTitle("Card reader UI");
 		//launchPinInputScreen();
 		try {
+			
+			 connectServiceProvider();
 			 connectToCard(true);
-			 identification();
+			 //identification();
 			//askName();
 
 			// checkChallenge();
@@ -324,6 +326,38 @@ public class MiddlewareMain extends Application {
 			System.out.println("ERROR IN MAKING CONNECTION WITH SIMULATOR: " + e);
 		}
 	}
+	
+	// -------------------------------------------------
+		// ------- SERVICE PROVIDER COMMUNICATION ----------
+		// -------------------------------------------------
+		public void connectServiceProvider() {
+			try {
+				socket = new ServerSocket(portSP);
+				System.out.println("Serversocket is listening");
+				middlewareSocket = socket.accept();
+				System.out.println("Socket connection accepted");
+
+				// start thread to listen for commands from ServiceProvider client
+				Thread listenerThread = new ListenForServiceProviderCommandThread();
+				listenerThread.start();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		private void sendToServiceProvider(Object message) {
+			ObjectOutputStream out;
+			try {
+				System.out.println("SENDING TO SP");
+				out = new ObjectOutputStream(middlewareSocket.getOutputStream());
+				out.writeObject(message);
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
 	// ------------------------------------------
 	// ------- JAVA CARD COMMUNICATION ----------
@@ -342,9 +376,13 @@ public class MiddlewareMain extends Application {
 		System.out.println("de naam is: " + str);
 		System.out.println();
 		
-		//TODO checken of signature klopt die werd toegevoegd aan vrijgegeven info
-		
+		IdInfo info = new IdInfo(str);
+
+		//info terugzenden naar de serviceprovider
+		sendToServiceProvider(info);
+		System.out.println("sent to SP identity info");
 	}
+	
 	public Boolean loginWithPin(byte[] pin) throws Exception {
 		if (pin.length != 4) { // limit length of the pin to prevent dangerous input
 			throw new Exception("Pin has to be 4 characters");
@@ -422,6 +460,60 @@ public class MiddlewareMain extends Application {
 			byte[] data = getDataFromCard(query);
 		}
 	}
+	
+	class ListenForServiceProviderCommandThread extends Thread {
+		public void run() {
+			ObjectInputStream objectinputstream = null;
+			try {
+				while (true) {
+					System.out.println("Listening to service provider...");
+					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
+					ServiceProviderAction receivedObject = (ServiceProviderAction) objectinputstream.readObject();
+					// System.out.println("received: " + receivedObject.getAction().getCommand());
+
+					switch (receivedObject.getAction().getCommand()) {
+//					case AUTH_SP:
+//						System.out.println("AUTH SP COMMAND");
+//						// sendToServiceProvider("AUTH command received");
+//						authenticateCertificate(receivedObject);
+//
+//						break;
+//					case GET_DATA:
+//						System.out.println("GET DATA COMMAND");
+//						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
+//						pinWaitingThread.start();
+//
+//						break;
+//					case VERIFY_CHALLENGE:
+//						System.out.println("VERIFY CHALLENGE COMMAND");
+//						verifyChallenge(receivedObject);
+//						break;
+//					case AUTH_CARD:
+//						System.out.println("AuthenticateCard COMMAND");
+//						authenticateCardSendChallenge(receivedObject);
+//						break;
+					case IDENTIFICATION:
+						System.out.println("Digital Identification COMMAND");
+						try{
+							identification();
+						}catch(Exception e) {
+							
+						}
+						//TODO terugzenden naar serviceprovider
+						break;
+						
+					default:
+						sendToServiceProvider("Command doesn't exists.");
+					}
+
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	// ------------------------------------
 	// ------- UTILITY FUNCTIONS ----------
 	// ------------------------------------

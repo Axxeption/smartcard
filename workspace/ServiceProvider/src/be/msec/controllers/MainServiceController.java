@@ -83,32 +83,36 @@ public class MainServiceController extends Controller {
     private void generateSPs() {
     	ArrayList<ServiceProvider> SPs = new ArrayList<>();
     	//the bigger the maxRights the more they can ask
-      	ServiceProvider napoleonGames = new ServiceProvider("Napoleon Games", ServiceProviderType.OWN, 2);
-    	ServiceProvider unibet = new ServiceProvider("Unibet", ServiceProviderType.OWN, 2);
-    	ServiceProvider youtube = new ServiceProvider("YouTube", ServiceProviderType.DEFAULT, 1);
-    	ServiceProvider kinepolis = new ServiceProvider("Kinepolis", ServiceProviderType.DEFAULT, 1);
-    	ServiceProvider facebook = new ServiceProvider("Facebook", ServiceProviderType.SOCNET,3);
-    	ServiceProvider twitter = new ServiceProvider("Twitter", ServiceProviderType.SOCNET,3);
-    	ServiceProvider governmentSP = new ServiceProvider("Belgium", ServiceProviderType.GOVERNMENT,4);
-    	ServiceProvider USA = new ServiceProvider("USA", ServiceProviderType.GOVERNMENT,4);
+//      	ServiceProvider napoleonGames = new ServiceProvider("Napoleon Games", ServiceProviderType.OWN, 2);
+//    	ServiceProvider unibet = new ServiceProvider("Unibet", ServiceProviderType.OWN, 2);
+//    	ServiceProvider youtube = new ServiceProvider("YouTube", ServiceProviderType.DEFAULT, 1);
+//    	ServiceProvider kinepolis = new ServiceProvider("Kinepolis", ServiceProviderType.DEFAULT, 1);
+//    	ServiceProvider facebook = new ServiceProvider("Facebook", ServiceProviderType.SOCNET,3);
+//    	ServiceProvider twitter = new ServiceProvider("Twitter", ServiceProviderType.SOCNET,3);
+//    	ServiceProvider governmentSP = new ServiceProvider("Belgium", ServiceProviderType.GOVERNMENT,4);
+//    	ServiceProvider USA = new ServiceProvider("USA", ServiceProviderType.GOVERNMENT,4);
     	
-    	services.add(napoleonGames);
-    	services.add(unibet);
-    	services.add(youtube);
-    	services.add(kinepolis);
-    	services.add(twitter);
-    	services.add(facebook);
-    	services.add(governmentSP);
-    	services.add(USA);
-
-    	SPs.add(napoleonGames);
-    	SPs.add(unibet);
-    	SPs.add(youtube);
-    	SPs.add(kinepolis);
-    	SPs.add(governmentSP);
-    	SPs.add(USA);
-    	SPs.add(facebook);
-    	SPs.add(twitter);
+//    	services.add(napoleonGames);
+//    	services.add(unibet);
+//    	services.add(youtube);
+//    	services.add(kinepolis);
+//    	services.add(twitter);
+//    	services.add(facebook);
+//    	services.add(governmentSP);
+//    	services.add(USA);
+//
+//    	SPs.add(napoleonGames);
+//    	SPs.add(unibet);
+//    	SPs.add(youtube);
+//    	SPs.add(kinepolis);
+//    	SPs.add(governmentSP);
+//    	SPs.add(USA);
+//    	SPs.add(facebook);
+//    	SPs.add(twitter);
+    	
+    	ServiceProvider KBCMobile = new ServiceProvider("KBC Mobile Banking", ServiceProviderType.DEFAULT, 4);
+    	services.add(KBCMobile);
+    	SPs.add(KBCMobile);
     	
     	spMain.setServiceProviders(SPs);
     }
@@ -134,10 +138,19 @@ public class MainServiceController extends Controller {
     public void getData_own() {
     	getData(2);
     }
+    
+    public void getData_identification() {
+    	addToDataLog("*****   Digital Identification    *****");
+    	//TODO send request for identity data
+    	if( selectedServiceProvider == null) {
+    		selectedServiceProvider = services.get(0); //want voor identification maakt toch niet uit welke serviceprovider om data vraagt
+    	}
+    	getData(5);
+    }
     	
     private void getData(int query){
         if(selectedServiceProvider != null){	
-            addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
+            //addToDataLog(selectedServiceProvider.toString() + "-> get data ; type = " + selectedServiceProvider.getInfo().getType());
             addToDataLog("Sending request for data: " + query);
             spMain.submitDataQuery(selectedServiceProvider, query);
 

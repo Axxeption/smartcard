@@ -25,7 +25,7 @@ public class ServiceProvider {
 	        privateKey = (RSAPrivateKey) keyPair.getPrivate();
 	        //TODO choose maxRight for each serviceprovider 4 is hoogste (=gov), 1 laagste (=default)
 	        serviceProviderInfo = new CertificateServiceProvider(keyPair.getPublic(), name, (short) maxRight);
-	        letCASignCertificate();
+	        //letCASignCertificate();
     }
 
     private KeyPair generateKey() {

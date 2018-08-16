@@ -2,6 +2,7 @@ package be.msec;
 import be.msec.client.CAService;
 import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
+import be.msec.client.IdInfo;
 import be.msec.client.MessageToAuthCard;
 import be.msec.client.SignedCertificate;
 import be.msec.client.TimeInfoStruct;
@@ -107,39 +108,47 @@ public class ServiceProviderMain extends Application {
     }
     
     public void submitDataQuery(ServiceProvider selectedServiceProvider, int query) {
-    	mainController.addToDataLog("---- 2. SP was chosen --> start authenticateSP -----");
-    	// STEP 1
-    	// Do Authentication
-    	if(lastUsedSP != selectedServiceProvider) {
-    		mainController.addToDataLog("First time with this SP --> need for authenticate");
-	    	authenticateServiceProvider(selectedServiceProvider);
-	    
-	    	// STEP 4
-	    	//start the authentication of the card (step 3)
-	    	if(!errorAuth) {
-	    	mainController.addToDataLog("---- 3. Authenticate the card to the SP -----");
-	    	authenticateCard();
-    	
-    	//STEP 7
-    	// Get data
-    	mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
-    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
-        request.setServiceProvider(selectedServiceProvider.getName());
-        request.setDataQuery((short) query);
-    	sendCommandToMiddleware(request,true);
-    	lastUsedSP = selectedServiceProvider;
-	    	}else {
-	    		mainController.addToDataLog("There was an error in the authentication of the serviceprovider");
-				mainController.addToDataLog("Cannot give the data!");
-	    	}
-    	}else {
-    		mainController.addToDataLog("Skipping authentication phase because already logged in to this service provider!");
-    		mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
-        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+    	//Digitale identificatie
+    	if(query == 5) {
+    		ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Identification",CallableMiddelwareMethodes.IDENTIFICATION));
             request.setServiceProvider(selectedServiceProvider.getName());
             request.setDataQuery((short) query);
         	sendCommandToMiddleware(request,true);
     	}
+    	
+//    	mainController.addToDataLog("---- 2. SP was chosen --> start authenticateSP -----");
+//    	// STEP 1
+//    	// Do Authentication
+//    	if(lastUsedSP != selectedServiceProvider) {
+//    		mainController.addToDataLog("First time with this SP --> need for authenticate");
+//	    	authenticateServiceProvider(selectedServiceProvider);
+//	    
+//	    	// STEP 4
+//	    	//start the authentication of the card (step 3)
+//	    	if(!errorAuth) {
+//	    	mainController.addToDataLog("---- 3. Authenticate the card to the SP -----");
+//	    	authenticateCard();
+//    	
+//    	//STEP 7
+//    	// Get data
+//    	mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
+//    	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+//        request.setServiceProvider(selectedServiceProvider.getName());
+//        request.setDataQuery((short) query);
+//    	sendCommandToMiddleware(request,true);
+//    	lastUsedSP = selectedServiceProvider;
+//	    	}else {
+//	    		mainController.addToDataLog("There was an error in the authentication of the serviceprovider");
+//				mainController.addToDataLog("Cannot give the data!");
+//	    	}
+//    	}else {
+//    		mainController.addToDataLog("Skipping authentication phase because already logged in to this service provider!");
+//    		mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
+//        	ServiceProviderAction request = new ServiceProviderAction(new ServiceAction("Get Data",CallableMiddelwareMethodes.GET_DATA), selectedServiceProvider.getCertificate());
+//            request.setServiceProvider(selectedServiceProvider.getName());
+//            request.setDataQuery((short) query);
+//        	sendCommandToMiddleware(request,true);
+//    	}
     }
     
 
@@ -388,6 +397,11 @@ public class ServiceProviderMain extends Application {
 				//recreate session key, respond to challenge
 				recreateSessionKey(challengeFromSC);
 				notify();
+			}
+			else if(obj instanceof IdInfo) {
+				//digitale identificatie
+				IdInfo info = (IdInfo) obj;
+				mainController.addToDataLog("received id info from smartcard: " + info.getInfo() );
 			}
 			else if( obj instanceof String) {
 				// STEP 8
