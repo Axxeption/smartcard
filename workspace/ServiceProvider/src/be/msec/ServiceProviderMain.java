@@ -70,9 +70,6 @@ public class ServiceProviderMain extends Application {
 	static final int portSP = 8003;
 	private byte[] challengeToAuthCard;
 	private ServiceProvider lastUsedSP;
-	private boolean errorAuth = false;
-	private boolean errorAuthCard = false;
-	
 
     /**
      * Constructor
@@ -116,7 +113,6 @@ public class ServiceProviderMain extends Application {
 	    
 	    	// STEP 4
 	    	//start the authentication of the card (step 3)
-	    	if(!errorAuth) {
 	    	mainController.addToDataLog("---- 3. Authenticate the card to the SP -----");
 	    	authenticateCard();
     	
@@ -128,10 +124,6 @@ public class ServiceProviderMain extends Application {
         request.setDataQuery((short) query);
     	sendCommandToMiddleware(request,true);
     	lastUsedSP = selectedServiceProvider;
-	    	}else {
-	    		mainController.addToDataLog("There was an error in the authentication of the serviceprovider");
-				mainController.addToDataLog("Cannot give the data!");
-	    	}
     	}else {
     		mainController.addToDataLog("Skipping authentication phase because already logged in to this service provider!");
     		mainController.addToDataLog("---- 4. ask to release the attributes from the smartcard ---- ");
@@ -276,7 +268,6 @@ public class ServiceProviderMain extends Application {
 			if(!signer.verify(signature)) {
 				mainController.addToDataLog("The card has a valid common certificate!");
 			} else {
-				errorAuthCard = true;
 				mainController.addToDataLog("The card dos not have a valid common certificate!");
 				return;
 			}
@@ -300,7 +291,6 @@ public class ServiceProviderMain extends Application {
 		    if(!signer.verify(Arrays.copyOfRange(message, 156, 220))) {
 				mainController.addToDataLog("There is a valid challenge send by the card.");
 			} else {
-				errorAuthCard = true;
 				mainController.addToDataLog("There is no valid challenge send by the card.");
 				return;
 			}
@@ -380,7 +370,6 @@ public class ServiceProviderMain extends Application {
 			obj = objectinputstream.readObject();
 			if(obj == null) {
 				mainController.addToDataLog("Something went wrong with the authentication of the SP... ");
-				errorAuth = true;
 			}
 			else if(obj instanceof Challenge) {
 				Challenge challengeFromSC = (Challenge)obj;
