@@ -43,6 +43,8 @@
                                           <Button fx:id="getData2" layoutX="9.0" layoutY="206.0" mnemonicParsing="false" onAction="#getData_socnet" prefHeight="31.0" prefWidth="142.0" text="Get social data" />
                                           <Button fx:id="getData3" layoutX="9.0" layoutY="175.0" mnemonicParsing="false" onAction="#getData_egov" prefHeight="31.0" prefWidth="142.0" text="Get all data" />
                                           <Button fx:id="getData31" layoutX="5.0" layoutY="7.0" mnemonicParsing="false" onAction="#getData_identification" prefHeight="31.0" prefWidth="142.0" text="Digital identification" />
+                                          <Button fx:id="authenticateBtn" layoutX="5.0" layoutY="55.0" mnemonicParsing="false" onAction="#authenticateToSP" prefHeight="31.0" prefWidth="142.0" text="Authenticate to SP" />
+                                          <Button fx:id="signBtn" layoutX="5.0" layoutY="101.0" mnemonicParsing="false" onAction="#signDocument" prefHeight="31.0" prefWidth="142.0" text="Digital Signature" />
                                        </children>
                                     </AnchorPane>
                                  </children>

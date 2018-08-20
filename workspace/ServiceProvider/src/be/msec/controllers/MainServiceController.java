@@ -139,13 +139,25 @@ public class MainServiceController extends Controller {
     	getData(2);
     }
     
+    public void authenticateToSP() {
+    	addToDataLog("*****		Authenticate to SP		*****");
+    	getData(6);
+    }
+    
     public void getData_identification() {
-    	addToDataLog("*****   Digital Identification    *****");
-    	//TODO send request for identity data
+    	addToDataLog("*****		Digital Identification		*****");
     	if( selectedServiceProvider == null) {
     		selectedServiceProvider = services.get(0); //want voor identification maakt toch niet uit welke serviceprovider om data vraagt
     	}
     	getData(5);
+    }
+    
+    public void signDocument() {
+    	addToDataLog("*****    Digitally sign a document    *****");
+    	if( selectedServiceProvider == null) {
+    		selectedServiceProvider = services.get(0); //SP doet er niet toe
+    	}
+    	getData(7);
     }
     	
     private void getData(int query){
@@ -155,7 +167,7 @@ public class MainServiceController extends Controller {
             spMain.submitDataQuery(selectedServiceProvider, query);
 
         }else {	
-        	addToDataLog("Select a ServiceProvider and an action!");
+        	alertDialog("Select a ServiceProvider and an action!" );
         }
     }
     

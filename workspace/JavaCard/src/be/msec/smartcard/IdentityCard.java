@@ -44,6 +44,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	private static final byte VERIFY_CHALLENGE = 0x29;
 	private static final byte AUTHENTICATE_CARD = 0x30;
 	private static final byte RELEASE_ATTRIBUTE = 0x31;
+	private static final byte AUTH_TO_SP = 0x32;
+	private static final byte SIGN_HASH  = 0x33;
+
+
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
 
@@ -311,6 +315,12 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		case RELEASE_ATTRIBUTE:
 			releaseAttribute(apdu);
 			break;
+		case AUTH_TO_SP:
+			authenticateToSP(apdu);
+			break;
+		case SIGN_HASH:
+			signHash(apdu);
+			break;
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
@@ -425,7 +435,88 @@ public class IdentityCard extends Applet implements ExtendedLength {
 		}
 		return data;
 	}
+	
+	/***
+	 * sign the hash received from MW
+	 * TODO!!! hier gebruik ik opnieuw commoncert omdak nie weet hoe ik nieuwe cert/keypairs moet aanmaken
+	 * maar int echt is er een apart cert voor auth en voor signen, dus da moeten we sws nog in orde brengen
+	 */
+	private void signHash(APDU apdu) {
+		try {
+			//sign de hash en stuur terug naar de MW
+			byte[] hashToSign = receiveBigData(apdu);
+			//prepare signature
+			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+			RSAPrivateKey privateKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short) 512, false);
+			privateKey.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+		    privateKey.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			signature.init(privateKey, Signature.MODE_SIGN);
+			
+			//sign hash
+			byte[] outputBuffer = new byte[100];
+			short signatureLength = signature.sign(hashToSign, (short) 0, (short) hashToSign.length, outputBuffer,(short) 0);
+			byte [] signedHash = new byte[signatureLength];
+			Util.arrayCopy(outputBuffer, (short) 0, signedHash, (short) 0, signatureLength);
+			
+			//message samenstellen om terug te sturen naar MW, bestaande uit certificaat en getekende hash
+			byte[] message = new byte[commonCertificate.length + signedHash.length];
+			Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
+			Util.arrayCopy(signedHash, (short) 0, message, (short) commonCertificate.length, (short) signedHash.length);
+			
+			sendBigFile(apdu, message);			
+		}
+		catch(Exception e) {
+			ISOException.throwIt(ENCRYPT_ERROR);
+		}
+	}
+	
+	/**
+	 * authentication to SP
+	 * generate response to the challenge the SP sent 
+	 */
+	private void authenticateToSP(APDU apdu) {
+		
+		try {
+			byte[] challenge = receiveBigData(apdu);
+			byte[] response = new byte[16];
+			
+			byte[] authBytes = "AUTH".getBytes();
+			byte[] bytesToSign = new byte[response.length + authBytes.length];
+			
+			Util.arrayCopy(response, (short) 0, bytesToSign, (short) 0, (short) response.length);
+			Util.arrayCopy(authBytes, (short) 0, bytesToSign, (short) 15, (short) authBytes.length);
+			
+			// prepare signature
+			// nu gwn efkes voort gemak keypairs gebruiken van common cert van vorig project
+			// keypair van common cert is dus hier voor auth van citizen
+			// TODO renamen naar andere naam zodat duidelijk dat dit gebruikt wordt voor auth
+			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+			RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short) 512, false);
+			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
+		    privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			signature.init(privk, Signature.MODE_SIGN);
+			
+			//sign response
+			byte[] outputBuffer = new byte[100];
+			short sigLength = signature.sign(bytesToSign, (short) 0, (short) bytesToSign.length, outputBuffer,(short) 0);
+			byte[] sig = new byte[sigLength];
+			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
 
+			byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4]; //waarom plus 4??
+			
+			Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
+			Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length, (short) bytesToSign.length);
+			Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length), (short) sig.length);
+			
+			sendBigFile(apdu, message);
+			
+			
+		} catch (Exception e) {
+			ISOException.throwIt(ENCRYPT_ERROR);
+		}
+	}
+	
+	
 	/**
 	 * This method authenticates the card for the service provider.
 	 * 

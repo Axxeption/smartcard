@@ -1,10 +1,12 @@
 package be.msec;
+import be.msec.client.AuthenticateToSPResponse;
 import be.msec.client.CAService;
 import be.msec.client.CallableMiddelwareMethodes;
 import be.msec.client.Challenge;
 import be.msec.client.IdInfo;
 import be.msec.client.MessageToAuthCard;
 import be.msec.client.SignedCertificate;
+import be.msec.client.SignedDocumentResponse;
 import be.msec.client.TimeInfoStruct;
 import be.msec.controllers.MainServiceController;
 import be.msec.controllers.RootMenuController;
@@ -27,12 +29,15 @@ import java.net.Socket;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -56,6 +61,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.rmi.CORBA.Util;
+import javax.xml.bind.DatatypeConverter;
 
 public class ServiceProviderMain extends Application {
 
@@ -70,6 +76,7 @@ public class ServiceProviderMain extends Application {
 	private IvParameterSpec ivSpec;
 	static final int portSP = 8003;
 	private byte[] challengeToAuthCard;
+	private byte[] challengeToMW;
 	private ServiceProvider lastUsedSP;
 	private boolean errorAuth = false;
 	private boolean errorAuthCard = false;
@@ -115,6 +122,21 @@ public class ServiceProviderMain extends Application {
             request.setDataQuery((short) query);
         	sendCommandToMiddleware(request,true);
     	}
+    	
+    	//Authenticatie
+    	else if(query == 6) {
+    		//1. vraag PIN voor confirmation
+    		confirmRequest();
+    		//2. stuur challenge naar gebruiker
+    		authenticateToSP();
+    	}
+    	
+    	else if(query == 7) {
+    		//1. stuur command naar MW voor digital sign init
+    		initSignDocument();
+    	}
+    	
+    	 
     	
 //    	mainController.addToDataLog("---- 2. SP was chosen --> start authenticateSP -----");
 //    	// STEP 1
@@ -265,6 +287,36 @@ public class ServiceProviderMain extends Application {
     	
     }
     
+    public void initSignDocument() {
+    	mainController.addToDataLog("Sign doc command sent to MW");
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Init digital signing", CallableMiddelwareMethodes.INIT_SIGN));
+    	sendCommandToMiddleware(action, true);
+    }
+    
+    public void confirmRequest() {
+    	//eerst pin opvragen voor confirmatie van de gebruiker
+    	mainController.addToDataLog("Confirm request by entering PIN");
+    	
+    	//generate an action to send to the card
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("Confirm request by entering PIN", CallableMiddelwareMethodes.CONFIRM_REQUEST));
+    	sendCommandToMiddleware(action,true);
+    }
+    
+    public void authenticateToSP() {
+    	// STEP 4
+    	mainController.addToDataLog("Start authentication of citizen" );
+    	mainController.addToDataLog("sending challenge...");
+    	//generate random bytes for challenge
+    	byte[] b = new byte[16];
+    	new Random().nextBytes(b);
+    	challengeToMW = b;
+    	
+    	//generate an action to send to the card
+    	ServiceProviderAction action = new ServiceProviderAction(new ServiceAction("verify challenge to authenticate card", CallableMiddelwareMethodes.AUTH_TO_SP));
+    	action.setChallengeBytes(challengeToMW);
+    	sendCommandToMiddleware(action,true);
+    }
+    
     public void authenticateCard(MessageToAuthCard cardMessage) {
     	// STEP 5, after second response from MW
     	mainController.addToDataLog("Received the message from the SC to authenticate the card.");
@@ -402,6 +454,10 @@ public class ServiceProviderMain extends Application {
 				//digitale identificatie
 				IdInfo info = (IdInfo) obj;
 				mainController.addToDataLog("received id info from smartcard: " + info.getInfo() );
+				//TODO evt nog checken of de signature van RRN klopt
+			}
+			else if( obj instanceof Boolean) {
+				mainController.addToDataLog("pin correct!");
 			}
 			else if( obj instanceof String) {
 				// STEP 8
@@ -411,8 +467,18 @@ public class ServiceProviderMain extends Application {
 			else if(obj instanceof MessageToAuthCard) {
 				authenticateCard((MessageToAuthCard) obj);
 			}
+			else if(obj instanceof AuthenticateToSPResponse) {
+				mainController.addToDataLog("received response from SC");
+				verifyResponseAndCertificate((AuthenticateToSPResponse)obj);
+			}
 			else if(obj instanceof byte[]) {
 				decryptAndShowData((byte[]) obj); 
+			}
+			else if(obj instanceof SignedDocumentResponse){
+				SignedDocumentResponse signedDocumentResponse = (SignedDocumentResponse) obj;
+				mainController.addToDataLog("received signed document from SC");
+				verifySignature(signedDocumentResponse);
+				
 			}
 			else {
 				System.out.println("UNKNOW OBJECT received "+ obj);
@@ -423,6 +489,101 @@ public class ServiceProviderMain extends Application {
     	}catch (Exception e) {
 			System.out.println(e);
 		}
+    }
+    
+    /***
+     * TODO verify signature and sign certificate
+     * @param signedDocumentResponse
+     */
+    private void verifySignature(SignedDocumentResponse signedDocumentResponse) {
+    	byte [] response = signedDocumentResponse.getResponse();
+    	byte [] documentHash = signedDocumentResponse.getDocumentHash();
+    	byte [] unsignedDocument = signedDocumentResponse.getUnsignedDocument();
+    	
+    	
+    	//authenticiteit van document controleren
+    	MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+			md.update(unsignedDocument);
+			byte[] digest = md.digest();
+			String checkSum = DatatypeConverter.printHexBinary(digest).toUpperCase();
+			String receivedCheckSum = DatatypeConverter.printHexBinary(documentHash).toUpperCase();
+			
+			if(receivedCheckSum.equals(checkSum)) {
+				mainController.addToDataLog("Checksum valid:");
+				mainController.addToDataLog("	Rent hash = "+receivedCheckSum);
+				mainController.addToDataLog("	Calculated hash = "+checkSum);
+			}
+			else {
+				mainController.addToDataLog("Checksum invalid");
+				mainController.addToDataLog("	Rent hash = "+receivedCheckSum);
+				mainController.addToDataLog("	Calculated hash = "+checkSum);
+				return;
+			}
+			
+			//TODO geldigheid van certificaat controleren dmv CRL
+			// dit kan gewoon een simpele text file/java class of zelfs arraylist met alle certificaten die niet meer geldig zijn
+			//TODO authenticiteit van de signature controleren
+			
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+    	
+    }
+    
+    private void verifyResponseAndCertificate(AuthenticateToSPResponse responseFromSC) {
+    	byte[] message = responseFromSC.getMessage();
+    	//response en certificaat verifiëren
+    	//check signature
+    	try {
+    		System.out.println("aaaareceived response: "+message);
+    		
+    		//check if authentication certificate is valid
+    		byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);
+			byte[] signature = Arrays.copyOfRange(message, 72, 136);
+			Signature verifier = Signature.getInstance("SHA1WithRSA");
+			verifier.initVerify(CAService.loadPublicKey("RSA"));
+			verifier.update(signedBytes);
+			
+			if(!verifier.verify(signature)) {
+				mainController.addToDataLog("eID authentication certificate is valid!");
+			} 
+			else {
+				errorAuthCard = true;
+				mainController.addToDataLog("eID authentication certificate is invalid!");
+				return;
+			}
+			
+			//verifieer signature op de response
+			//eerst public authentication key opbouwen
+			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(message, 1, 4));
+			byte [] exparray = exponent.toByteArray();
+			System.out.println("exponent: "+exponent);
+			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(message, 6, 70));
+			byte [] modarray = modulus.toByteArray();
+			System.out.println("modulus: "+modulus);
+			
+			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+			KeyFactory factory = KeyFactory.getInstance("RSA");
+			PublicKey publicAuthKey = factory.generatePublic(spec);
+			verifier.initVerify(publicAuthKey);
+			
+			if(!verifier.verify(Arrays.copyOfRange(message, 156, 220))) {
+				mainController.addToDataLog("eID sent valid response");
+				mainController.addToDataLog("VALID AUTHENTICATION");
+			} else {
+				errorAuthCard = true;
+				mainController.addToDataLog("eID sent invalid response");
+				return;
+			}
+    	}
+    	catch(Exception e) {
+    		e.printStackTrace();
+    	}
     }
 
 		private void decryptAndShowData(byte[] encryptedData) {

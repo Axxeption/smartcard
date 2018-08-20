@@ -20,6 +20,7 @@ import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
 //import javacard.security.KeyBuilder;
 //import javacard.security.RSAPublicKey;
+import be.msec.controllers.MainServiceController;
 
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
@@ -27,13 +28,17 @@ import java.security.interfaces.RSAPublicKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -46,15 +51,23 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
+import java.util.Optional;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javax.smartcardio.*;
+import javax.xml.bind.DatatypeConverter;
+
+import com.sun.org.apache.xpath.internal.axes.FilterExprIterator;
+
+import javafx.*;
 
 public class MiddlewareMain extends Application {
 
@@ -79,6 +92,8 @@ public class MiddlewareMain extends Application {
 	static final int portG = 8001;
 	static final int portSP = 8003;
 	private static final byte IDENTIFICATION = 0x26;
+	private static final byte AUTH_TO_SP = 0x32;
+	private static final byte SIGN_HASH  = 0x33;
 	private Socket timestampSocket = null;
 	private Socket serviceProviderSocket = null;
 	IConnection c;
@@ -89,6 +104,9 @@ public class MiddlewareMain extends Application {
 
 	private ServerSocket socket;
 	private Socket middlewareSocket;
+	
+	private boolean pinForSigning = false;
+	private String filePathForSigning = "";
 
 	// for testing
 	private byte[] pubMod_CA = new byte[] { (byte) -40, (byte) -96, (byte) 115, (byte) 21, (byte) -10, (byte) -66,
@@ -104,7 +122,7 @@ public class MiddlewareMain extends Application {
 	public void start(Stage stage) throws IOException {
 		this.primaryStage = stage;
 		this.primaryStage.setTitle("Card reader UI");
-		//launchPinInputScreen();
+		launchPinInputScreen();
 		try {
 			
 			 connectServiceProvider();
@@ -383,6 +401,50 @@ public class MiddlewareMain extends Application {
 		System.out.println("sent to SP identity info");
 	}
 	
+	private void authenticateCardSendChallenge(ServiceProviderAction received) {
+		byte[] toSend = received.getChallengeBytes();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_CARD, 0x00, 0x00, toSend);
+
+		try {
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				byte[] response = r.getData();
+				System.out.println(bytesToHex(response));
+				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return;
+	}
+	
+	//challenge ontvangen van de SP, deze signen en terugsturen naar de SP
+	public void authenticateToSP(ServiceProviderAction received) {
+		byte[] toSend = received.getChallengeBytes();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTH_TO_SP, 0x00, 0x00, toSend);
+
+		try {
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				byte[] response = r.getData();
+				System.out.println("signed response from SC + certificate " + bytesToDec(response));
+				sendToServiceProvider(new AuthenticateToSPResponse(Arrays.copyOfRange(response, 0, response.length)));
+				System.out.println("signed response sent to SP");
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return;
+	}
+	
 	public Boolean loginWithPin(byte[] pin) throws Exception {
 		if (pin.length != 4) { // limit length of the pin to prevent dangerous input
 			throw new Exception("Pin has to be 4 characters");
@@ -430,12 +492,103 @@ public class MiddlewareMain extends Application {
 		}
 		return null;
 	}
+	
+	/***
+	 * retrieve file path of the file to be signed on eID card
+	 * @return
+	 */
+	public String getFilePath() {
+		String filePath = "";
+		
+		Task<Void> task = new Task<Void>() {
+
+		     @Override protected Void call() throws Exception {
+
+		    	 Platform.runLater(new Runnable() {
+	                 @Override public void run() {
+	                	 TextInputDialog dialog = new TextInputDialog("Tran");
+	                	 
+	                     dialog.setTitle("Sign document");
+	                     dialog.setHeaderText("Enter filepath:");
+	                     dialog.setContentText("path:");
+	              
+	                     Optional<String> result = dialog.showAndWait();
+	              
+	                     result.ifPresent(filePath -> {	                         
+	                         //confirmatie vragen dmv PIN
+	                         verifyPinForSigning(filePath);
+	                         filePathForSigning = filePath;
+	                     });
+	                 }
+	             });
+		         return null;
+		     }
+		 };
+		task.run();
+		
+		return filePath;
+	}
+	
+	/**
+	 * verify PIN for signing document
+	 * 
+	 */
+	public void verifyPinForSigning(String filePath) {
+		 //pin opvragen ter confirmatie
+		middlewareController.log("filepath = "+filePath);
+	    middlewareController.log("confirm signing the file by entering PIN");
+	    WaitForPinThread pinWaitingThread = new WaitForPinThread();
+	    pinForSigning = true;
+		pinWaitingThread.start();
+	}
+	
+	/***
+	 * Calculate file hash and send to eID for signing 
+	 * as an example, use /Middleware/unsignedDoc.txt as filepath
+	 */
+	public void sendFileHashToSC() {
+		String filePath = filePathForSigning;
+		try {
+			//calculate hash
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(Files.readAllBytes(Paths.get(filePath)));
+			byte[] digest = md.digest();
+		    String checkSum = bytesToHex(digest);
+		    System.out.println(checkSum);
+		    middlewareController.log("file path = " + filePath);
+		    middlewareController.log("sending hash to SC to sign: "+checkSum);
+		    
+		    //send hash to SC
+		    a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_HASH, 0x00, 0x00, digest);
+		    r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				byte[] response = r.getData();
+				middlewareController.log("signed hash from eID" + bytesToHex(response));
+				middlewareController.log("signed hash sent to SP");
+				
+				//terugzenden van gesignede hash + certificaat (=response) + oorspronkelijke bericht en hash zodat de hash zelf ook gecontroleerd kan worden
+				SignedDocumentResponse resp = new SignedDocumentResponse(response, Files.readAllBytes(Paths.get(filePath)), digest);
+				sendToServiceProvider(resp);
+			}
+		    
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 
 	class WaitForPinThread extends Thread {
 		ServiceProviderAction query;
 
 		public WaitForPinThread(ServiceProviderAction query) {
 			this.query = query;
+		}
+		
+		public WaitForPinThread() {
+			this.query = null;
 		}
 
 		public void run() {
@@ -457,7 +610,15 @@ public class MiddlewareMain extends Application {
 				}
 			}
 			System.out.println("PIN is correct!");
-			byte[] data = getDataFromCard(query);
+			if(!pinForSigning)
+				sendToServiceProvider(true);
+			else {
+				pinForSigning = false;	//Default is pin voor authenticatie
+				//bereken nu de hash en stuur naar de smartcard
+				sendFileHashToSC();
+				System.out.println("send hash to SC for signing");
+			}
+				
 		}
 	}
 	
@@ -499,7 +660,19 @@ public class MiddlewareMain extends Application {
 						}catch(Exception e) {
 							
 						}
-						//TODO terugzenden naar serviceprovider
+						break;
+					case AUTH_TO_SP:
+						System.out.println("initiating authentication to SP COMMAND");
+						authenticateToSP(receivedObject);
+						break;
+					case CONFIRM_REQUEST:
+						System.out.println("confirm request by entering PIN in MW");
+						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
+						pinWaitingThread.start();
+						break;
+					case INIT_SIGN:
+						System.out.println("init digital sign request received");
+						String filePath = getFilePath();
 						break;
 						
 					default:
