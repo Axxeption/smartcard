@@ -512,19 +512,19 @@ public class ServiceProviderMain extends Application {
 			
 			if(receivedCheckSum.equals(checkSum)) {
 				mainController.addToDataLog("Checksum valid:");
-				mainController.addToDataLog("	Rent hash = "+receivedCheckSum);
+				mainController.addToDataLog("	Sent hash = "+receivedCheckSum);
 				mainController.addToDataLog("	Calculated hash = "+checkSum);
 			}
 			else {
 				mainController.addToDataLog("Checksum invalid");
-				mainController.addToDataLog("	Rent hash = "+receivedCheckSum);
+				mainController.addToDataLog("	Sent hash = "+receivedCheckSum);
 				mainController.addToDataLog("	Calculated hash = "+checkSum);
 				return;
 			}
 			
 			//TODO geldigheid van certificaat controleren dmv CRL
 			// dit kan gewoon een simpele text file/java class of zelfs arraylist met alle certificaten die niet meer geldig zijn
-			//TODO authenticiteit van de signature controleren
+			//TODO authenticiteit van signature controleren op zelfde manier als verifyCert methode
 			
 			
 		} catch (Exception e) {
@@ -540,7 +540,6 @@ public class ServiceProviderMain extends Application {
     	//response en certificaat verifiëren
     	//check signature
     	try {
-    		System.out.println("aaaareceived response: "+message);
     		
     		//check if authentication certificate is valid
     		byte[] signedBytes = Arrays.copyOfRange(message, 0, 72);

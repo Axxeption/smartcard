@@ -182,6 +182,39 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23,
 			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89,
 			(byte) 127, (byte) -46, (byte) -109, (byte) -91 };
+	
+	private byte[] signatureCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13,
+			(byte) -113, (byte) 13, (byte) 45, (byte) -34, (byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111,
+			(byte) -55, (byte) 72, (byte) 80, (byte) 45, (byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87,
+			(byte) 119, (byte) -116, (byte) -109, (byte) 30, (byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82,
+			(byte) 103, (byte) -125, (byte) -70, (byte) -46, (byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36,
+			(byte) -94, (byte) 59, (byte) -5, (byte) 32, (byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41,
+			(byte) -106, (byte) -23, (byte) -40, (byte) -23, (byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53,
+			(byte) 31, (byte) 59, (byte) -50, (byte) 89, (byte) 127, (byte) -46, (byte) -109, (byte) -91, (byte) 101,
+			(byte) 16, (byte) -13, (byte) 41, (byte) 82, (byte) 35, (byte) -59, (byte) 101, (byte) -89, (byte) 66,
+			(byte) 3, (byte) -59, (byte) -45, (byte) 32, (byte) -118, (byte) -76, (byte) -103, (byte) 21, (byte) 69,
+			(byte) -97, (byte) -102, (byte) -58, (byte) -82, (byte) 112, (byte) -113, (byte) 120, (byte) 69,
+			(byte) -101, (byte) -119, (byte) 98, (byte) -41, (byte) -126, (byte) -103, (byte) 25, (byte) -109,
+			(byte) -63, (byte) -108, (byte) 34, (byte) 61, (byte) 39, (byte) 56, (byte) 76, (byte) 127, (byte) -90,
+			(byte) 29, (byte) -95, (byte) -40, (byte) 7, (byte) 96, (byte) -20, (byte) -35, (byte) 65, (byte) 119,
+			(byte) 49, (byte) 91, (byte) 99, (byte) 98, (byte) 66, (byte) -25, (byte) -15, (byte) 41, (byte) -14,
+			(byte) -62, (byte) 5, (byte) 108, (byte) -110, (byte) 37, (byte) -95 };
+	private byte[] privExp_signatureCertificate = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51,
+			(byte) 20, (byte) -55, (byte) 63, (byte) 126, (byte) -34, (byte) 120, (byte) -90, (byte) -16, (byte) 30,
+			(byte) -66, (byte) 115, (byte) 50, (byte) 108, (byte) 15, (byte) 89, (byte) -78, (byte) -107, (byte) -98,
+			(byte) 4, (byte) -4, (byte) -117, (byte) -110, (byte) 13, (byte) -93, (byte) -124, (byte) -77, (byte) 34,
+			(byte) -59, (byte) 37, (byte) 45, (byte) 62, (byte) -81, (byte) 31, (byte) 98, (byte) -118, (byte) -7,
+			(byte) -114, (byte) -20, (byte) -66, (byte) 93, (byte) -32, (byte) 101, (byte) -27, (byte) -4, (byte) 86,
+			(byte) -29, (byte) -79, (byte) 24, (byte) 38, (byte) -21, (byte) -104, (byte) -10, (byte) -18, (byte) -5,
+			(byte) 84, (byte) 77, (byte) -2, (byte) 125 };
+	private byte[] privMod_signatureCertificate = new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34,
+			(byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, (byte) -55, (byte) 72, (byte) 80, (byte) 45,
+			(byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, (byte) 119, (byte) -116, (byte) -109, (byte) 30,
+			(byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, (byte) 103, (byte) -125, (byte) -70, (byte) -46,
+			(byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, (byte) -94, (byte) 59, (byte) -5, (byte) 32,
+			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23,
+			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89,
+			(byte) 127, (byte) -46, (byte) -109, (byte) -91 };
 
 	private byte[] att_name = new byte[] { (byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x56,
 			(byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65 };
@@ -448,8 +481,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			//prepare signature
 			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 			RSAPrivateKey privateKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short) 512, false);
-			privateKey.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-		    privateKey.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			privateKey.setExponent(privExp_signatureCertificate, offset, (short) privExp_signatureCertificate.length);
+		    privateKey.setModulus(privMod_signatureCertificate, offset, (short) privMod_signatureCertificate.length);
 			signature.init(privateKey, Signature.MODE_SIGN);
 			
 			//sign hash
@@ -459,9 +492,9 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(outputBuffer, (short) 0, signedHash, (short) 0, signatureLength);
 			
 			//message samenstellen om terug te sturen naar MW, bestaande uit certificaat en getekende hash
-			byte[] message = new byte[commonCertificate.length + signedHash.length];
-			Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
-			Util.arrayCopy(signedHash, (short) 0, message, (short) commonCertificate.length, (short) signedHash.length);
+			byte[] message = new byte[signatureCertificate.length + signedHash.length];
+			Util.arrayCopy(signatureCertificate, (short) 0, message, (short) 0, (short) signatureCertificate.length);
+			Util.arrayCopy(signedHash, (short) 0, message, (short) signatureCertificate.length, (short) signedHash.length);
 			
 			sendBigFile(apdu, message);			
 		}
