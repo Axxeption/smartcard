@@ -20,6 +20,7 @@ import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
 //import javacard.security.KeyBuilder;
 //import javacard.security.RSAPublicKey;
+import be.msec.controllers.MainServiceController;
 
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
@@ -27,13 +28,17 @@ import java.security.interfaces.RSAPublicKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -46,15 +51,23 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
+import java.util.Optional;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javax.smartcardio.*;
+import javax.xml.bind.DatatypeConverter;
+
+import com.sun.org.apache.xpath.internal.axes.FilterExprIterator;
+
+import javafx.*;
 
 public class MiddlewareMain extends Application {
 
@@ -79,6 +92,8 @@ public class MiddlewareMain extends Application {
 	static final int portG = 8001;
 	static final int portSP = 8003;
 	private static final byte IDENTIFICATION = 0x26;
+	private static final byte AUTH_TO_SP = 0x32;
+	private static final byte SIGN_HASH  = 0x33;
 	private Socket timestampSocket = null;
 	private Socket serviceProviderSocket = null;
 	IConnection c;
@@ -89,6 +104,9 @@ public class MiddlewareMain extends Application {
 
 	private ServerSocket socket;
 	private Socket middlewareSocket;
+	
+	private boolean pinForSigning = false;
+	private String filePathForSigning = "";
 
 	// for testing
 	private byte[] pubMod_CA = new byte[] { (byte) -40, (byte) -96, (byte) 115, (byte) 21, (byte) -10, (byte) -66,
@@ -102,12 +120,19 @@ public class MiddlewareMain extends Application {
 	private byte[] pubExp_CA = new byte[] { (byte) 1, (byte) 0, (byte) 1 };
 
 	public void start(Stage stage) throws IOException {
+		System.out.println(bytesToHex(("Hospitaalstraat 13 \r\n" + 
+				"8610\r\n" + 
+				"Kortemark \r\n" + 
+				"Belgium").getBytes()));
+
 		this.primaryStage = stage;
 		this.primaryStage.setTitle("Card reader UI");
-		//launchPinInputScreen();
+		launchPinInputScreen();
 		try {
+			
+			 connectServiceProvider();
 			 connectToCard(true);
-			 identification();
+			 //identification();
 			//askName();
 
 			// checkChallenge();
@@ -117,19 +142,6 @@ public class MiddlewareMain extends Application {
 		}
 	}
 
-<<<<<<< HEAD
-=======
-	private void UPDATE_TIME_ON_CARD_ROUTINE() throws Exception {
-		if (connectTimestampServer()) {
-			TimeInfoStruct signedTime = askTimeToTimestampServer();
-			if (signedTime != null) {
-				// make connection to the card (simulator) and send the bytes
-				connectToCard(true); // true => simulatedconnection
-				sendTimeToCard(signedTime);
-			}
-		}
-	}
->>>>>>> parent of a5c0bf0... Demo ready
 	// -------------------------------------------------
 	// ------- TEST METHODES wITH USEFULL CODE ----------
 	// -------------------------------------------------
@@ -288,7 +300,7 @@ public class MiddlewareMain extends Application {
 		try {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			if (simulatedConnection) {
-				// System.out.println("Simulated connection");
+				 System.out.println("Make a simulated connection.");
 				c = new SimulatedConnection();
 
 				c.connect();
@@ -328,7 +340,8 @@ public class MiddlewareMain extends Application {
 			a = new CommandAPDU(0x00, 0xa4, 0x04, 0x00,
 					new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00 }, 0x7f);
 			r = c.transmit(a);
-			System.out.println(r);
+//			System.out.println(r);
+			System.out.println("Succesfully connected to the virtual javacard.");
 			if (r.getSW() != 0x9000)
 				throw new Exception("Applet selection failed");
 
@@ -336,8 +349,39 @@ public class MiddlewareMain extends Application {
 			System.out.println("ERROR IN MAKING CONNECTION WITH SIMULATOR: " + e);
 		}
 	}
+	
+	// -------------------------------------------------
+		// ------- SERVICE PROVIDER COMMUNICATION ----------
+		// -------------------------------------------------
+		public void connectServiceProvider() {
+			try {
+				socket = new ServerSocket(portSP);
+				System.out.println("Serversocket is listening");
+				middlewareSocket = socket.accept();
+				System.out.println("Socket connection accepted");
 
-<<<<<<< HEAD
+				// start thread to listen for commands from ServiceProvider client
+				Thread listenerThread = new ListenForServiceProviderCommandThread();
+				listenerThread.start();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		private void sendToServiceProvider(Object message) {
+			ObjectOutputStream out;
+			try {
+				System.out.println("SENDING TO SP");
+				out = new ObjectOutputStream(middlewareSocket.getOutputStream());
+				out.writeObject(message);
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
 	// ------------------------------------------
 	// ------- JAVA CARD COMMUNICATION ----------
 	// ------------------------------------------
@@ -351,131 +395,63 @@ public class MiddlewareMain extends Application {
 			throw new Exception("Exception on the card: " + r.getSW());
 		String str = new String(r.getData(), StandardCharsets.UTF_8);
 		//er wordt nog een vraagteken teveel geprint maar die is afkomstig van het apdu formaat de data op zich op de sc is oke
+		System.out.println("alles gekregen: " + bytesToHex(r.getData()));
+		System.out.println("de naam is (omgevormd naar string): " + str);
+		System.out.println();
 		
-		System.out.println("de naam is: " + str);
-		
-=======
-	// -------------------------------------------------
-	// ------- TIMESTAMP SERVER COMMUNICATION ----------
-	// -------------------------------------------------
-	public boolean connectTimestampServer() {
-		// setup ssl properties
-		System.setProperty("javax.net.ssl.keyStore", "sslKeyStore.store");
-		System.setProperty("javax.net.ssl.keyStorePassword", "jonasaxel");
-		System.setProperty("javax.net.ssl.trustStore", "sslKeyStore.store");
-		System.setProperty("javax.net.ssl.trustStorePassword", "jonasaxel");
+		//verstuur alles in bytes en parse het aan de SP kant
+		IdInfo info = new IdInfo(r.getData());
 
-		SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-		try {
-			timestampSocket = sslSocketFactory.createSocket("localhost", portG);
-		} catch (IOException ex) {
-			System.out.println("ERROR WITH CONNECTION TO G: " + ex);
-			return false;
-		}
-		System.out.println("Connected to timestamp server:" + timestampSocket);
-
-		return true;
-
+		//info terugzenden naar de serviceprovider
+		sendToServiceProvider(info);
+		System.out.println("sent to SP identity info");
 	}
+	
+	
+	private void authenticateCardSendChallenge(ServiceProviderAction received) {
+		byte[] toSend = received.getChallengeBytes();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_CARD, 0x00, 0x00, toSend);
 
-	public TimeInfoStruct askTimeToTimestampServer() throws Exception {
-		// hiervoor is eigenlijk geen certificaat nodig want de smartcard heeft de PKg
-		// hier wil ik enkel de tijd terug krijgen: eenmaal gehashed endan gesigned met
-		// SKg en eenmaal plain text
-		TimeInfoStruct timeInfoStruct = null;
-		ObjectOutputStream objectoutputstream = null;
-		ObjectInputStream objectinputstream = null;
-		try {
-			System.out.println("Try to send to the timestampserver");
-
-			try {
-				objectoutputstream = new ObjectOutputStream(timestampSocket.getOutputStream());
-				// Command = 1 => GetSignedTime
-				objectoutputstream.writeObject(1);
-				objectinputstream = new ObjectInputStream(timestampSocket.getInputStream());
-				// Cast serialized object into new object
-				timeInfoStruct = (TimeInfoStruct) objectinputstream.readObject();
-
-				System.out.println("Received date and signedData (both in byte array)");
-				// System.out.println("Date from server: " + timeInfoStruct.getDate());
-				// System.out.println(bytesToDec(timeInfoStruct.getSignedData()));
-				objectinputstream.close();
-
-			} catch (EOFException | ClassNotFoundException exc) {
-				objectinputstream.close();
-			}
-		} catch (IOException ex) {
-			System.out.println("ERROR WITH RECEIVING TIME: " + ex);
-		}
-		return timeInfoStruct;
-	}
-
-	// -------------------------------------------------
-	// ------- SERVICE PROVIDER COMMUNICATION ----------
-	// -------------------------------------------------
-	public void connectServiceProvider() {
-		try {
-			socket = new ServerSocket(portSP);
-			System.out.println("Serversocket is listening");
-			middlewareSocket = socket.accept();
-			System.out.println("Socket connection accepted");
-
-			// start thread to listen for commands from ServiceProvider client
-			Thread listenerThread = new ListenForServiceProviderCommandThread();
-			listenerThread.start();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	private void sendToServiceProvider(Object message) {
-		ObjectOutputStream out;
-		try {
-			System.out.println("SENDING TO SP");
-			out = new ObjectOutputStream(middlewareSocket.getOutputStream());
-			out.writeObject(message);
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	// ------------------------------------------
-	// ------- JAVA CARD COMMUNICATION ----------
-	// ------------------------------------------
-
-	/**
-	 * Send the signedtimestamp to the card so the time can be verifyed and updated
-	 * 
-	 * @param timeInfoStruct
-	 */
-	private boolean sendTimeToCard(TimeInfoStruct timeInfoStruct) {
-		// concatenate all bytes into one big data array, this toSend needs to be given
-		// to the card
-		byte[] toSend = new byte[timeInfoStruct.getSignedData().length + timeInfoStruct.getDate().length];
-		System.arraycopy(timeInfoStruct.getSignedData(), 0, toSend, 0, timeInfoStruct.getSignedData().length);
-		System.arraycopy(timeInfoStruct.getDate(), 0, toSend, timeInfoStruct.getSignedData().length,
-				timeInfoStruct.getDate().length);
-
-		//
-		System.out.println("Send time to card (need to)");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, UPDATE_TIME, 0x00, 0x00, toSend);
 		try {
 			r = c.transmit(a);
 			if (r.getSW() != 0x9000)
 				throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("DATE UPDATED ");
+			else {
+				byte[] response = r.getData();
+				System.out.println(bytesToHex(response));
+				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
+			}
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return false;
 		}
-		return true;
->>>>>>> parent of a5c0bf0... Demo ready
+		return;
 	}
+	
+	//challenge ontvangen van de SP, deze signen en terugsturen naar de SP
+	public void authenticateToSP(ServiceProviderAction received) {
+		byte[] toSend = received.getChallengeBytes();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTH_TO_SP, 0x00, 0x00, toSend);
+
+		try {
+			r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				byte[] response = r.getData();
+				System.out.println("signed response from SC + certificate " + bytesToDec(response));
+				sendToServiceProvider(new AuthenticateToSPResponse(Arrays.copyOfRange(response, 0, response.length)));
+				System.out.println("signed response sent to SP");
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return;
+	}
+	
 	public Boolean loginWithPin(byte[] pin) throws Exception {
 		if (pin.length != 4) { // limit length of the pin to prevent dangerous input
 			throw new Exception("Pin has to be 4 characters");
@@ -500,99 +476,6 @@ public class MiddlewareMain extends Application {
 		launch(args);
 	}
 
-<<<<<<< HEAD
-=======
-	private boolean authenticateCertificate(ServiceProviderAction received) {
-		byte[] signedCertificateBytes = received.getSignedCertificate().getSignatureBytes();
-		CertificateServiceProvider certificateServiceProvider = (CertificateServiceProvider) received
-				.getSignedCertificate().getCertificateBasic();
-
-		// prepare everything to send to the card
-		byte[] certificateBytes = certificateServiceProvider.getBytes();
-		byte[] toSend = new byte[signedCertificateBytes.length + certificateBytes.length];
-		System.arraycopy(signedCertificateBytes, 0, toSend, 0, signedCertificateBytes.length);
-		System.arraycopy(certificateBytes, 0, toSend, signedCertificateBytes.length, certificateBytes.length);
-		
-		//FOR DEMO DO SOMETHING WRONG!!
-//		toSend[2] = (byte) 0x53;
-		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_SP, 0x00, 0x00, toSend);
-		try {
-			r = c.transmit(a);
-			if (r.getSW() != 0x9000) {
-				System.out.println("Not succesfully verified");
-				sendToServiceProvider(null);
-				} 
-			else {
-				System.out.println("Certificate succesfully verified:  " + r.getSW());
-				// get response data and send to SP
-				byte[] response = r.getData();
-				System.out.println(response.length + "  response " + bytesToDec(response)); // first byte = length of
-																							// response
-				Challenge challengeToSP = new Challenge(Arrays.copyOfRange(response, 1, 65),
-						Arrays.copyOfRange(response, 65, 81), Arrays.copyOfRange(response, 81, response.length));
-				// System.out.println(challengeToSP);
-
-				sendToServiceProvider(challengeToSP);
-				System.out.println("send challenge to SP done");
-			}
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-
-	}
-
-	private boolean verifyChallenge(ServiceProviderAction received) {
-		byte[] toSend = new byte[received.getChallengeBytes().length];
-		System.arraycopy(received.getChallengeBytes(), 0, toSend, 0, received.getChallengeBytes().length);
-		a = new CommandAPDU(IDENTITY_CARD_CLA, VERIFY_CHALLENGE, 0x00, 0x00, toSend);
-
-		try {
-			r = c.transmit(a);
-			if (r.getSW() != 0x9000)
-				throw new Exception("Exception on the card: " + r.getSW());
-			else {
-				System.out.println("succesfully verified challenge");
-			}
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-
-	}
-
-	private void authenticateCardSendChallenge(ServiceProviderAction received) {
-		byte[] toSend = received.getChallengeBytes();
-		a = new CommandAPDU(IDENTITY_CARD_CLA, AUTHENTICATE_CARD, 0x00, 0x00, toSend);
-
-		try {
-			r = c.transmit(a);
-			if (r.getSW() != 0x9000)
-				throw new Exception("Exception on the card: " + r.getSW());
-			else {
-				byte[] response = r.getData();
-				System.out.println(bytesToHex(response));
-				// TODO: ER ZIT HIER NOG EEN FOUT ERGENS. Ik weet niet of het door de kaart
-				// komt. heb offset veranderd naar 0 . Stond op 1.
-				// response zou een veelvoud van 16 bytes moeten zijn zodat de sp kan
-				// decrypteren.
-				sendToServiceProvider(new MessageToAuthCard(Arrays.copyOfRange(response, 0, response.length)));
-			}
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return;
-	}
-
->>>>>>> parent of a5c0bf0... Demo ready
 	private byte[] getDataFromCard(ServiceProviderAction receivedQuery) {
 		System.out.println("Getting data from card");
 
@@ -616,12 +499,103 @@ public class MiddlewareMain extends Application {
 		}
 		return null;
 	}
+	
+	/***
+	 * retrieve file path of the file to be signed on eID card
+	 * @return
+	 */
+	public String getFilePath() {
+		String filePath = "";
+		
+		Task<Void> task = new Task<Void>() {
+
+		     @Override protected Void call() throws Exception {
+
+		    	 Platform.runLater(new Runnable() {
+	                 @Override public void run() {
+	                	 TextInputDialog dialog = new TextInputDialog("Tran");
+	                	 
+	                     dialog.setTitle("Sign document");
+	                     dialog.setHeaderText("Enter filepath:");
+	                     dialog.setContentText("path:");
+	              
+	                     Optional<String> result = dialog.showAndWait();
+	              
+	                     result.ifPresent(filePath -> {	                         
+	                         //confirmatie vragen dmv PIN
+	                         verifyPinForSigning(filePath);
+	                         filePathForSigning = filePath;
+	                     });
+	                 }
+	             });
+		         return null;
+		     }
+		 };
+		task.run();
+		
+		return filePath;
+	}
+	
+	/**
+	 * verify PIN for signing document
+	 * 
+	 */
+	public void verifyPinForSigning(String filePath) {
+		 //pin opvragen ter confirmatie
+		middlewareController.log("filepath = "+filePath);
+	    middlewareController.log("confirm signing the file by entering PIN");
+	    WaitForPinThread pinWaitingThread = new WaitForPinThread();
+	    pinForSigning = true;
+		pinWaitingThread.start();
+	}
+	
+	/***
+	 * Calculate file hash and send to eID for signing 
+	 * as an example, use /Middleware/unsignedDoc.txt as filepath
+	 */
+	public void sendFileHashToSC() {
+		String filePath = filePathForSigning;
+		try {
+			//calculate hash
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(Files.readAllBytes(Paths.get(filePath)));
+			byte[] digest = md.digest();
+		    String checkSum = bytesToHex(digest);
+		    System.out.println(checkSum);
+		    middlewareController.log("file path = " + filePath);
+		    middlewareController.log("sending hash to SC to sign: "+checkSum);
+		    
+		    //send hash to SC
+		    a = new CommandAPDU(IDENTITY_CARD_CLA, SIGN_HASH, 0x00, 0x00, digest);
+		    r = c.transmit(a);
+			if (r.getSW() != 0x9000)
+				throw new Exception("Exception on the card: " + r.getSW());
+			else {
+				byte[] response = r.getData();
+				middlewareController.log("signed hash from eID" + bytesToHex(response));
+				middlewareController.log("signed hash sent to SP");
+				
+				//terugzenden van gesignede hash + certificaat (=response) + oorspronkelijke bericht en hash zodat de hash zelf ook gecontroleerd kan worden
+				SignedDocumentResponse resp = new SignedDocumentResponse(response, Files.readAllBytes(Paths.get(filePath)), digest);
+				sendToServiceProvider(resp);
+			}
+		    
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 
 	class WaitForPinThread extends Thread {
 		ServiceProviderAction query;
 
 		public WaitForPinThread(ServiceProviderAction query) {
 			this.query = query;
+		}
+		
+		public WaitForPinThread() {
+			this.query = null;
 		}
 
 		public void run() {
@@ -633,19 +607,93 @@ public class MiddlewareMain extends Application {
 					middlewareController.setMainMessage("Enter pin to get data...");
 				}
 			});
+			System.out.println("User must give in correct PIN...");
 			while (!pinVerified) {
 				try {
 					Thread.sleep(1000);
-					System.out.println("wait for pin ...");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			System.out.println("pin valid");
-			byte[] data = getDataFromCard(query);
+			System.out.println("PIN is correct!");
+			if(!pinForSigning)
+				sendToServiceProvider(true);
+			else {
+				pinForSigning = false;	//Default is pin voor authenticatie
+				//bereken nu de hash en stuur naar de smartcard
+				sendFileHashToSC();
+				System.out.println("send hash to SC for signing");
+			}
+				
 		}
 	}
+	
+	class ListenForServiceProviderCommandThread extends Thread {
+		public void run() {
+			ObjectInputStream objectinputstream = null;
+			try {
+				while (true) {
+					System.out.println("Listening to service provider...");
+					objectinputstream = new ObjectInputStream(middlewareSocket.getInputStream());
+					ServiceProviderAction receivedObject = (ServiceProviderAction) objectinputstream.readObject();
+					// System.out.println("received: " + receivedObject.getAction().getCommand());
+
+					switch (receivedObject.getAction().getCommand()) {
+//					case AUTH_SP:
+//						System.out.println("AUTH SP COMMAND");
+//						// sendToServiceProvider("AUTH command received");
+//						authenticateCertificate(receivedObject);
+//
+//						break;
+//					case GET_DATA:
+//						System.out.println("GET DATA COMMAND");
+//						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
+//						pinWaitingThread.start();
+//
+//						break;
+//					case VERIFY_CHALLENGE:
+//						System.out.println("VERIFY CHALLENGE COMMAND");
+//						verifyChallenge(receivedObject);
+//						break;
+//					case AUTH_CARD:
+//						System.out.println("AuthenticateCard COMMAND");
+//						authenticateCardSendChallenge(receivedObject);
+//						break;
+					case IDENTIFICATION:
+						System.out.println("Digital Identification COMMAND");
+						try{
+							identification();
+						}catch(Exception e) {
+							
+						}
+						break;
+					case AUTH_TO_SP:
+						System.out.println("initiating authentication to SP COMMAND");
+						authenticateToSP(receivedObject);
+						break;
+					case CONFIRM_REQUEST:
+						System.out.println("confirm request by entering PIN in MW");
+						WaitForPinThread pinWaitingThread = new WaitForPinThread(receivedObject);
+						pinWaitingThread.start();
+						break;
+					case INIT_SIGN:
+						System.out.println("init digital sign request received");
+						String filePath = getFilePath();
+						break;
+						
+					default:
+						sendToServiceProvider("Command doesn't exists.");
+					}
+
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	// ------------------------------------
 	// ------- UTILITY FUNCTIONS ----------
 	// ------------------------------------
@@ -661,7 +709,7 @@ public class MiddlewareMain extends Application {
 		}
 		String str = "";
 		for (int j = 0; j < hexChars.length; j += 2) {
-			str += "0x" + hexChars[j] + hexChars[j + 1] + ", ";
+			str += "(byte) 0x" + hexChars[j] + hexChars[j + 1] + ", ";
 		}
 		return str;
 	}

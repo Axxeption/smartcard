@@ -69,63 +69,70 @@ public class CAService {
 		
 	}
 	
-	
-	
 	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, URISyntaxException {
+		
 		//Need tis code to generate CA keys
-//        try {
-//        	KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-//            // Initialize KeyPairGenerator.
-//            keyGen.initialize(512);
-//
-//            // Generate Key Pairs, a private key and a public key.
-//            KeyPair keyPair = keyGen.generateKeyPair();
-//            saveKeyPair(keyPair);
-////            PrivateKey privateKey = keyPair.getPrivate();
-////            PublicKey publicKey = keyPair.getPublic();
-////            try {
-////				System.out.println("Check if load works: " + loadPublicKey("RSA"));
-////			} catch (InvalidKeySpecException | URISyntaxException e) {
-////				// TODO Auto-generated catch block
-////				e.printStackTrace();
-////			}
-//            
-//            
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        }
+		initiate();
+    }
+	
+	private static void initiate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, URISyntaxException {
+		try {
+        	KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            // Initialize KeyPairGenerator.
+            keyGen.initialize(512);
+
+            // Generate Key Pairs, a private key and a public key.
+            KeyPair keyPair = keyGen.generateKeyPair();
+           // saveKeyPair(keyPair);
+//            PrivateKey privateKey = keyPair.getPrivate();
+//            PublicKey publicKey = keyPair.getPublic();
+//            try {
+//				System.out.println("Check if load works: " + loadPublicKey("RSA"));
+//			} catch (InvalidKeySpecException | URISyntaxException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+            
+            
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
 		
 		
 		//need this code once to sign the data 
-//		final byte[] att_name = new byte[] { (byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x56,
-//				(byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65 };
-//		Signature sig = Signature.getInstance("SHA1WithRSA");
-//		try {
-//			sig.initSign(loadPrivateKey("RSA"));
-//		
-//			
-//		sig.update(att_name);
-//        byte[] signatureBytes = sig.sign();
-//        System.out.println(signatureBytes);
-//        sig.initVerify(loadPublicKey("RSA"));
-//        sig.update(att_name);
-//
-//        System.out.println(sig.verify(signatureBytes));
-//        System.out.println(bytesToHex(signatureBytes));
-//		} catch (InvalidKeyException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		//Need this method to generate certificates
-//		//generateCommonCertificate();
-// catch (SignatureException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-    }
-	
-	private static void saveKeyPair(KeyPair keyPair) throws IOException {
+		final byte[] att_name = new byte[] {(byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x43, (byte) 0x61, (byte) 0x72, (byte) 0x6C, (byte) 0x20, (byte) 0x4C, (byte) 0x2E, (byte) 0x20, (byte) 0x56, (byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65, (byte) 0x0D, (byte) 0x0A, (byte) 0x39, (byte) 0x36, (byte) 0x30, (byte) 0x32, (byte) 0x32, (byte) 0x31, (byte) 0x34, (byte) 0x37, (byte) 0x37, (byte) 0x35, (byte) 0x31, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x0D, (byte) 0x0A, (byte) 0x52, (byte) 0x6F, (byte) 0x65, (byte) 0x73, (byte) 0x65, (byte) 0x6C, (byte) 0x61, (byte) 0x72, (byte) 0x65, (byte) 0x20, (byte) 0x32, (byte) 0x31, (byte) 0x20, (byte) 0x46, (byte) 0x45, (byte) 0x42, (byte) 0x20, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36, (byte) 0x0D, (byte) 0x0A, (byte) 0x4D, (byte) 0x61, (byte) 0x6C, (byte) 0x65, (byte) 0x0D, (byte) 0x0A, (byte) 0x35, (byte) 0x39, (byte) 0x32, (byte) 0x2D, (byte) 0x35, (byte) 0x37, (byte) 0x30, (byte) 0x34, (byte) 0x33, (byte) 0x34, (byte) 0x30, (byte) 0x34, (byte) 0x2D, (byte) 0x30, (byte) 0x39, (byte) 0x0D, (byte) 0x0A, (byte) 0x3D};
+		Signature sig = Signature.getInstance("SHA1WithRSA");
+		try {
+			sig.initSign(loadPrivateKey("RSA"));
 		
+			final byte[] ADDRESSFile = new byte[] {(byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69, (byte) 0x74, (byte) 0x61, (byte) 0x61, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x72, (byte) 0x61, (byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x31, (byte) 0x33, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x38, (byte) 0x36, (byte) 0x31, (byte) 0x30, (byte) 0x0D, (byte) 0x0A, (byte) 0x4B, (byte) 0x6F, (byte) 0x72, (byte) 0x74, (byte) 0x65, (byte) 0x6D, (byte) 0x61, (byte) 0x72, (byte) 0x6B, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x3D};
+			final byte[] ADDRESSFileSignedRRN = new byte[] {(byte) 0x8F, (byte) 0x5D, (byte) 0x77, (byte) 0x84, (byte) 0xAD, (byte) 0x3A, (byte) 0x77, (byte) 0x3E, (byte) 0x41, (byte) 0x49, (byte) 0x1F, (byte) 0x26, (byte) 0xC3, (byte) 0x43, (byte) 0xB6, (byte) 0x6F, (byte) 0x36, (byte) 0xEB, (byte) 0xE9, (byte) 0xC3, (byte) 0x5B, (byte) 0x6E, (byte) 0x42, (byte) 0x0E, (byte) 0xB0, (byte) 0xFD, (byte) 0xD9, (byte) 0x58, (byte) 0x56, (byte) 0xFF, (byte) 0x35, (byte) 0x9D, (byte) 0x7C, (byte) 0x16, (byte) 0x0B, (byte) 0xD2, (byte) 0x88, (byte) 0x26, (byte) 0x1F, (byte) 0xD0, (byte) 0x8D, (byte) 0x92, (byte) 0x6C, (byte) 0xBC, (byte) 0x95, (byte) 0x31, (byte) 0x12, (byte) 0x22, (byte) 0x81, (byte) 0xAB, (byte) 0x2D, (byte) 0x65, (byte) 0xFD, (byte) 0x88, (byte) 0x39, (byte) 0x06, (byte) 0xE1, (byte) 0xD6, (byte) 0xCD, (byte) 0x00, (byte) 0xC2, (byte) 0x82, (byte) 0xDF, (byte) 0x90};
+
+		sig.update(ADDRESSFile);
+		System.out.println("sign the data");
+        byte[] signatureBytes = sig.sign();
+//        System.out.println(signatureBytes);
+//        System.out.println(signatureBytes.length);
+        
+        sig.initVerify(loadPublicKey("RSA"));
+        sig.update(ADDRESSFile);
+
+        System.out.println("check: " + sig.verify(ADDRESSFileSignedRRN));
+        System.out.println("singaturebytes:" + bytesToHex(signatureBytes));
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//Need this method to generate certificates
+		//generateCommonCertificate();
+ catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+	
+	private static void saveKeyPair(KeyPair keyPair) throws IOException {	
 		
 		PrivateKey privateKey = keyPair.getPrivate();
 		PublicKey publicKey = keyPair.getPublic();
@@ -143,13 +150,15 @@ public class CAService {
 		fos = new FileOutputStream("privateRRN.key");
 		fos.write(pkcs8EncodedKeySpec.getEncoded());
 		fos.close();
+		System.out.println("Succesfully written");
 	}
 
 	public static PrivateKey loadPrivateKey(String algorithm)
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
-		URL d = CAService.class.getClassLoader().getResource("./key/privateRRN.key");
+//		System.out.println(CAService.class.toString());
+		URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\privateRRN.key");
 		System.out.println("the private key of the CA is succesfully found at: " + d);
 		File filePrivateKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePrivateKey);
@@ -236,7 +245,8 @@ public class CAService {
 		// Read Public Key.		
 		//URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\publicRRN.key");
 
-		URL d = CAService.class.getClassLoader().getResource("./key/publicRRN.key");
+		URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\publicRRN.key");
+		System.out.println("the public key of the CA is succesfully found at: " + d);
 		File filePublicKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePublicKey);
 		byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
