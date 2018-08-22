@@ -84,8 +84,8 @@ public class ServiceProviderMain extends Application {
 	private ServiceProvider lastUsedSP;
 	private boolean errorAuth = false;
 	private boolean errorAuthCard = false;
+	private ArrayList <BigInteger> CRL = new ArrayList<>(3);
 	
-
     /**
      * Constructor
      */
@@ -111,6 +111,8 @@ public class ServiceProviderMain extends Application {
         initRootLayout();
         showMainView();
         connectToMiddleWare();
+        CRL.add(new BigInteger("125422014097029724918108792105071187178873784845384312037013610507433438597578390785240316080683301401867427452546962388774824104444331913648865840870706609"));
+        CRL.add(new BigInteger("12542201409702972491810953105071187178873784845384312037013610507433438597578390785240316080683301401867427452546962388774824104444331913648865840870706609"));
     }
 
     @Override
@@ -479,7 +481,7 @@ public class ServiceProviderMain extends Application {
 			else if(obj instanceof SignedDocumentResponse){
 				SignedDocumentResponse signedDocumentResponse = (SignedDocumentResponse) obj;
 				mainController.addToDataLog("received signed document from SC");
-				verifySignature(signedDocumentResponse);
+				verifyDigitalSignature(signedDocumentResponse);
 				
 			}
 			else {
@@ -511,13 +513,11 @@ public class ServiceProviderMain extends Application {
 				if(counter == 2) {
 					AddressFile = Arrays.copyOfRange(totalArray, IDFile.length + SignIDFile.length + 1,	i+1 );
 					SignAddressFile = Arrays.copyOfRange(totalArray, IDFile.length + SignIDFile.length + AddressFile.length + 1, totalArray.length);
-
 				}
 				counter++;
 			}
 		}
-		
-		System.out.println("Received IDFile: " +  bytesToHex(IDFile));
+		System.out.println("Received IDFile: " +  bytesToHex(Arrays.copyOfRange(IDFile, 0,	(IDFile.length -1) )));
 		System.out.println("SignedFile (length: " + SignIDFile.length + "): " + bytesToHex(SignIDFile));
 		String IDText = new String(IDFile, StandardCharsets.UTF_8);
 		String AddressText = new String(AddressFile, StandardCharsets.UTF_8);
@@ -532,7 +532,7 @@ public class ServiceProviderMain extends Application {
 			if(sig.verify(SignIDFile)) {
 				System.out.println("The signature on the IDFile is valid by the RRN");
 				mainController.addToDataLog("Signature on IDFile is valid by the RRN");
-				mainController.addToDataLog("Received IDFile from smartcard: " + IDText );
+				mainController.addToDataLog("Received IDFile from smartcard: " + IDText.substring(0, (IDText.length()-1)) );
 				System.out.println("The received address: " + AddressText);
 				System.out.println("The address in bytes: " + bytesToHex(AddressFile));
 				System.out.println(SignAddressFile.length + "is: " + bytesToHex(SignAddressFile));
@@ -540,7 +540,7 @@ public class ServiceProviderMain extends Application {
 				if(sig.verify(SignAddressFile)) {
 					mainController.addToDataLog("Signature on AddressFile is valid by the RRN");
 					System.out.println("The signature on the AddressFile is valid by the RRN!");
-					mainController.addToDataLog("Received AddressFile from smartcard: " + AddressText);
+					mainController.addToDataLog("Received AddressFile from smartcard: " + AddressText.substring(0, (AddressText.length() -1 )));
 				}
 				else {
 					mainController.addToDataLog("AddressFile not valid!");
@@ -573,14 +573,13 @@ public class ServiceProviderMain extends Application {
 	}
     
     
-
 	private PublicKey loadPublicKeyRRN(String algorithm)
 				throws IOException, NoSuchAlgorithmException,
 				InvalidKeySpecException, URISyntaxException {
 			// Read Public Key.		
-			//URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\publicRRN.key");
+			URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\publicRRN.key");
 			//We assume that the pkRRN is know for every SP
-			URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\publicRRN.key");
+//			URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\publicRRN.key");
 			System.out.println("the public key of the CA is succesfully found at: " + d);
 			File filePublicKey = new File(d.toURI());
 			FileInputStream fis = new FileInputStream(filePublicKey);
@@ -608,11 +607,16 @@ public class ServiceProviderMain extends Application {
      * TODO verify signature and sign certificate
      * @param signedDocumentResponse
      */
-    private void verifySignature(SignedDocumentResponse signedDocumentResponse) {
-    	byte [] response = signedDocumentResponse.getResponse();
+    private void verifyDigitalSignature(SignedDocumentResponse signedDocumentResponse) {
+    	byte [] response = signedDocumentResponse.getResponse(); //nog samengeplakt cert (length 136) + gesignede hash
     	byte [] documentHash = signedDocumentResponse.getDocumentHash();
     	byte [] unsignedDocument = signedDocumentResponse.getUnsignedDocument();
     	
+    	byte[] certificate = Arrays.copyOfRange(response, 0, 137);
+    	byte[] bytesToSignCert = Arrays.copyOfRange(certificate, 1, 73);
+    	byte[] bytesSignedCert = Arrays.copyOfRange(certificate, 73, 137);
+    	
+    	byte[] signedHashData = Arrays.copyOfRange(response, 137, response.length);
     	
     	//authenticiteit van document controleren
     	MessageDigest md;
@@ -635,17 +639,55 @@ public class ServiceProviderMain extends Application {
 				return;
 			}
 			
-			//TODO geldigheid van certificaat controleren dmv CRL
+			//TODO geldigheid van certificaat van SC (specifiek per kaart!) controleren dmv CRL
 			// dit kan gewoon een simpele text file/java class of zelfs arraylist met alle certificaten die niet meer geldig zijn
-			//TODO authenticiteit van signature controleren op zelfde manier als verifyCert methode
 			
+			//TODO authenticiteit van signature controleren op zelfde manier als verifyCert methode (gebruik doorgestuurd Cert met signedhash en unsignedhash)
+			//controleer eerst certificaat als de sign van de CA klopt
+			Signature verifier = Signature.getInstance("SHA1WithRSA");
+			verifier.initVerify(CAService.loadPublicKey("RSA"));
+			verifier.update(bytesToSignCert);
+			System.out.println("To sign length: " + bytesToSignCert.length + "   signed length: " + bytesSignedCert.length);
+			System.out.println("ToSign: " + bytesToDec(bytesToSignCert) );
+			System.out.println("Signed: " + bytesToDec(bytesSignedCert));
+
+            if(verifier.verify(bytesSignedCert)) {
+    			mainController.addToDataLog("The certificate is valid signed by the CA!");
+    			
+    			//controleer signature op het doc met de op te bouwen pk van de kaart.
+//    			System.out.println("where he cuts: bytesTosigncert: " + bytesToDec(bytesToSignCert));
+    			BigInteger exponent = new BigInteger(1,Arrays.copyOfRange(bytesToSignCert, 0, 3));
+    			byte [] exparray = exponent.toByteArray();
+    			System.out.println("Exponent PK: "+ bytesToDec(exparray));
+    			BigInteger modulus = new BigInteger(1,Arrays.copyOfRange(bytesToSignCert, 4, 68));
+    			System.out.println(modulus);
+    			
+    			//CRL op basis van modulus, aangezien dit uniek is in deze omgeving.
+    			if(!CRL.contains(modulus)) {
+    			
+    			byte [] modarray = modulus.toByteArray();
+    			System.out.println( modarray.length + " modulus: "+ bytesToDec(modarray));
+    			
+    			RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+    			KeyFactory factory = KeyFactory.getInstance("RSA");
+    			PublicKey publicAuthKey = factory.generatePublic(spec);
+    			verifier.initVerify(publicAuthKey);
+    			verifier.update(documentHash); //hash van doc
+    			System.out.println(bytesToDec(documentHash));
+
+//    			System.out.println("check digital signature on doc: "+ verifier.verify(signedHashData)); //sign van hash van documentHash
+    			if(verifier.verify(signedHashData)) {
+        			mainController.addToDataLog("The document has a valid signature!");
+    			}	
+            }else {
+    			mainController.addToDataLog("The beID is in the revocationlist, so it is not possible to put digital signatures!");
+            }
+            }
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-    	
+		}	
     }
     
     private void verifyResponseAndCertificate(AuthenticateToSPResponse responseFromSC) {

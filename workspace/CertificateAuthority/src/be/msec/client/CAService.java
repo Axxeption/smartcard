@@ -72,7 +72,8 @@ public class CAService {
 	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, URISyntaxException {
 		
 		//Need tis code to generate CA keys
-		initiate();
+		//initiate();
+		loadPrivateKey("RSA");
     }
 	
 	private static void initiate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, URISyntaxException {
@@ -83,7 +84,7 @@ public class CAService {
 
             // Generate Key Pairs, a private key and a public key.
             KeyPair keyPair = keyGen.generateKeyPair();
-           // saveKeyPair(keyPair);
+            //saveKeyPair(keyPair);
 //            PrivateKey privateKey = keyPair.getPrivate();
 //            PublicKey publicKey = keyPair.getPublic();
 //            try {
@@ -100,39 +101,36 @@ public class CAService {
 		
 		
 		//need this code once to sign the data 
-		final byte[] att_name = new byte[] {(byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x43, (byte) 0x61, (byte) 0x72, (byte) 0x6C, (byte) 0x20, (byte) 0x4C, (byte) 0x2E, (byte) 0x20, (byte) 0x56, (byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65, (byte) 0x0D, (byte) 0x0A, (byte) 0x39, (byte) 0x36, (byte) 0x30, (byte) 0x32, (byte) 0x32, (byte) 0x31, (byte) 0x34, (byte) 0x37, (byte) 0x37, (byte) 0x35, (byte) 0x31, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x0D, (byte) 0x0A, (byte) 0x52, (byte) 0x6F, (byte) 0x65, (byte) 0x73, (byte) 0x65, (byte) 0x6C, (byte) 0x61, (byte) 0x72, (byte) 0x65, (byte) 0x20, (byte) 0x32, (byte) 0x31, (byte) 0x20, (byte) 0x46, (byte) 0x45, (byte) 0x42, (byte) 0x20, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36, (byte) 0x0D, (byte) 0x0A, (byte) 0x4D, (byte) 0x61, (byte) 0x6C, (byte) 0x65, (byte) 0x0D, (byte) 0x0A, (byte) 0x35, (byte) 0x39, (byte) 0x32, (byte) 0x2D, (byte) 0x35, (byte) 0x37, (byte) 0x30, (byte) 0x34, (byte) 0x33, (byte) 0x34, (byte) 0x30, (byte) 0x34, (byte) 0x2D, (byte) 0x30, (byte) 0x39, (byte) 0x0D, (byte) 0x0A, (byte) 0x3D};
-		Signature sig = Signature.getInstance("SHA1WithRSA");
-		try {
-			sig.initSign(loadPrivateKey("RSA"));
-		
-			final byte[] ADDRESSFile = new byte[] {(byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69, (byte) 0x74, (byte) 0x61, (byte) 0x61, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x72, (byte) 0x61, (byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x31, (byte) 0x33, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x38, (byte) 0x36, (byte) 0x31, (byte) 0x30, (byte) 0x0D, (byte) 0x0A, (byte) 0x4B, (byte) 0x6F, (byte) 0x72, (byte) 0x74, (byte) 0x65, (byte) 0x6D, (byte) 0x61, (byte) 0x72, (byte) 0x6B, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x3D};
-			final byte[] ADDRESSFileSignedRRN = new byte[] {(byte) 0x8F, (byte) 0x5D, (byte) 0x77, (byte) 0x84, (byte) 0xAD, (byte) 0x3A, (byte) 0x77, (byte) 0x3E, (byte) 0x41, (byte) 0x49, (byte) 0x1F, (byte) 0x26, (byte) 0xC3, (byte) 0x43, (byte) 0xB6, (byte) 0x6F, (byte) 0x36, (byte) 0xEB, (byte) 0xE9, (byte) 0xC3, (byte) 0x5B, (byte) 0x6E, (byte) 0x42, (byte) 0x0E, (byte) 0xB0, (byte) 0xFD, (byte) 0xD9, (byte) 0x58, (byte) 0x56, (byte) 0xFF, (byte) 0x35, (byte) 0x9D, (byte) 0x7C, (byte) 0x16, (byte) 0x0B, (byte) 0xD2, (byte) 0x88, (byte) 0x26, (byte) 0x1F, (byte) 0xD0, (byte) 0x8D, (byte) 0x92, (byte) 0x6C, (byte) 0xBC, (byte) 0x95, (byte) 0x31, (byte) 0x12, (byte) 0x22, (byte) 0x81, (byte) 0xAB, (byte) 0x2D, (byte) 0x65, (byte) 0xFD, (byte) 0x88, (byte) 0x39, (byte) 0x06, (byte) 0xE1, (byte) 0xD6, (byte) 0xCD, (byte) 0x00, (byte) 0xC2, (byte) 0x82, (byte) 0xDF, (byte) 0x90};
-
-		sig.update(ADDRESSFile);
-		System.out.println("sign the data");
-        byte[] signatureBytes = sig.sign();
-//        System.out.println(signatureBytes);
-//        System.out.println(signatureBytes.length);
-        
-        sig.initVerify(loadPublicKey("RSA"));
-        sig.update(ADDRESSFile);
-
-        System.out.println("check: " + sig.verify(ADDRESSFileSignedRRN));
-        System.out.println("singaturebytes:" + bytesToHex(signatureBytes));
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		Signature sig = Signature.getInstance("SHA1WithRSA");
+//		try {
+//			sig.initSign(loadPrivateKey("RSA"));
+//		
+//		final byte[] ADDRESSFile = new byte[] {(byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69, (byte) 0x74, (byte) 0x61, (byte) 0x61, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x72, (byte) 0x61, (byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x31, (byte) 0x33, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x38, (byte) 0x36, (byte) 0x31, (byte) 0x30, (byte) 0x0D, (byte) 0x0A, (byte) 0x4B, (byte) 0x6F, (byte) 0x72, (byte) 0x74, (byte) 0x65, (byte) 0x6D, (byte) 0x61, (byte) 0x72, (byte) 0x6B, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x3D};
+//		final byte[] ADDRESSFileSigned = new byte[] {(byte) 0x8F, (byte) 0x5D, (byte) 0x77, (byte) 0x84, (byte) 0xAD, (byte) 0x3A, (byte) 0x77, (byte) 0x3E, (byte) 0x41, (byte) 0x49, (byte) 0x1F, (byte) 0x26, (byte) 0xC3, (byte) 0x43, (byte) 0xB6, (byte) 0x6F, (byte) 0x36, (byte) 0xEB, (byte) 0xE9, (byte) 0xC3, (byte) 0x5B, (byte) 0x6E, (byte) 0x42, (byte) 0x0E, (byte) 0xB0, (byte) 0xFD, (byte) 0xD9, (byte) 0x58, (byte) 0x56, (byte) 0xFF, (byte) 0x35, (byte) 0x9D, (byte) 0x7C, (byte) 0x16, (byte) 0x0B, (byte) 0xD2, (byte) 0x88, (byte) 0x26, (byte) 0x1F, (byte) 0xD0, (byte) 0x8D, (byte) 0x92, (byte) 0x6C, (byte) 0xBC, (byte) 0x95, (byte) 0x31, (byte) 0x12, (byte) 0x22, (byte) 0x81, (byte) 0xAB, (byte) 0x2D, (byte) 0x65, (byte) 0xFD, (byte) 0x88, (byte) 0x39, (byte) 0x06, (byte) 0xE1, (byte) 0xD6, (byte) 0xCD, (byte) 0x00, (byte) 0xC2, (byte) 0x82, (byte) 0xDF, (byte) 0x90};
+//
+//		sig.update(ADDRESSFile);
+//		System.out.println("sign the data");
+//        byte[] signatureBytes = sig.sign();
+////        System.out.println(signatureBytes);
+////        System.out.println(signatureBytes.length);
+//        
+//        sig.initVerify(loadPublicKey("RSA"));
+//        sig.update(ADDRESSFile);
+//
+//        System.out.println("check: " + sig.verify(ADDRESSFileSigned));
+//        System.out.println("singaturebytes:" + bytesToHex(signatureBytes));
+//		} catch (InvalidKeyException | SignatureException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		//Need this method to generate certificates
-		//generateCommonCertificate();
- catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		generateCommonCertificate();
+	
 
 	}
 	
 	private static void saveKeyPair(KeyPair keyPair) throws IOException {	
+		
 		
 		PrivateKey privateKey = keyPair.getPrivate();
 		PublicKey publicKey = keyPair.getPublic();
@@ -140,14 +138,14 @@ public class CAService {
 		// Store Public Key.
 		X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
 				publicKey.getEncoded());
-		FileOutputStream fos = new FileOutputStream("publicRRN.key");
+		FileOutputStream fos = new FileOutputStream("publicDigSign.key");
 		fos.write(x509EncodedKeySpec.getEncoded());
 		fos.close();
  
 		// Store Private Key.
 		PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
 				privateKey.getEncoded());
-		fos = new FileOutputStream("privateRRN.key");
+		fos = new FileOutputStream("privateDigSign.key");
 		fos.write(pkcs8EncodedKeySpec.getEncoded());
 		fos.close();
 		System.out.println("Succesfully written");
@@ -158,9 +156,12 @@ public class CAService {
 			InvalidKeySpecException, URISyntaxException {
 		// Read Private Key.
 //		System.out.println(CAService.class.toString());
-		URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\privateRRN.key");
-		System.out.println("the private key of the CA is succesfully found at: " + d);
+		URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\src\\key\\private.key");
+		System.out.println(d);
+		//URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\private.key");
 		File filePrivateKey = new File(d.toURI());
+		System.out.println("the private key of the CA is succesfully found at: " + d);
+
 		FileInputStream fis = new FileInputStream(filePrivateKey);
 		byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
 		fis.read(encodedPrivateKey);
@@ -179,34 +180,35 @@ public class CAService {
 	private static void generateCommonCertificate() {
 		try {
         	KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            // Initialize KeyPairGenerator.
-            keyGen.initialize(512);
+        	keyGen.initialize(512);
 
-            // Generate Key Pairs, a private key and a public key.
-            KeyPair keyPair = keyGen.generateKeyPair();
-            PrivateKey privateKey = keyPair.getPrivate();
-            PublicKey publicKey = keyPair.getPublic();
+	        // Generate Key Pairs, a private key and a public key.
+	        KeyPair keyPair = keyGen.generateKeyPair();
+	        PrivateKey privateKey = keyPair.getPrivate();
+			PublicKey publicKey = keyPair.getPublic();
             
-            //generating the common keys
+            //generating the new keys for signing
             RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
             RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) privateKey;
-//            System.out.println("Commoncertificate privatekey exponent: " + bytesToDec(rsaPrivateKey.getPrivateExponent().toByteArray()));
-//            System.out.println("Commoncertificate privatekey modulus: " + bytesToDec(rsaPrivateKey.getModulus().toByteArray()));
-//            System.out.println("Commoncertificate publickey exponent: " + bytesToDec(rsaPublicKey.getPublicExponent().toByteArray()));
-//            System.out.println("Commoncertificate publickey modulus: " + bytesToDec(rsaPublicKey.getModulus().toByteArray()));
+            System.out.println("privatekey exponent: " + bytesToDec(rsaPrivateKey.getPrivateExponent().toByteArray()));
+            System.out.println("privatekey modulus: " + bytesToDec(rsaPrivateKey.getModulus().toByteArray()));
+            System.out.println("certificate publickey exponent: " + bytesToDec(rsaPublicKey.getPublicExponent().toByteArray()));
+            System.out.println(rsaPublicKey.getModulus().toByteArray().length + " certificate publickey modulus: " + bytesToDec(rsaPublicKey.getModulus().toByteArray()));
             
-            //creating a common certificate signed by the CA
+            //creating a certificate signed by the CA
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(rsaPublicKey.getPublicExponent().toByteArray());
             outputStream.write(rsaPublicKey.getModulus().toByteArray());
             outputStream.write(ByteBuffer.allocate(4).putInt(new Random().nextInt()).array());
             //this bytes will be signed: pubExponent + pubModulus + randomInt
             byte[] bytesToSign = outputStream.toByteArray();
+            System.out.println("lengths of bytesToSign: " + bytesToSign.length);
             
-            //sign the bytes
+            //sign the bytes with CAkey
             Signature sig = Signature.getInstance("SHA1WithRSA");
 			sig.initSign(loadPrivateKey("RSA"));
 			sig.update(bytesToSign);
+			
 			byte[] signatureBytes = sig.sign();
             
 			//certificate is the information + signature from the CA
@@ -216,9 +218,16 @@ public class CAService {
 			byte[] commonCertificate = outputStream.toByteArray();
 			
 			//print out the certificate, the fourth byte is not useful, take care when reconstructing keys
-            System.out.println(bytesToDec(commonCertificate));
+			System.out.println("Cert length: " + commonCertificate.length);
+            System.out.println("Certificate: " + bytesToDec(commonCertificate));
 			
+            //check als de signature klopt
+            sig.initVerify(loadPublicKey("RSA")); //de pk van CA
+            sig.update(bytesToSign);
+            System.out.println("check: " + sig.verify(signatureBytes)); //true! --> signed met CA
 			
+            System.out.println("to signed: " + bytesToDec(bytesToSign));
+            System.out.println("signed: "+ bytesToDec(signatureBytes));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -243,9 +252,9 @@ public class CAService {
 			throws IOException, NoSuchAlgorithmException,
 			InvalidKeySpecException, URISyntaxException {
 		// Read Public Key.		
-		//URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\publicRRN.key");
+		URL d = new URL("file:\\"+ System.getProperty("user.dir") + "\\key\\public.key");
 
-		URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\publicRRN.key");
+//		URL d = new URL("file:///C:\\Users\\vulst\\Documents\\School_4elict\\Veilige_software\\smartcard\\workspace\\CertificateAuthority\\src\\key\\public.key");
 		System.out.println("the public key of the CA is succesfully found at: " + d);
 		File filePublicKey = new File(d.toURI());
 		FileInputStream fis = new FileInputStream(filePublicKey);
@@ -287,7 +296,7 @@ public class CAService {
 	public static String bytesToDec(byte[] barray) {
 		String str = "";
 		for (byte b : barray)
-			str += (int) b + ", ";
+			str += "(byte) " + (int) b + ", ";
 		return str;
 	}
 

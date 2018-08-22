@@ -4,9 +4,11 @@ import java.io.Serializable;
 
 public class SignedDocumentResponse implements Serializable{
 
-	private byte[] response;
-	private byte[] unsignedDocument;
-	private byte[] documentHash;
+	//terugzenden van gesignede hash + certificaat (=response) + oorspronkelijke bericht en hash zodat de hash zelf ook gecontroleerd kan worden
+
+	private byte[] response; //nog samengeplakt cert (length 136) + gesignede hash
+	private byte[] unsignedDocument; // volledig plain doc
+	private byte[] documentHash; //om hash te controleren met doc
 	
 	public byte[] getResponse() {
 		return response;

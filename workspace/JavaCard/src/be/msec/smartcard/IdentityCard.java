@@ -13,7 +13,6 @@ import java.util.Arrays;
 
 import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
 
-//TODO beno deze magje niet gebruiken ;) cheater
 //import java.io.ByteArrayOutputStream;
 //import java.io.IOException;
 //import java.math.BigInteger;
@@ -150,7 +149,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 68, (byte) 124, (byte) -1, (byte) -128, (byte) -49, (byte) 124, (byte) 103, (byte) 28, (byte) 56,
 			(byte) -114, (byte) -10, (byte) 97, (byte) -78, (byte) 54 };
 
-	private byte[] commonCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13,
+	private byte[] authCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13,
 			(byte) -113, (byte) 13, (byte) 45, (byte) -34, (byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111,
 			(byte) -55, (byte) 72, (byte) 80, (byte) 45, (byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87,
 			(byte) 119, (byte) -116, (byte) -109, (byte) 30, (byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82,
@@ -166,7 +165,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 29, (byte) -95, (byte) -40, (byte) 7, (byte) 96, (byte) -20, (byte) -35, (byte) 65, (byte) 119,
 			(byte) 49, (byte) 91, (byte) 99, (byte) 98, (byte) 66, (byte) -25, (byte) -15, (byte) 41, (byte) -14,
 			(byte) -62, (byte) 5, (byte) 108, (byte) -110, (byte) 37, (byte) -95 };
-	private byte[] privExp_ComCer = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51,
+	private byte[] privExp_AuthCer = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51,
 			(byte) 20, (byte) -55, (byte) 63, (byte) 126, (byte) -34, (byte) 120, (byte) -90, (byte) -16, (byte) 30,
 			(byte) -66, (byte) 115, (byte) 50, (byte) 108, (byte) 15, (byte) 89, (byte) -78, (byte) -107, (byte) -98,
 			(byte) 4, (byte) -4, (byte) -117, (byte) -110, (byte) 13, (byte) -93, (byte) -124, (byte) -77, (byte) 34,
@@ -174,7 +173,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) -114, (byte) -20, (byte) -66, (byte) 93, (byte) -32, (byte) 101, (byte) -27, (byte) -4, (byte) 86,
 			(byte) -29, (byte) -79, (byte) 24, (byte) 38, (byte) -21, (byte) -104, (byte) -10, (byte) -18, (byte) -5,
 			(byte) 84, (byte) 77, (byte) -2, (byte) 125 };
-	private byte[] privMod_ComCer = new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34,
+	private byte[] privMod_AuthCer = new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34,
 			(byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, (byte) -55, (byte) 72, (byte) 80, (byte) 45,
 			(byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, (byte) 119, (byte) -116, (byte) -109, (byte) 30,
 			(byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, (byte) 103, (byte) -125, (byte) -70, (byte) -46,
@@ -183,39 +182,17 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89,
 			(byte) 127, (byte) -46, (byte) -109, (byte) -91 };
 	
-	private byte[] signatureCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -119, (byte) 13,
-			(byte) -113, (byte) 13, (byte) 45, (byte) -34, (byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111,
-			(byte) -55, (byte) 72, (byte) 80, (byte) 45, (byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87,
-			(byte) 119, (byte) -116, (byte) -109, (byte) 30, (byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82,
-			(byte) 103, (byte) -125, (byte) -70, (byte) -46, (byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36,
-			(byte) -94, (byte) 59, (byte) -5, (byte) 32, (byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41,
-			(byte) -106, (byte) -23, (byte) -40, (byte) -23, (byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53,
-			(byte) 31, (byte) 59, (byte) -50, (byte) 89, (byte) 127, (byte) -46, (byte) -109, (byte) -91, (byte) 101,
-			(byte) 16, (byte) -13, (byte) 41, (byte) 82, (byte) 35, (byte) -59, (byte) 101, (byte) -89, (byte) 66,
-			(byte) 3, (byte) -59, (byte) -45, (byte) 32, (byte) -118, (byte) -76, (byte) -103, (byte) 21, (byte) 69,
-			(byte) -97, (byte) -102, (byte) -58, (byte) -82, (byte) 112, (byte) -113, (byte) 120, (byte) 69,
-			(byte) -101, (byte) -119, (byte) 98, (byte) -41, (byte) -126, (byte) -103, (byte) 25, (byte) -109,
-			(byte) -63, (byte) -108, (byte) 34, (byte) 61, (byte) 39, (byte) 56, (byte) 76, (byte) 127, (byte) -90,
-			(byte) 29, (byte) -95, (byte) -40, (byte) 7, (byte) 96, (byte) -20, (byte) -35, (byte) 65, (byte) 119,
-			(byte) 49, (byte) 91, (byte) 99, (byte) 98, (byte) 66, (byte) -25, (byte) -15, (byte) 41, (byte) -14,
-			(byte) -62, (byte) 5, (byte) 108, (byte) -110, (byte) 37, (byte) -95 };
-	private byte[] privExp_signatureCertificate = new byte[] { (byte) 81, (byte) -47, (byte) -61, (byte) 102, (byte) 21, (byte) -51,
-			(byte) 20, (byte) -55, (byte) 63, (byte) 126, (byte) -34, (byte) 120, (byte) -90, (byte) -16, (byte) 30,
-			(byte) -66, (byte) 115, (byte) 50, (byte) 108, (byte) 15, (byte) 89, (byte) -78, (byte) -107, (byte) -98,
-			(byte) 4, (byte) -4, (byte) -117, (byte) -110, (byte) 13, (byte) -93, (byte) -124, (byte) -77, (byte) 34,
-			(byte) -59, (byte) 37, (byte) 45, (byte) 62, (byte) -81, (byte) 31, (byte) 98, (byte) -118, (byte) -7,
-			(byte) -114, (byte) -20, (byte) -66, (byte) 93, (byte) -32, (byte) 101, (byte) -27, (byte) -4, (byte) 86,
-			(byte) -29, (byte) -79, (byte) 24, (byte) 38, (byte) -21, (byte) -104, (byte) -10, (byte) -18, (byte) -5,
-			(byte) 84, (byte) 77, (byte) -2, (byte) 125 };
-	private byte[] privMod_signatureCertificate = new byte[] { (byte) -119, (byte) 13, (byte) -113, (byte) 13, (byte) 45, (byte) -34,
-			(byte) 81, (byte) -34, (byte) -85, (byte) -49, (byte) 111, (byte) -55, (byte) 72, (byte) 80, (byte) 45,
-			(byte) 109, (byte) 23, (byte) -34, (byte) 86, (byte) 87, (byte) 119, (byte) -116, (byte) -109, (byte) 30,
-			(byte) -91, (byte) 59, (byte) 24, (byte) 59, (byte) -82, (byte) 103, (byte) -125, (byte) -70, (byte) -46,
-			(byte) 3, (byte) 116, (byte) 103, (byte) -63, (byte) -36, (byte) -94, (byte) 59, (byte) -5, (byte) 32,
-			(byte) -68, (byte) -3, (byte) -29, (byte) -80, (byte) -41, (byte) -106, (byte) -23, (byte) -40, (byte) -23,
-			(byte) 35, (byte) -18, (byte) -121, (byte) -72, (byte) -53, (byte) 31, (byte) 59, (byte) -50, (byte) 89,
-			(byte) 127, (byte) -46, (byte) -109, (byte) -91 };
+	//Deze zijn aangepast nu
+	//Deze zitten in de CRL voor de demo
+//	private byte[] signatureCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -17, (byte) 121, (byte) 0, (byte) -30, (byte) -1, (byte) -22, (byte) -50, (byte) -111, (byte) -60, (byte) 109, (byte) -31, (byte) -24, (byte) -21, (byte) -86, (byte) 55, (byte) -44, (byte) -94, (byte) -64, (byte) -68, (byte) 70, (byte) 5, (byte) -116, (byte) -122, (byte) 104, (byte) -111, (byte) -117, (byte) 16, (byte) -107, (byte) 68, (byte) 59, (byte) 66, (byte) 20, (byte) 40, (byte) -38, (byte) -125, (byte) -19, (byte) 81, (byte) -122, (byte) -43, (byte) 62, (byte) 73, (byte) 12, (byte) 2, (byte) 106, (byte) 25, (byte) 54, (byte) 60, (byte) 9, (byte) -35, (byte) 38, (byte) 124, (byte) -59, (byte) 4, (byte) -85, (byte) 89, (byte) 22, (byte) 47, (byte) 48, (byte) -7, (byte) -11, (byte) -80, (byte) 127, (byte) -51, (byte) -79, (byte) -58, (byte) -64, (byte) 5, (byte) -85, (byte) -107, (byte) -27, (byte) 23, (byte) -126, (byte) 126, (byte) -87, (byte) 123, (byte) -8, (byte) -124, (byte) 28, (byte) 12, (byte) 21, (byte) -78, (byte) -45, (byte) -99, (byte) 114, (byte) 6, (byte) -16, (byte) 45, (byte) -83, (byte) 78, (byte) -59, (byte) 74, (byte) 112, (byte) 100, (byte) 16, (byte) 0, (byte) 54, (byte) -41, (byte) -8, (byte) 120, (byte) -67, (byte) 54, (byte) 90, (byte) -98, (byte) -114, (byte) -28, (byte) -65, (byte) 57, (byte) -104, (byte) 103, (byte) -120, (byte) 7, (byte) -53, (byte) 118, (byte) 74, (byte) -6, (byte) 103, (byte) 88, (byte) -39, (byte) -17, (byte) -7, (byte) -44, (byte) 126, (byte) 41, (byte) -31, (byte) 100, (byte) -102, (byte) 9, (byte) 70, (byte) 11, (byte) 20, (byte) 18, (byte) 120};
+//	private byte[] privExp_signatureCertificate = new byte[] { (byte) 89, (byte) -35, (byte) -36, (byte) -7, (byte) 82, (byte) -12, (byte) -71, (byte) 4, (byte) 118, (byte) -28, (byte) -115, (byte) -116, (byte) -83, (byte) 51, (byte) -71, (byte) -77, (byte) -16, (byte) 71, (byte) -57, (byte) -33, (byte) -73, (byte) 33, (byte) 95, (byte) 39, (byte) 74, (byte) -57, (byte) 23, (byte) 56, (byte) 12, (byte) -36, (byte) -8, (byte) 20, (byte) -126, (byte) -60, (byte) -51, (byte) 53, (byte) -117, (byte) 2, (byte) 11, (byte) 48, (byte) 9, (byte) 22, (byte) -62, (byte) 65, (byte) 86, (byte) 125, (byte) -62, (byte) -8, (byte) 105, (byte) -92, (byte) 6, (byte) 71, (byte) -105, (byte) -18, (byte) -10, (byte) 115, (byte) -108, (byte) 106, (byte) -71, (byte) -3, (byte) -41, (byte) 3, (byte) -43, (byte) -31};	
+//	private byte[] privMod_signatureCertificate = new byte[] { (byte) -17, (byte) 121, (byte) 0, (byte) -30, (byte) -1, (byte) -22, (byte) -50, (byte) -111, (byte) -60, (byte) 109, (byte) -31, (byte) -24, (byte) -21, (byte) -86, (byte) 55, (byte) -44, (byte) -94, (byte) -64, (byte) -68, (byte) 70, (byte) 5, (byte) -116, (byte) -122, (byte) 104, (byte) -111, (byte) -117, (byte) 16, (byte) -107, (byte) 68, (byte) 59, (byte) 66, (byte) 20, (byte) 40, (byte) -38, (byte) -125, (byte) -19, (byte) 81, (byte) -122, (byte) -43, (byte) 62, (byte) 73, (byte) 12, (byte) 2, (byte) 106, (byte) 25, (byte) 54, (byte) 60, (byte) 9, (byte) -35, (byte) 38, (byte) 124, (byte) -59, (byte) 4, (byte) -85, (byte) 89, (byte) 22, (byte) 47, (byte) 48, (byte) -7, (byte) -11, (byte) -80, (byte) 127, (byte) -51, (byte) -79};	
 
+	//Deze zijn wel geldig
+	private byte[] signatureCertificate = new byte[] { (byte) 1, (byte) 0, (byte) 1, (byte) 0, (byte) -99, (byte) -35, (byte) 36, (byte) -19, (byte) -93, (byte) 112, (byte) 14, (byte) -121, (byte) -11, (byte) -3, (byte) -78, (byte) -18, (byte) -25, (byte) 29, (byte) -45, (byte) 106, (byte) 51, (byte) -43, (byte) 113, (byte) 55, (byte) -69, (byte) 73, (byte) -90, (byte) 33, (byte) -99, (byte) 22, (byte) 100, (byte) 4, (byte) -46, (byte) -1, (byte) -86, (byte) 108, (byte) 106, (byte) 52, (byte) -121, (byte) 74, (byte) -104, (byte) -110, (byte) -13, (byte) 71, (byte) -108, (byte) 8, (byte) 12, (byte) -122, (byte) 14, (byte) 100, (byte) -8, (byte) 101, (byte) -67, (byte) 123, (byte) 4, (byte) 83, (byte) -65, (byte) -89, (byte) 38, (byte) 112, (byte) -36, (byte) 62, (byte) -25, (byte) 39, (byte) -107, (byte) -112, (byte) 108, (byte) 9, (byte) 104, (byte) -63, (byte) 26, (byte) -102, (byte) -123, (byte) 15, (byte) 84, (byte) 20, (byte) -56, (byte) -88, (byte) 102, (byte) 113, (byte) -45, (byte) 21, (byte) -36, (byte) 77, (byte) -53, (byte) -1, (byte) -29, (byte) -55, (byte) -41, (byte) -49, (byte) -127, (byte) -110, (byte) -74, (byte) 35, (byte) -23, (byte) -111, (byte) 27, (byte) 63, (byte) -29, (byte) -55, (byte) -47, (byte) -37, (byte) -119, (byte) 106, (byte) -75, (byte) -51, (byte) 2, (byte) -41, (byte) -34, (byte) -119, (byte) -81, (byte) 50, (byte) 89, (byte) -18, (byte) -62, (byte) 8, (byte) 55, (byte) -103, (byte) -46, (byte) -59, (byte) 62, (byte) 83, (byte) 37, (byte) -105, (byte) 31, (byte) 9, (byte) -33, (byte) -72, (byte) 85, (byte) 92, (byte) 95, (byte) 116, (byte) 47, (byte) -48, (byte) 104, (byte) -119};
+	private byte[] privExp_signatureCertificate = new byte[] {(byte) -105, (byte) -101, (byte) -74, (byte) -57, (byte) 114, (byte) -37, (byte) 63, (byte) 89, (byte) 91, (byte) -23, (byte) -42, (byte) 90, (byte) -110, (byte) 35, (byte) -106, (byte) -46, (byte) -68, (byte) 13, (byte) 20, (byte) -70, (byte) -115, (byte) 103, (byte) -31, (byte) -31, (byte) 14, (byte) 88, (byte) 94, (byte) -98, (byte) 51, (byte) 117, (byte) -50, (byte) 88, (byte) -26, (byte) 51, (byte) 97, (byte) -80, (byte) 28, (byte) 75, (byte) -34, (byte) 115, (byte) -79, (byte) -92, (byte) -113, (byte) -20, (byte) -37, (byte) -74, (byte) -9, (byte) -19, (byte) 119, (byte) -29, (byte) -35, (byte) 13, (byte) -123, (byte) -93, (byte) -89, (byte) -23, (byte) -62, (byte) -29, (byte) -13, (byte) 27, (byte) -93, (byte) -65, (byte) -79, (byte) -63};
+	private byte[] privMod_signatureCertificate = new byte[] {(byte) -99, (byte) -35, (byte) 36, (byte) -19, (byte) -93, (byte) 112, (byte) 14, (byte) -121, (byte) -11, (byte) -3, (byte) -78, (byte) -18, (byte) -25, (byte) 29, (byte) -45, (byte) 106, (byte) 51, (byte) -43, (byte) 113, (byte) 55, (byte) -69, (byte) 73, (byte) -90, (byte) 33, (byte) -99, (byte) 22, (byte) 100, (byte) 4, (byte) -46, (byte) -1, (byte) -86, (byte) 108, (byte) 106, (byte) 52, (byte) -121, (byte) 74, (byte) -104, (byte) -110, (byte) -13, (byte) 71, (byte) -108, (byte) 8, (byte) 12, (byte) -122, (byte) 14, (byte) 100, (byte) -8, (byte) 101, (byte) -67, (byte) 123, (byte) 4, (byte) 83, (byte) -65, (byte) -89, (byte) 38, (byte) 112, (byte) -36, (byte) 62, (byte) -25, (byte) 39, (byte) -107, (byte) -112, (byte) 108, (byte) 9};
+	
 	private byte[] att_name = new byte[] { (byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x56,
 			(byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65 };
 	private byte[] att_address = new byte[] { (byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69,
@@ -253,9 +230,10 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	
 	//can be changed 
 	private byte[] IDFile = new byte[] { (byte) 0x41, (byte) 0x78, (byte) 0x65, (byte) 0x6C, (byte) 0x20, (byte) 0x43, (byte) 0x61, (byte) 0x72, (byte) 0x6C, (byte) 0x20, (byte) 0x4C, (byte) 0x2E, (byte) 0x20, (byte) 0x56, (byte) 0x75, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x65, (byte) 0x6B, (byte) 0x65, (byte) 0x0D, (byte) 0x0A, (byte) 0x39, (byte) 0x36, (byte) 0x30, (byte) 0x32, (byte) 0x32, (byte) 0x31, (byte) 0x34, (byte) 0x37, (byte) 0x37, (byte) 0x35, (byte) 0x31, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x0D, (byte) 0x0A, (byte) 0x52, (byte) 0x6F, (byte) 0x65, (byte) 0x73, (byte) 0x65, (byte) 0x6C, (byte) 0x61, (byte) 0x72, (byte) 0x65, (byte) 0x20, (byte) 0x32, (byte) 0x31, (byte) 0x20, (byte) 0x46, (byte) 0x45, (byte) 0x42, (byte) 0x20, (byte) 0x31, (byte) 0x39, (byte) 0x39, (byte) 0x36, (byte) 0x0D, (byte) 0x0A, (byte) 0x4D, (byte) 0x61, (byte) 0x6C, (byte) 0x65, (byte) 0x0D, (byte) 0x0A, (byte) 0x35, (byte) 0x39, (byte) 0x32, (byte) 0x2D, (byte) 0x35, (byte) 0x37, (byte) 0x30, (byte) 0x34, (byte) 0x33, (byte) 0x34, (byte) 0x30, (byte) 0x34, (byte) 0x2D, (byte) 0x30, (byte) 0x39, (byte) 0x0D, (byte) 0x0A, (byte) 0x3D};
+	private byte[] IDFileSignedRRN = new byte[] {(byte) 0x94, (byte) 0x43, (byte) 0x7F, (byte) 0x42, (byte) 0xC9, (byte) 0xD4, (byte) 0xF6, (byte) 0xCC, (byte) 0xF8, (byte) 0x1A, (byte) 0xFA, (byte) 0xF9, (byte) 0x19, (byte) 0x23, (byte) 0x7E, (byte) 0x36, (byte) 0xDA, (byte) 0xF8, (byte) 0xCE, (byte) 0x9B, (byte) 0xBA, (byte) 0x10, (byte) 0x19, (byte) 0x59, (byte) 0x95, (byte) 0x6D, (byte) 0x77, (byte) 0x99, (byte) 0x6E, (byte) 0xB8, (byte) 0x21, (byte) 0xEA, (byte) 0x6B, (byte) 0x28, (byte) 0x48, (byte) 0xD5, (byte) 0x11, (byte) 0x44, (byte) 0xBC, (byte) 0xBC, (byte) 0x43, (byte) 0x6A, (byte) 0x09, (byte) 0x0F, (byte) 0x7F, (byte) 0x71, (byte) 0x37, (byte) 0x27, (byte) 0x6D, (byte) 0x71, (byte) 0x1E, (byte) 0xDB, (byte) 0xC9, (byte) 0xD9, (byte) 0xF9, (byte) 0x0B, (byte) 0x5B, (byte) 0xAD, (byte) 0xEE, (byte) 0x89, (byte) 0xE7, (byte) 0xC0, (byte) 0x08, (byte) 0x9D, (byte) 0x3D};
+
 	//Cannot be changed 
 	private byte[] ADDRESSFile = new byte[] {(byte) 0x48, (byte) 0x6F, (byte) 0x73, (byte) 0x70, (byte) 0x69, (byte) 0x74, (byte) 0x61, (byte) 0x61, (byte) 0x6C, (byte) 0x73, (byte) 0x74, (byte) 0x72, (byte) 0x61, (byte) 0x61, (byte) 0x74, (byte) 0x20, (byte) 0x31, (byte) 0x33, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x38, (byte) 0x36, (byte) 0x31, (byte) 0x30, (byte) 0x0D, (byte) 0x0A, (byte) 0x4B, (byte) 0x6F, (byte) 0x72, (byte) 0x74, (byte) 0x65, (byte) 0x6D, (byte) 0x61, (byte) 0x72, (byte) 0x6B, (byte) 0x20, (byte) 0x0D, (byte) 0x0A, (byte) 0x42, (byte) 0x65, (byte) 0x6C, (byte) 0x67, (byte) 0x69, (byte) 0x75, (byte) 0x6D, (byte) 0x3D};
-	private byte[] IDFileSignedRRN = new byte[] {(byte) 0x94, (byte) 0x43, (byte) 0x7F, (byte) 0x42, (byte) 0xC9, (byte) 0xD4, (byte) 0xF6, (byte) 0xCC, (byte) 0xF8, (byte) 0x1A, (byte) 0xFA, (byte) 0xF9, (byte) 0x19, (byte) 0x23, (byte) 0x7E, (byte) 0x36, (byte) 0xDA, (byte) 0xF8, (byte) 0xCE, (byte) 0x9B, (byte) 0xBA, (byte) 0x10, (byte) 0x19, (byte) 0x59, (byte) 0x95, (byte) 0x6D, (byte) 0x77, (byte) 0x99, (byte) 0x6E, (byte) 0xB8, (byte) 0x21, (byte) 0xEA, (byte) 0x6B, (byte) 0x28, (byte) 0x48, (byte) 0xD5, (byte) 0x11, (byte) 0x44, (byte) 0xBC, (byte) 0xBC, (byte) 0x43, (byte) 0x6A, (byte) 0x09, (byte) 0x0F, (byte) 0x7F, (byte) 0x71, (byte) 0x37, (byte) 0x27, (byte) 0x6D, (byte) 0x71, (byte) 0x1E, (byte) 0xDB, (byte) 0xC9, (byte) 0xD9, (byte) 0xF9, (byte) 0x0B, (byte) 0x5B, (byte) 0xAD, (byte) 0xEE, (byte) 0x89, (byte) 0xE7, (byte) 0xC0, (byte) 0x08, (byte) 0x9D, (byte) 0x3D};
 	private byte[] ADDRESSFileSignedRRN = new byte[] {(byte) 0x8F, (byte) 0x5D, (byte) 0x77, (byte) 0x84, (byte) 0xAD, (byte) 0x3A, (byte) 0x77, (byte) 0x3E, (byte) 0x41, (byte) 0x49, (byte) 0x1F, (byte) 0x26, (byte) 0xC3, (byte) 0x43, (byte) 0xB6, (byte) 0x6F, (byte) 0x36, (byte) 0xEB, (byte) 0xE9, (byte) 0xC3, (byte) 0x5B, (byte) 0x6E, (byte) 0x42, (byte) 0x0E, (byte) 0xB0, (byte) 0xFD, (byte) 0xD9, (byte) 0x58, (byte) 0x56, (byte) 0xFF, (byte) 0x35, (byte) 0x9D, (byte) 0x7C, (byte) 0x16, (byte) 0x0B, (byte) 0xD2, (byte) 0x88, (byte) 0x26, (byte) 0x1F, (byte) 0xD0, (byte) 0x8D, (byte) 0x92, (byte) 0x6C, (byte) 0xBC, (byte) 0x95, (byte) 0x31, (byte) 0x12, (byte) 0x22, (byte) 0x81, (byte) 0xAB, (byte) 0x2D, (byte) 0x65, (byte) 0xFD, (byte) 0x88, (byte) 0x39, (byte) 0x06, (byte) 0xE1, (byte) 0xD6, (byte) 0xCD, (byte) 0x00, (byte) 0xC2, (byte) 0x82, (byte) 0xDF, (byte) 0x90};
 	
 	byte[] K_u = new byte[] { (byte) 1, (byte) 2, (byte) 3 }; // id of the card
@@ -479,6 +457,7 @@ public class IdentityCard extends Applet implements ExtendedLength {
 	
 	/***
 	 * sign the hash received from MW
+	 * Nieuw certificaat gebruikt!
 	 * TODO!!! hier gebruik ik opnieuw commoncert omdak nie weet hoe ik nieuwe cert/keypairs moet aanmaken
 	 * maar int echt is er een apart cert voor auth en voor signen, dus da moeten we sws nog in orde brengen
 	 */
@@ -500,10 +479,14 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			Util.arrayCopy(outputBuffer, (short) 0, signedHash, (short) 0, signatureLength);
 			
 			//message samenstellen om terug te sturen naar MW, bestaande uit certificaat en getekende hash
+			//Certificate has a lenghth of 136 
 			byte[] message = new byte[signatureCertificate.length + signedHash.length];
 			Util.arrayCopy(signatureCertificate, (short) 0, message, (short) 0, (short) signatureCertificate.length);
 			Util.arrayCopy(signedHash, (short) 0, message, (short) signatureCertificate.length, (short) signedHash.length);
 			
+			//TODO verwijder deze lijnen
+			System.out.println("signed hash" + signedHash);
+			System.out.println("hash of doc: " + hashToSign);
 			sendBigFile(apdu, message);			
 		}
 		catch(Exception e) {
@@ -533,8 +516,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			// TODO renamen naar andere naam zodat duidelijk dat dit gebruikt wordt voor auth
 			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 			RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short) 512, false);
-			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-		    privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			privk.setExponent(privExp_AuthCer, offset, (short) privExp_AuthCer.length);
+		    privk.setModulus(privMod_AuthCer, offset, (short) privMod_AuthCer.length);
 			signature.init(privk, Signature.MODE_SIGN);
 			
 			//sign response
@@ -543,11 +526,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			byte[] sig = new byte[sigLength];
 			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
 
-			byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4]; //waarom plus 4??
+			byte[] message = new byte[authCertificate.length + bytesToSign.length + sig.length + 4]; //waarom plus 4??
 			
-			Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
-			Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length, (short) bytesToSign.length);
-			Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length), (short) sig.length);
+			Util.arrayCopy(authCertificate, (short) 0, message, (short) 0, (short) authCertificate.length);
+			Util.arrayCopy(bytesToSign, (short) 0, message, (short) authCertificate.length, (short) bytesToSign.length);
+			Util.arrayCopy(sig, (short) 0, message, (short) (authCertificate.length + bytesToSign.length), (short) sig.length);
 			
 			sendBigFile(apdu, message);
 			
@@ -588,8 +571,8 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			// prepare signature
 			Signature signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
 			RSAPrivateKey privk = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, (short) 512, false);
-			privk.setExponent(privExp_ComCer, offset, (short) privExp_ComCer.length);
-			privk.setModulus(privMod_ComCer, offset, (short) privMod_ComCer.length);
+			privk.setExponent(privExp_AuthCer, offset, (short) privExp_AuthCer.length);
+			privk.setModulus(privMod_AuthCer, offset, (short) privMod_AuthCer.length);
 			signature.init(privk, Signature.MODE_SIGN);
 
 			// sign
@@ -600,11 +583,11 @@ public class IdentityCard extends Applet implements ExtendedLength {
 			byte[] sig = new byte[sigLength];
 			Util.arrayCopy(outputBuffer, (short) 0, sig, (short) 0, sigLength);
 
-			byte[] message = new byte[commonCertificate.length + bytesToSign.length + sig.length + 4];
-			Util.arrayCopy(commonCertificate, (short) 0, message, (short) 0, (short) commonCertificate.length);
-			Util.arrayCopy(bytesToSign, (short) 0, message, (short) commonCertificate.length,
+			byte[] message = new byte[authCertificate.length + bytesToSign.length + sig.length + 4];
+			Util.arrayCopy(authCertificate, (short) 0, message, (short) 0, (short) authCertificate.length);
+			Util.arrayCopy(bytesToSign, (short) 0, message, (short) authCertificate.length,
 					(short) bytesToSign.length);
-			Util.arrayCopy(sig, (short) 0, message, (short) (commonCertificate.length + bytesToSign.length),
+			Util.arrayCopy(sig, (short) 0, message, (short) (authCertificate.length + bytesToSign.length),
 					(short) sig.length);
 			byte[] encryptedMessage = new byte[message.length];
 

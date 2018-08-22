@@ -575,7 +575,7 @@ public class MiddlewareMain extends Application {
 				middlewareController.log("signed hash from eID" + bytesToHex(response));
 				middlewareController.log("signed hash sent to SP");
 				
-				//terugzenden van gesignede hash + certificaat (=response) + oorspronkelijke bericht en hash zodat de hash zelf ook gecontroleerd kan worden
+				//terugzenden van certificaat + gesignede hash (=response) + oorspronkelijke bericht en hash zodat de hash zelf ook gecontroleerd kan worden
 				SignedDocumentResponse resp = new SignedDocumentResponse(response, Files.readAllBytes(Paths.get(filePath)), digest);
 				sendToServiceProvider(resp);
 			}
