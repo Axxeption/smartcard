@@ -639,9 +639,6 @@ public class ServiceProviderMain extends Application {
 				return;
 			}
 			
-			//TODO geldigheid van certificaat van SC (specifiek per kaart!) controleren dmv CRL
-			// dit kan gewoon een simpele text file/java class of zelfs arraylist met alle certificaten die niet meer geldig zijn
-			
 			//TODO authenticiteit van signature controleren op zelfde manier als verifyCert methode (gebruik doorgestuurd Cert met signedhash en unsignedhash)
 			//controleer eerst certificaat als de sign van de CA klopt
 			Signature verifier = Signature.getInstance("SHA1WithRSA");
